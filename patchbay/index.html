@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patchbay — API Workshops</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #111110;
+  --surface: #1a1a18;
+  --border: #2a2a26;
+  --border-hi: #3a3a34;
+  --text: #d4d0c8;
+  --text-dim: #8a8780;
+  --text-faint: #5a5850;
+  --amber: #d4a017;
+  --amber-dim: rgba(212,160,23,0.12);
+  --cyan: #3ec9d1;
+  --cyan-dim: rgba(62,201,209,0.12);
+  --green: #6abf69;
+  --green-dim: rgba(106,191,105,0.12);
+  --red: #c0392b;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'IBM Plex Sans', sans-serif;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Grain overlay ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 999;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+}
+
+/* ── Cable pattern background ── */
+.bg-cables {
+  position: fixed; inset: 0; z-index: 0; overflow: hidden;
+  opacity: 0.06;
+}
+.bg-cables svg { width: 100%; height: 100%; }
+
+/* ── Layout ── */
+.container {
+  position: relative; z-index: 1;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 4rem 2rem 3rem;
+}
+
+/* ── Header ── */
+.header {
+  text-align: center;
+  margin-bottom: 4rem;
+  animation: fadeUp 0.6s ease-out both;
+}
+.logo {
+  font-family: var(--mono);
+  font-size: 3.2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.5rem;
+}
+.logo .patch { color: var(--text); }
+.logo .bay { color: var(--amber); }
+.tagline {
+  font-size: 0.95rem;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.intro {
+  margin-top: 1.8rem;
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: var(--text-dim);
+  max-width: 620px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.intro em { font-style: italic; color: var(--text); }
+
+/* ── Workshop cards ── */
+.workshops {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.8rem 2rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 2px;
+  transition: opacity 0.2s;
+  opacity: 0;
+}
+.card:hover {
+  border-color: var(--border-hi);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  transform: translateY(-2px);
+}
+.card:hover::before { opacity: 1; }
+.card:nth-child(1)::before { background: var(--amber); }
+.card:nth-child(2)::before { background: var(--cyan); }
+.card:nth-child(3)::before { background: var(--green); }
+
+/* Ghost text/shapes that appear on hover */
+.card::after {
+  content: '';
+  position: absolute; inset: 0;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  border-radius: 10px;
+}
+.card:hover::after { opacity: 1; }
+
+.card:nth-child(1)::after {
+  content: 'GET /api/dogs HTTP/1.1\a Host: api.example.com\a Accept: application/json\a \a → 200 OK { "breed": "labrador" }';
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  line-height: 1.6;
+  color: var(--amber);
+  opacity: 0;
+  padding: 1.2rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  text-align: right;
+}
+.card:nth-child(1):hover::after { opacity: 0.07; }
+
+.card:nth-child(2)::after {
+  content: '/start\a 🤖 Hello! Try /dog or /joke\a /dog\a 🐕 Here is a random dog!\a /joke\a 😂 Why do dogs float?\a Because they are good buoys';
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 0.52rem;
+  line-height: 1.7;
+  color: var(--cyan);
+  opacity: 0;
+  padding: 1.2rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  text-align: right;
+}
+.card:nth-child(2):hover::after { opacity: 0.08; }
+
+.card:nth-child(3)::after {
+  content: '[Trigger]──→[HTTP GET]──→[Extract]\a                              ↓\a                          [Template]──→[Display]\a                              ↓\a [If temp>25]──→[Hot]       [Cold]\a       ↓                ↓\a   [Send]            [Send]';
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 0.52rem;
+  line-height: 1.7;
+  color: var(--green);
+  opacity: 0;
+  padding: 1.2rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  text-align: left;
+}
+.card:nth-child(3):hover::after { opacity: 0.08; }
+
+.card:nth-child(1) { animation: fadeUp 0.6s 0.15s ease-out both; }
+.card:nth-child(2) { animation: fadeUp 0.6s 0.25s ease-out both; }
+.card:nth-child(3) { animation: fadeUp 0.6s 0.35s ease-out both; }
+
+.card-number {
+  font-family: var(--mono);
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+  width: 3.5rem;
+  text-align: center;
+}
+.card:nth-child(1) .card-number { color: var(--amber); }
+.card:nth-child(2) .card-number { color: var(--cyan); }
+.card:nth-child(3) .card-number { color: var(--green); }
+
+.card-body { flex: 1; min-width: 0; }
+
+.card-title {
+  font-family: var(--mono);
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+.card-sub {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  margin-bottom: 0.7rem;
+}
+.card-desc {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+.card-desc strong { color: var(--text); font-weight: 500; }
+.card-desc code {
+  font-family: var(--mono); font-size: 0.82em;
+  background: var(--bg); padding: 0.1em 0.35em;
+  border-radius: 3px; border: 1px solid var(--border);
+  color: var(--amber);
+}
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.8rem;
+}
+.tag {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 3px;
+  background: var(--bg);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+
+.card-arrow {
+  font-size: 1.2rem;
+  color: var(--text-faint);
+  flex-shrink: 0;
+  align-self: center;
+  transition: color 0.2s, transform 0.2s;
+}
+.card:hover .card-arrow {
+  transform: translateX(4px);
+}
+.card:nth-child(1):hover .card-arrow { color: var(--amber); }
+.card:nth-child(2):hover .card-arrow { color: var(--cyan); }
+.card:nth-child(3):hover .card-arrow { color: var(--green); }
+
+/* ── Download section ── */
+.download-section {
+  text-align: center;
+  padding: 2rem 0;
+  border-top: 1px solid var(--border);
+  animation: fadeUp 0.6s 0.45s ease-out both;
+}
+.download-section p {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 1rem;
+}
+.download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.7rem 1.6rem;
+  border: 1.5px solid var(--amber);
+  border-radius: 6px;
+  background: var(--amber-dim);
+  color: var(--amber);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.download-btn:hover {
+  background: var(--amber);
+  color: var(--bg);
+  box-shadow: 0 0 20px rgba(212,160,23,0.2);
+}
+.download-btn:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.download-btn .dl-icon { font-size: 1rem; }
+
+/* ── Footer ── */
+.footer {
+  text-align: center;
+  padding: 2rem 0 1rem;
+  font-size: 0.65rem;
+  color: var(--text-faint);
+  font-family: var(--mono);
+  animation: fadeUp 0.6s 0.55s ease-out both;
+}
+.footer a {
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.footer a:hover { color: var(--cyan); }
+
+/* ── Prereq hint ── */
+.prereq {
+  text-align: center;
+  margin-top: -2.5rem;
+  margin-bottom: 2.5rem;
+  font-size: 0.78rem;
+  color: var(--text-faint);
+  animation: fadeUp 0.6s 0.4s ease-out both;
+}
+.prereq em { font-style: normal; color: var(--text-dim); }
+
+/* ── Animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .container { padding: 2.5rem 1.2rem 2rem; }
+  .logo { font-size: 2.2rem; }
+  .card { flex-direction: column; gap: 0.8rem; padding: 1.4rem 1.2rem; }
+  .card-number { font-size: 1.6rem; width: auto; text-align: left; }
+  .card-arrow { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- Background cable pattern -->
+<div class="bg-cables">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <style>
+      .cable { fill:none; stroke:#d4a017; stroke-width:1.5; }
+      .cable2 { fill:none; stroke:#3ec9d1; stroke-width:1; }
+      .cable3 { fill:none; stroke:#6abf69; stroke-width:1; }
+    </style>
+  </defs>
+  <path class="cable" d="M0,80 C200,80 200,200 400,200 S600,320 800,320"/>
+  <path class="cable2" d="M0,200 C150,200 250,100 400,100 S650,300 800,180"/>
+  <path class="cable3" d="M0,400 C200,400 300,280 500,300 S700,450 800,400"/>
+  <path class="cable" d="M0,520 C300,520 200,400 500,450 S700,550 800,500"/>
+  <path class="cable2" d="M0,350 C100,350 300,500 500,480 S600,350 800,280"/>
+  <circle cx="400" cy="200" r="3" fill="#d4a017" opacity="0.5"/>
+  <circle cx="400" cy="100" r="3" fill="#3ec9d1" opacity="0.5"/>
+  <circle cx="500" cy="300" r="3" fill="#6abf69" opacity="0.5"/>
+  <circle cx="500" cy="450" r="3" fill="#d4a017" opacity="0.5"/>
+  <circle cx="500" cy="480" r="3" fill="#3ec9d1" opacity="0.5"/>
+</svg>
+</div>
+
+<div class="container">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="logo"><span class="patch">Patch</span><span class="bay">bay</span></div>
+    <div class="tagline">plug things into other things until something happens</div>
+    <p class="intro">
+      Three workshops about the plumbing behind every app, bot, and automation you've ever used.
+      Start by yelling into the void of the internet with raw HTTP. Graduate to building a
+      Telegram bot that yells back. End by wiring a visual pipeline where you can <em>see</em>
+      the data move. Each one is a single HTML file — no install, no backend, no signup wall.
+      Download, open, break stuff.
+    </p>
+  </header>
+
+  <!-- Workshop cards -->
+  <div class="workshops">
+
+    <a class="card" href="./api_workshop.html">
+      <div class="card-number">101</div>
+      <div class="card-body">
+        <div class="card-title">API Workshop</div>
+        <div class="card-sub">Talking to the internet by hand</div>
+        <div class="card-desc">
+          Type a URL. Get JSON back. Understand <strong>what actually happens</strong> when
+          an app fetches data — the URLs, the status codes, the headers, the query strings.
+          No frameworks, no magic. Just you and <code>fetch()</code>.
+        </div>
+        <div class="card-tags">
+          <span class="tag">HTTP</span>
+          <span class="tag">JSON</span>
+          <span class="tag">REST</span>
+          <span class="tag">fetch()</span>
+          <span class="tag">12 chapters</span>
+        </div>
+      </div>
+      <div class="card-arrow">→</div>
+    </a>
+
+    <a class="card" href="./bot_workshop.html">
+      <div class="card-number">201</div>
+      <div class="card-body">
+        <div class="card-title">Bot Workshop</div>
+        <div class="card-sub">Your first Telegram bot, from zero</div>
+        <div class="card-desc">
+          A real bot that runs in a real chat app. <strong>Polling loops, command parsing,
+          API calls, state</strong> — the same architecture running every chatbot you've ever talked to.
+          By the end yours tells dog jokes.
+        </div>
+        <div class="card-tags">
+          <span class="tag">Telegram API</span>
+          <span class="tag">JavaScript</span>
+          <span class="tag">polling</span>
+          <span class="tag">commands</span>
+          <span class="tag">10 chapters</span>
+        </div>
+      </div>
+      <div class="card-arrow">→</div>
+    </a>
+
+    <a class="card" href="./flow_workshop.html">
+      <div class="card-number">301</div>
+      <div class="card-body">
+        <div class="card-title">Flow Workshop</div>
+        <div class="card-sub">Visual API pipelines — see the program</div>
+        <div class="card-desc">
+          Drag nodes. Wire them together. Watch data flow. <strong>27 node types, sub-graphs
+          you can package into new nodes, and a full Telegram bot</strong> — built without writing a
+          single line of code. Same paradigm as Node-RED, n8n, and ComfyUI.
+        </div>
+        <div class="card-tags">
+          <span class="tag">visual programming</span>
+          <span class="tag">dataflow</span>
+          <span class="tag">27 nodes</span>
+          <span class="tag">composition</span>
+          <span class="tag">16 chapters</span>
+        </div>
+      </div>
+      <div class="card-arrow">→</div>
+    </a>
+
+  </div>
+
+  <div class="prereq">
+    <em>They work standalone</em>, but the order is the point. Each one rewires how you see the previous.
+  </div>
+
+  <!-- Download -->
+  <div class="download-section">
+    <p>Four HTML files, zero dependencies, works on a plane. Take the whole thing:</p>
+    <button class="download-btn" onclick="downloadAll(this)">
+      <span class="dl-icon">↓</span>
+      Download Patchbay (.zip)
+    </button>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <a href="https://endarthur.github.io" target="_blank">endarthur</a>
+    &nbsp;·&nbsp; <a href="https://gentropic.org" target="_blank">Geoscientific Chaos Union</a>
+    &nbsp;·&nbsp; Flow Workshop powered by <a href="https://github.com/jerosoler/Drawflow" target="_blank">Drawflow</a> (MIT)
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+const FILES = [
+  { name: 'patchbay/index.html', url: './index.html' },
+  { name: 'patchbay/api_workshop.html', url: './api_workshop.html' },
+  { name: 'patchbay/bot_workshop.html', url: './bot_workshop.html' },
+  { name: 'patchbay/flow_workshop.html', url: './flow_workshop.html' },
+];
+
+async function downloadAll(btn) {
+  btn.disabled = true;
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<span class="dl-icon">⟳</span> Bundling…';
+
+  try {
+    const zip = new JSZip();
+    const results = await Promise.all(
+      FILES.map(f => fetch(f.url).then(r => {
+        if (!r.ok) throw new Error('Failed to fetch ' + f.name);
+        return r.text();
+      }))
+    );
+    FILES.forEach((f, i) => zip.file(f.name, results[i]));
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'patchbay.zip';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    btn.innerHTML = '<span class="dl-icon">✓</span> Downloaded!';
+    setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 2500);
+  } catch (e) {
+    console.error(e);
+    btn.innerHTML = '<span class="dl-icon">✗</span> Error — try right-click save instead';
+    setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 3000);
+  }
+}
+</script>
+</body>
+</html>

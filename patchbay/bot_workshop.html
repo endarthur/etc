@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bot Workshop — Build a Telegram Bot in Your Browser</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:wght@400;700;900&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #111110;
+  --surface: #1a1a18;
+  --surface2: #222220;
+  --border: #333330;
+  --border-hi: #4a4a44;
+  --text: #e8e4d9;
+  --text-dim: #999688;
+  --text-faint: #666460;
+  --cyan: #3ec9d1;
+  --cyan-dim: rgba(62,201,209,0.12);
+  --cyan-mid: rgba(62,201,209,0.22);
+  --amber: #e5a430;
+  --amber-dim: rgba(229,164,48,0.12);
+  --green: #5ccc5c;
+  --green-dim: rgba(92,204,92,0.10);
+  --red: #e55050;
+  --red-dim: rgba(229,80,80,0.10);
+  --blue: #5a9fd4;
+  --blue-dim: rgba(90,159,212,0.10);
+  --purple: #b07acc;
+  --purple-dim: rgba(176,122,204,0.12);
+  --mono: 'IBM Plex Mono', monospace;
+  --display: 'Fraunces', serif;
+  --body: 'Outfit', sans-serif;
+  --radius: 8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+::-webkit-scrollbar { width:7px; height:7px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+::-webkit-scrollbar-thumb:hover { background:var(--border-hi); }
+html { scroll-behavior:smooth; }
+body { background:var(--bg); color:var(--text); font-family:var(--body); line-height:1.65; font-weight:400; }
+.wrap { max-width:920px; margin:0 auto; padding:2rem 1.5rem 6rem; }
+
+/* Hero */
+.hero { text-align:center; padding:3rem 0 2.5rem; border-bottom:1px solid var(--border); margin-bottom:2.5rem; }
+.hero h1 { font-family:var(--display); font-size:2.4rem; font-weight:900; letter-spacing:-0.03em; margin-bottom:0.4rem; }
+.hero h1 .accent { color:var(--cyan); }
+.hero p { color:var(--text-dim); font-size:1rem; max-width:580px; margin:0 auto; font-weight:300; }
+.hero .prereq { display:inline-block; margin-top:0.8rem; font-size:0.8rem; color:var(--text-faint); background:var(--surface); padding:0.35rem 0.9rem; border-radius:20px; border:1px solid var(--border); }
+.hero .prereq a { color:var(--amber); text-decoration:none; }
+
+/* Sections */
+.section { margin-bottom:3rem; }
+.section-head { display:flex; align-items:center; gap:0.75rem; margin-bottom:1.25rem; padding-bottom:0.75rem; border-bottom:1px solid var(--border); }
+.section-num { font-family:var(--mono); font-size:0.7rem; font-weight:600; color:var(--cyan); background:var(--cyan-dim); padding:0.2rem 0.6rem; border-radius:4px; letter-spacing:0.05em; }
+.section-title { font-family:var(--display); font-size:1.35rem; font-weight:700; }
+.section-desc { color:var(--text-dim); font-size:0.9rem; margin-bottom:1.25rem; font-weight:300; line-height:1.75; }
+.section-desc strong { color:var(--text); font-weight:500; }
+.section-desc em { color:var(--cyan); font-style:normal; }
+.section-desc code { font-family:var(--mono); font-size:0.84em; background:var(--surface2); padding:0.1em 0.4em; border-radius:3px; }
+
+/* Panels */
+.panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:1rem; overflow:hidden; }
+.panel-header { padding:0.7rem 1rem; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:0.6rem; background:var(--surface2); }
+.panel-header .dot { width:8px; height:8px; border-radius:50%; }
+.panel-header .dot.r { background:var(--red); }
+.panel-header .dot.y { background:var(--amber); }
+.panel-header .dot.g { background:var(--green); }
+.panel-header .panel-label { font-family:var(--mono); font-size:0.72rem; color:var(--text-dim); margin-left:auto; text-transform:uppercase; letter-spacing:0.06em; }
+.panel-body { padding:1rem 1.15rem; }
+
+/* Controls */
+.ctrl-group { margin-bottom:1rem; }
+.ctrl-group:last-child { margin-bottom:0; }
+.ctrl-label { font-family:var(--mono); font-size:0.72rem; font-weight:600; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.35rem; display:flex; align-items:center; gap:0.5rem; }
+.ctrl-hint { font-size:0.78rem; color:var(--text-faint); margin-bottom:0.4rem; font-style:italic; }
+.ctrl-hint a { color:var(--cyan); text-decoration:none; }
+input[type="text"], input[type="password"], input[type="number"], select, textarea {
+  width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text);
+  padding:0.55rem 0.8rem; border-radius:6px; font-family:var(--mono); font-size:0.82rem;
+  outline:none; transition:border-color 0.2s;
+}
+input:focus, select:focus, textarea:focus { border-color:var(--cyan); }
+input::placeholder, textarea::placeholder { color:var(--text-faint); }
+textarea { resize:vertical; min-height:3rem; line-height:1.5; font-family:var(--body); font-size:0.88rem; }
+select { cursor:pointer; appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999688' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 0.7rem center; padding-right:2rem;
+}
+select optgroup { font-weight:700; color:var(--text); background:var(--surface); }
+select option { font-weight:400; color:var(--text); background:var(--bg); }
+
+/* Buttons */
+.btn {
+  display:inline-flex; align-items:center; gap:0.4rem;
+  background:var(--cyan); color:#111; border:none; padding:0.6rem 1.3rem;
+  border-radius:6px; font-family:var(--body); font-weight:600; font-size:0.85rem;
+  cursor:pointer; transition:all 0.15s; white-space:nowrap;
+}
+.btn:hover { filter:brightness(1.1); }
+.btn:active { transform:scale(0.97); }
+.btn:disabled { opacity:0.35; cursor:not-allowed; }
+.btn-sm { padding:0.4rem 0.8rem; font-size:0.78rem; }
+.btn-outline { background:transparent; border:1px solid var(--border); color:var(--text-dim); }
+.btn-outline:hover { border-color:var(--text-dim); color:var(--text); }
+.btn-green { background:var(--green); }
+.btn-red { background:var(--red); }
+.btn-amber { background:var(--amber); }
+.btn-purple { background:var(--purple); }
+.btn-copy.copied { background:var(--green); }
+.ctrl-row { display:flex; gap:0.6rem; align-items:center; }
+
+/* Tags */
+.tag { font-family:var(--mono); font-size:0.65rem; padding:0.1rem 0.4rem; border-radius:3px; font-weight:500; }
+.tag-get { background:var(--green-dim); color:var(--green); }
+.tag-post { background:var(--blue-dim); color:var(--blue); }
+.tag-tg { background:var(--cyan-dim); color:var(--cyan); }
+.tag-llm { background:var(--amber-dim); color:var(--amber); }
+.tag-tool { background:var(--purple-dim); color:var(--purple); }
+
+/* JSON preview */
+.json-preview {
+  background:var(--bg); border:1px solid var(--border); border-radius:6px;
+  padding:0.8rem 1rem; font-family:var(--mono); font-size:0.78rem;
+  line-height:1.7; overflow-x:auto; white-space:pre-wrap; word-break:break-word;
+  max-height:350px; overflow-y:auto;
+}
+.json-preview .jk { color:var(--blue); }
+.json-preview .js { color:var(--green); }
+.json-preview .jn { color:var(--amber); }
+.json-preview .jc { color:var(--text-faint); }
+
+/* Callouts and warnings */
+.warning { background:rgba(229,80,80,0.06); border:1px solid rgba(229,80,80,0.2); border-radius:var(--radius); padding:1rem 1.15rem; margin-bottom:1rem; }
+.warning-title { font-weight:600; color:var(--red); font-size:0.85rem; margin-bottom:0.3rem; }
+.warning p { font-size:0.82rem; color:var(--text-dim); line-height:1.6; }
+.callout { border-radius:var(--radius); padding:0.85rem 1.1rem; margin-bottom:1rem; font-size:0.85rem; line-height:1.6; }
+.callout-cyan { background:var(--cyan-dim); border-left:3px solid var(--cyan); }
+.callout-green { background:var(--green-dim); border-left:3px solid var(--green); }
+.callout-amber { background:var(--amber-dim); border-left:3px solid var(--amber); }
+.callout-purple { background:var(--purple-dim); border-left:3px solid var(--purple); }
+
+/* Diagram */
+.diagram-wrap { background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:1.25rem 0.75rem; margin:1.5rem 0; overflow-x:auto; }
+.diagram-wrap svg { width:100%; max-width:780px; height:auto; display:block; margin:0 auto; }
+
+/* Steps list */
+.steps-list { counter-reset:steps; margin:1rem 0; }
+.steps-list .step-item {
+  display:flex; gap:0.8rem; padding:0.65rem 0; border-bottom:1px solid var(--border);
+  font-size:0.87rem; color:var(--text-dim); line-height:1.6;
+}
+.steps-list .step-item:last-child { border-bottom:none; }
+.steps-list .step-item::before {
+  counter-increment:steps; content:counter(steps);
+  font-family:var(--mono); font-size:0.72rem; font-weight:600; color:var(--cyan);
+  background:var(--cyan-dim); min-width:24px; height:24px; line-height:24px;
+  text-align:center; border-radius:50%; flex-shrink:0; margin-top:0.1rem;
+}
+.steps-list .step-item strong { color:var(--text); font-weight:500; }
+.steps-list .step-item code { font-family:var(--mono); font-size:0.82em; background:var(--surface2); padding:0.1em 0.35em; border-radius:3px; }
+
+/* Commands table */
+.cmd-table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+.cmd-table th { text-align:left; font-family:var(--mono); font-size:0.72rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.04em; padding:0.5rem 0.6rem; border-bottom:1px solid var(--border); }
+.cmd-table td { padding:0.55rem 0.6rem; border-bottom:1px solid var(--border); vertical-align:top; }
+.cmd-table tr:last-child td { border-bottom:none; }
+.cmd-name { font-family:var(--mono); color:var(--cyan); font-weight:500; }
+.cmd-desc { color:var(--text-dim); }
+.cmd-apis { display:flex; gap:0.3rem; flex-wrap:wrap; }
+.cmd-explain { font-size:0.78rem; color:var(--text-faint); margin-top:0.2rem; line-height:1.5; }
+
+/* Custom command builder */
+.custom-cmd {
+  display:flex; gap:0.5rem; padding:0.55rem 0.65rem; border-bottom:1px solid var(--border);
+  align-items:flex-start; font-size:0.82rem;
+}
+.custom-cmd:last-child { border-bottom:none; }
+.custom-cmd-name { font-family:var(--mono); color:var(--cyan); font-weight:500; min-width:80px; flex-shrink:0; }
+.custom-cmd-prompt { color:var(--text-dim); flex:1; font-size:0.8rem; line-height:1.5; }
+.custom-cmd-del { cursor:pointer; color:var(--text-faint); font-size:0.75rem; padding:0.1rem 0.3rem; border-radius:3px; }
+.custom-cmd-del:hover { color:var(--red); background:var(--red-dim); }
+
+/* Status bar */
+.status-bar {
+  display:flex; align-items:center; gap:0.75rem; padding:0.7rem 1rem; flex-wrap:wrap;
+  background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:1rem;
+}
+.status-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.status-dot.off { background:var(--text-faint); }
+.status-dot.on { background:var(--green); box-shadow:0 0 8px rgba(92,204,92,0.5); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+.status-label { font-family:var(--mono); font-size:0.78rem; color:var(--text-dim); }
+.status-label strong { color:var(--text); font-weight:500; }
+.status-spacer { flex:1; }
+.status-count { font-family:var(--mono); font-size:0.72rem; color:var(--text-faint); }
+
+/* Live log */
+.live-log {
+  background:var(--bg); border:1px solid var(--border); border-radius:6px;
+  padding:0.5rem; max-height:500px; overflow-y:auto; min-height:100px;
+}
+.log-entry { padding:0.5rem 0.65rem; border-bottom:1px solid var(--border); font-size:0.8rem; line-height:1.5; animation:fadeIn 0.3s; }
+.log-entry:last-child { border-bottom:none; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(-4px);} to{opacity:1;transform:none;} }
+.log-time { font-family:var(--mono); font-size:0.68rem; color:var(--text-faint); margin-right:0.5rem; }
+.log-dir { font-family:var(--mono); font-size:0.7rem; padding:0.1rem 0.4rem; border-radius:3px; margin-right:0.4rem; }
+.log-in { background:var(--cyan-dim); color:var(--cyan); }
+.log-out { background:var(--green-dim); color:var(--green); }
+.log-err { background:var(--red-dim); color:var(--red); }
+.log-sys { background:var(--amber-dim); color:var(--amber); }
+.log-tool { background:var(--purple-dim); color:var(--purple); }
+.log-block { background:var(--red-dim); color:var(--red); }
+.log-mem { background:rgba(229,164,48,0.15); color:var(--amber); }
+.log-cmd { font-family:var(--mono); color:var(--cyan); font-weight:500; }
+.log-text { color:var(--text-dim); }
+.log-toggle {
+  font-family:var(--mono); font-size:0.68rem; color:var(--cyan); cursor:pointer;
+  margin-left:0.5rem; padding:0.1rem 0.4rem; border-radius:3px;
+  background:var(--cyan-dim); transition:all 0.15s; user-select:none;
+}
+.log-toggle:hover { background:var(--cyan-mid); color:var(--text); }
+.log-json { display:none; margin-top:0.4rem; }
+.log-json.show { display:block; }
+.log-empty { text-align:center; padding:2rem; color:var(--text-faint); font-style:italic; }
+
+/* Memory panel */
+.memory-panel { position:relative; }
+.memory-count { font-family:var(--mono); font-size:0.68rem; color:var(--text-faint); position:absolute; top:0.3rem; right:0.3rem; }
+#memoryPad { font-family:var(--mono); font-size:0.78rem; min-height:80px; line-height:1.6; background:var(--bg); border-color:var(--amber); }
+
+/* Misc */
+.flex-between { display:flex; justify-content:space-between; align-items:center; }
+.mt { margin-top:1rem; }
+.mb { margin-bottom:1rem; }
+.small { font-size:0.8rem; color:var(--text-dim); }
+hr { border:none; border-top:1px solid var(--border); margin:1.5rem 0; }
+a { color:var(--cyan); text-decoration:none; }
+a:hover { text-decoration:underline; }
+.spinner { display:inline-block; width:14px; height:14px; border:2px solid var(--border); border-top-color:var(--cyan); border-radius:50%; animation:spin 0.6s linear infinite; vertical-align:middle; margin-right:0.4rem; }
+@keyframes spin { to{transform:rotate(360deg);} }
+.checkbox-row { display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; color:var(--text-dim); cursor:pointer; }
+.checkbox-row input[type="checkbox"] { accent-color:var(--cyan); width:16px; height:16px; }
+/* Variable chips */
+.var-chips { display:flex; flex-wrap:wrap; gap:0.35rem; align-items:center; }
+.var-chip {
+  font-family:var(--mono); font-size:0.72rem; padding:0.2rem 0.55rem;
+  border-radius:4px; cursor:pointer; transition:all 0.15s; user-select:none;
+  border:1px solid var(--border);
+}
+.var-chip:hover { filter:brightness(1.3); }
+.chip-cyan { background:var(--cyan-dim); color:var(--cyan); border-color:rgba(62,201,209,0.25); }
+.chip-green { background:var(--green-dim); color:var(--green); border-color:rgba(92,204,92,0.25); }
+.chip-amber { background:var(--amber-dim); color:var(--amber); border-color:rgba(229,164,48,0.25); }
+.var-chip-label { font-size:0.68rem; color:var(--text-faint); white-space:nowrap; }
+
+@media(max-width:600px) { .hero h1{font-size:1.8rem;} .ctrl-row{flex-direction:column;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ═══ HERO ═══ -->
+<div class="hero">
+  <h1>Bot <span class="accent">Workshop</span></h1>
+  <p>Build a working Telegram bot that runs entirely in your browser tab. No server, no deployment, no installs. Just APIs talking to each other.</p>
+  <div class="prereq">Builds on concepts from the <a href="#">API Workshop</a> (101 level)</div>
+</div>
+
+<!-- ═══ PREAMBLE ═══ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">INTRO</span>
+    <span class="section-title">From calling APIs to being called</span>
+  </div>
+  <p class="section-desc">
+    In the API Workshop, you learned the fundamentals: your program sends a request, a server sends back data. A bot flips part of that around. Instead of you deciding when to call an API, your program <strong>continuously checks</strong> for new messages, then <strong>reacts</strong> by calling other APIs and sending results back. The loop looks like this:
+  </p>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 780 200" xmlns="http://www.w3.org/2000/svg">
+      <rect x="10" y="55" width="130" height="90" rx="10" fill="#1a1a18" stroke="#333330" stroke-width="1.5"/>
+      <text x="75" y="82" text-anchor="middle" font-family="Fraunces,serif" font-weight="700" font-size="13" fill="#e8e4d9">User</text>
+      <text x="75" y="100" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#666460">types /dogfact</text>
+      <text x="75" y="114" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#666460">in Telegram</text>
+      <rect x="195" y="35" width="130" height="130" rx="10" fill="#1a1a18" stroke="#3ec9d1" stroke-width="1.5"/>
+      <text x="260" y="62" text-anchor="middle" font-family="Fraunces,serif" font-weight="700" font-size="13" fill="#3ec9d1">Telegram</text>
+      <text x="260" y="78" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#666460">holds the message</text>
+      <text x="260" y="92" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#666460">until you poll for it</text>
+      <text x="260" y="120" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8" fill="#3ec9d1">getUpdates</text>
+      <text x="260" y="134" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8" fill="#3ec9d1">sendMessage</text>
+      <text x="260" y="148" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8" fill="#3ec9d1">sendPhoto</text>
+      <rect x="380" y="35" width="160" height="130" rx="10" fill="#1a1a18" stroke="#e5a430" stroke-width="1.5"/>
+      <text x="460" y="62" text-anchor="middle" font-family="Fraunces,serif" font-weight="700" font-size="13" fill="#e5a430">Your Browser</text>
+      <text x="460" y="78" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#666460">this page, running</text>
+      <text x="460" y="92" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#666460">a polling loop</text>
+      <text x="460" y="118" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8" fill="#e5a430">parse command</text>
+      <text x="460" y="132" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8" fill="#e5a430">call other APIs</text>
+      <text x="460" y="146" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8" fill="#e5a430">send response back</text>
+      <rect x="595" y="35" width="170" height="130" rx="10" fill="#1a1a18" stroke="#5ccc5c" stroke-width="1.5"/>
+      <text x="680" y="62" text-anchor="middle" font-family="Fraunces,serif" font-weight="700" font-size="13" fill="#5ccc5c">Other APIs</text>
+      <text x="680" y="82" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#666460">Dog CEO, NanoGPT,</text>
+      <text x="680" y="96" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#666460">anything you want</text>
+      <text x="680" y="124" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8" fill="#5ccc5c">GET /breeds/image</text>
+      <text x="680" y="138" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8" fill="#5ccc5c">POST /completions</text>
+      <line x1="140" y1="85" x2="192" y2="85" stroke="#3ec9d1" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <polygon points="194,85 186,80 186,90" fill="#3ec9d1"/>
+      <line x1="325" y1="80" x2="377" y2="80" stroke="#e5a430" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <polygon points="379,80 371,75 371,85" fill="#e5a430"/>
+      <line x1="380" y1="120" x2="328" y2="120" stroke="#3ec9d1" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <polygon points="326,120 334,115 334,125" fill="#3ec9d1"/>
+      <line x1="540" y1="80" x2="592" y2="80" stroke="#5ccc5c" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <polygon points="594,80 586,75 586,85" fill="#5ccc5c"/>
+      <line x1="595" y1="120" x2="543" y2="120" stroke="#5ccc5c" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <polygon points="541,120 549,115 549,125" fill="#5ccc5c"/>
+      <text x="166" y="78" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="7" fill="#3ec9d1">msg</text>
+      <text x="352" y="73" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="7" fill="#e5a430">poll</text>
+      <text x="352" y="115" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="7" fill="#3ec9d1">reply</text>
+      <text x="567" y="73" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="7" fill="#5ccc5c">req</text>
+      <text x="567" y="115" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="7" fill="#5ccc5c">data</text>
+      <path d="M 460 170 Q 460 190 380 190 Q 340 190 340 170 Q 340 158 355 155" fill="none" stroke="#e5a430" stroke-width="1.2" stroke-dasharray="4,3"/>
+      <polygon points="357,155 349,152 352,160" fill="#e5a430"/>
+      <text x="400" y="188" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="7.5" fill="#e5a430">repeat every 2s</text>
+    </svg>
+  </div>
+
+  <p class="section-desc">
+    The key concept is <em>long polling</em>: your browser asks Telegram "any new messages?" in a loop. If there's nothing, Telegram holds the connection open for a few seconds before responding with an empty list. If a message arrives during that wait, it responds immediately. It's simple, reliable, and perfect for learning — and it works right here in the browser.
+  </p>
+</div>
+
+<!-- ═══ SETUP ═══ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">SETUP</span>
+    <span class="section-title">Create Your Bot &amp; Connect</span>
+  </div>
+
+  <p class="section-desc">First, you need a bot. Telegram bots are created through another bot called <strong>BotFather</strong> — it's Telegram's official tool for registering bots and getting API tokens.</p>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="panel-label">botfather walkthrough</span>
+    </div>
+    <div class="panel-body">
+      <div class="steps-list">
+        <div class="step-item"><span>Open Telegram and search for <strong>@BotFather</strong> (or tap <a href="https://t.me/BotFather" target="_blank">this link</a>). It has a blue checkmark — it's official.</span></div>
+        <div class="step-item"><span>Send <code>/newbot</code>. BotFather will ask you two things: a <strong>display name</strong> (anything, like "My Workshop Bot") and a <strong>username</strong> (must end in "bot", like <code>my_workshop_bot</code>).</span></div>
+        <div class="step-item"><span>BotFather replies with a <strong>token</strong> — a long string like <code>123456789:ABCdef...</code> — this is your bot's API key. Copy it.</span></div>
+        <div class="step-item"><span>Paste the token below. That's it — your bot exists. It can't do anything yet (that's what the rest of this page is for), but it's registered and reachable.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="warning">
+    <div class="warning-title">&#9888; Keep your tokens private</div>
+    <p>Both tokens stay in this browser tab — never stored, never logged. Anyone with your bot token can control your bot. Anyone with your LLM key can use your credit. Treat both like passwords.</p>
+  </div>
+
+  <div class="panel">
+    <div class="panel-body">
+      <div class="ctrl-group">
+        <div class="ctrl-label">Telegram Bot Token <span class="tag tag-tg">telegram</span></div>
+        <input type="password" id="botToken" placeholder="123456789:ABCdefGHIjklMNO-pqrSTUvwxyz">
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">LLM Provider <span class="tag tag-llm">llm</span></div>
+        <div class="ctrl-hint">Both use the same request format. OpenRouter has free models — no credit card needed.</div>
+        <select id="llmProvider" onchange="onProviderChange()">
+          <option value="nanogpt">NanoGPT (pay-per-prompt)</option>
+          <option value="openrouter">OpenRouter (free models available)</option>
+          <option value="local">Local / Ollama (no key needed)</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">API Key <span class="tag tag-llm">llm</span></div>
+        <div class="ctrl-hint" id="apiKeyHint">From <a href="https://nano-gpt.com/api" target="_blank">nano-gpt.com/api</a> — same key as the API Workshop.</div>
+        <input type="password" id="nanoKey" placeholder="your API key">
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">LLM Model <span class="tag tag-llm">llm</span></div>
+        <select id="llmModel"><option value="">Loading models...</option></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-cyan" style="font-size:0.8rem;">
+    <strong>What gets saved?</strong> Your access control settings and custom commands are saved to your browser's local storage so they survive page reloads. Tokens are deliberately <em>not</em> saved — you paste them fresh each session, same as you'd expect from any security-conscious tool.
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="panel-label">access control</span>
+    </div>
+    <div class="panel-body">
+      <p class="ctrl-hint" style="margin-bottom:0.6rem;">
+        Your bot is public — anyone who finds its username can message it, and each LLM reply costs you credit. You can restrict it to specific Telegram user IDs, or auto-capture the first person who messages it.
+      </p>
+      <div class="ctrl-group">
+        <label class="checkbox-row">
+          <input type="checkbox" id="allowAll">
+          Allow everyone (no restrictions — useful for testing, but watch your LLM usage)
+        </label>
+      </div>
+      <div class="ctrl-group" id="allowListGroup">
+        <div class="ctrl-label">Allowed User IDs</div>
+        <div class="ctrl-hint">Comma-separated Telegram user IDs. Don't know yours? Leave empty and check "Auto-capture" — when you message the bot, it'll grab your ID and add it here.</div>
+        <input type="text" id="allowedIds" placeholder="e.g. 123456789, 987654321">
+        <label class="checkbox-row" style="margin-top:0.4rem;">
+          <input type="checkbox" id="autoCapture" checked>
+          Auto-capture: add the first person who messages the bot to the allow list
+        </label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ STEP 1: VERIFY ═══ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">STEP 1</span>
+    <span class="section-title">Meet Your Bot</span>
+  </div>
+  <p class="section-desc">
+    Let's verify your token by calling <code>getMe</code>. This is the simplest Telegram API endpoint — it takes no parameters and returns your bot's profile. If this works, your token is valid and you're connected.
+  </p>
+  <div class="panel">
+    <div class="panel-header">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="panel-label">getMe <span class="tag tag-get" style="margin-left:0.5rem;">GET</span></span>
+    </div>
+    <div class="panel-body">
+      <div class="ctrl-row">
+        <button class="btn" onclick="doGetMe()">&#9654; Call getMe</button>
+        <span class="small" id="getMeStatus"></span>
+      </div>
+      <div id="getMeResult" class="mt"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ STEP 2: COMMANDS ═══ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">STEP 2</span>
+    <span class="section-title">Commands &amp; Routing</span>
+  </div>
+  <p class="section-desc">
+    A bot command is just a message that starts with <code>/</code>. When a message arrives, the bot checks: does it start with a slash? If yes, extract the command name (everything between <code>/</code> and the first space), look it up in a routing table, and call the matching handler function. Everything after the command becomes the argument. That's it — a bot is a <code>switch</code> statement on strings, with API calls inside each branch.
+  </p>
+
+  <p class="section-desc">
+    Telegram also lets you register commands via <code>setMyCommands</code> so users see a menu when they type <code>/</code>. These are the built-in ones:
+  </p>
+
+  <div class="panel">
+    <div class="panel-body" style="padding:0;">
+      <table class="cmd-table">
+        <thead><tr><th>Command</th><th>What it does</th><th>APIs</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="cmd-name">/start</td>
+            <td class="cmd-desc">Sends a welcome message listing available commands.
+              <div class="cmd-explain">Every Telegram bot gets this automatically — it's what runs when someone opens your bot for the first time. No external APIs, just a static response.</div></td>
+            <td class="cmd-apis"><span class="tag tag-tg">sendMessage</span></td>
+          </tr>
+          <tr>
+            <td class="cmd-name">/dog</td>
+            <td class="cmd-desc">Sends a random dog photo.
+              <div class="cmd-explain">Calls Dog CEO for a random image URL, extracts the breed from the URL path, then calls Telegram's <code>sendPhoto</code> with the URL. Telegram fetches the image itself — you just pass a URL.</div></td>
+            <td class="cmd-apis"><span class="tag tag-get">dog ceo</span> <span class="tag tag-tg">sendPhoto</span></td>
+          </tr>
+          <tr>
+            <td class="cmd-name">/dogfact</td>
+            <td class="cmd-desc">Random breed photo + LLM-generated fun fact.
+              <div class="cmd-explain">The full chain: Dog CEO → extract breed → build prompt → LLM → send photo with caption. Three APIs in sequence — the output of each feeds the next.</div></td>
+            <td class="cmd-apis"><span class="tag tag-get">dog ceo</span> <span class="tag tag-llm">llm</span> <span class="tag tag-tg">sendPhoto</span></td>
+          </tr>
+          <tr>
+            <td class="cmd-name">/ask &lt;question&gt;</td>
+            <td class="cmd-desc">Ask the LLM anything.
+              <div class="cmd-explain">Everything after <code>/ask</code> becomes the user prompt. The system prompt (configurable below) defines the bot's personality. The LLM response goes straight back as a Telegram message.</div></td>
+            <td class="cmd-apis"><span class="tag tag-llm">llm</span> <span class="tag tag-tg">sendMessage</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="panel-label">setMyCommands <span class="tag tag-post" style="margin-left:0.5rem;">POST</span></span>
+    </div>
+    <div class="panel-body">
+      <div class="ctrl-row">
+        <button class="btn" onclick="doSetCommands()">&#9654; Register All Commands</button>
+        <span class="small" id="cmdStatus"></span>
+      </div>
+      <div id="cmdResult" class="mt"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ STEP 3: CUSTOM COMMANDS ═══ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">STEP 3</span>
+    <span class="section-title">Custom Commands</span>
+  </div>
+  <p class="section-desc">
+    The built-in commands are hardcoded, but there's nothing special about them — they're just entries in a lookup table. Here you can add your own. Each custom command sends whatever the user types (after the <code>/command</code>) to the LLM with a prompt template you define. Use <code>{input}</code> as a placeholder for the user's text.
+  </p>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="panel-label">command builder</span>
+    </div>
+    <div class="panel-body">
+      <div id="customCmdList"></div>
+      <hr style="margin:0.75rem 0;">
+      <div class="ctrl-group">
+        <div class="ctrl-label">Add New Command</div>
+        <div class="ctrl-row" style="align-items:flex-end;">
+          <div style="flex:0 0 120px;">
+            <input type="text" id="newCmdName" placeholder="/joke" style="font-size:0.82rem;">
+          </div>
+          <div style="flex:1;">
+            <input type="text" id="newCmdDesc" placeholder="Short description for Telegram menu" style="font-size:0.82rem;">
+          </div>
+        </div>
+        <div style="margin-top:0.4rem;">
+          <div class="ctrl-hint">Prompt template — use variables to inject context. Click a chip to insert it.</div>
+          <textarea id="newCmdPrompt" rows="2" placeholder="e.g. Tell me a joke about {input}. Keep it short and family-friendly."></textarea>
+          <div class="var-chips" style="margin-top:0.45rem;">
+            <span class="var-chip-label">User input:</span>
+            <span class="var-chip chip-cyan" onclick="insertCmdVar('{input}')" title="Everything the user typed after the /command">{input}</span>
+            <span class="var-chip-label" style="margin-left:0.3rem;">Context:</span>
+            <span class="var-chip chip-green" onclick="insertCmdVar('{user_name}')" title="Telegram first name of the user">{user_name}</span>
+            <span class="var-chip chip-green" onclick="insertCmdVar('{user_id}')" title="Telegram numeric user ID">{user_id}</span>
+            <span class="var-chip chip-green" onclick="insertCmdVar('{chat_id}')" title="Current chat ID">{chat_id}</span>
+            <span class="var-chip-label" style="margin-left:0.3rem;">Fun:</span>
+            <span class="var-chip chip-amber" onclick="insertCmdVar('{today}')" title="Today's date (YYYY-MM-DD)">{today}</span>
+            <span class="var-chip chip-amber" onclick="insertCmdVar('{time}')" title="Current time (HH:MM)">{time}</span>
+            <span class="var-chip chip-amber" onclick="insertCmdVar('{language}')" title="A random language">{language}</span>
+            <span class="var-chip chip-amber" onclick="insertCmdVar('{random_number}')" title="Random integer 1-100">{random_number}</span>
+          </div>
+        </div>
+        <div style="margin-top:0.5rem;">
+          <button class="btn btn-sm" onclick="addCustomCmd()">+ Add Command</button>
+        </div>
+      </div>
+      <div class="callout callout-cyan mt" style="font-size:0.8rem;">
+        <strong>Ideas:</strong> <code>/joke</code> → "Tell a joke about {input}", <code>/eli5</code> → "Explain like I'm 5: {input}", <code>/translate</code> → "Translate to {language}: {input}", <code>/greet</code> → "Write a personalized greeting for {user_name} about {input}", <code>/fortune</code> → "Give {user_name} a fortune cookie message. Their lucky number is {random_number}."
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ STEP 4: LLM CONFIG + MEMORY ═══ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">STEP 4</span>
+    <span class="section-title">LLM Personality &amp; Memory</span>
+  </div>
+  <p class="section-desc">
+    Every command that uses the LLM sends a <strong>system prompt</strong> that defines the bot's personality. But right now each request is stateless — the LLM has no idea what happened before. The <em>memory scratchpad</em> below changes that: its contents get appended to the system prompt on every LLM call, and the LLM can write back to it.
+  </p>
+
+  <div class="panel">
+    <div class="panel-body">
+      <div class="ctrl-group">
+        <div class="ctrl-label">System Prompt for /ask</div>
+        <textarea id="sysPromptAsk" rows="2">You are a helpful, concise assistant responding via Telegram. Keep answers short (2-3 sentences) since this is a chat context.</textarea>
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">System Prompt for /dogfact</div>
+        <textarea id="sysPromptDog" rows="2">You are a friendly dog expert. Give a single fun fact about the requested breed in 2-3 sentences. Keep it casual and fun.</textarea>
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">System Prompt for Custom Commands</div>
+        <textarea id="sysPromptCustom" rows="2">You are a helpful assistant responding via Telegram. Keep responses concise. Follow the user's instructions carefully.</textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="panel-label">memory scratchpad</span>
+    </div>
+    <div class="panel-body">
+      <p class="section-desc" style="margin-bottom:0.75rem;">
+        This is the bot's working memory — plain text that gets injected into the system prompt on every LLM call. The LLM can also write to it: if its response contains <code>[REMEMBER: ...]</code>, the bot strips that from the reply, extracts the content, and appends it here. You can see and edit everything the bot "knows."
+      </p>
+      <div class="callout callout-amber" style="font-size:0.8rem; margin-bottom:0.75rem;">
+        <strong>This is how chatbot memory works.</strong> There's no magic — just text being fed back into the next request. Every chatbot you've ever used that "remembers" things does some version of this: store text, inject it into the prompt, let the model update it. The only difference is visibility — here you can watch it happen.
+      </div>
+      <div class="memory-panel">
+        <textarea id="memoryPad" rows="4" placeholder="Empty — the bot has no memories yet. As you chat, the LLM can write memories here using [REMEMBER: ...] tags."></textarea>
+      </div>
+      <div class="flex-between mt" style="margin-top:0.5rem;">
+        <span class="small" id="memoryInfo">0 characters</span>
+        <button class="btn btn-sm btn-outline" onclick="document.getElementById('memoryPad').value=''; updateMemoryInfo();">Clear Memory</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ STEP 5: TOOL USE ═══ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">STEP 5</span>
+    <span class="section-title">Tool Use</span>
+  </div>
+  <p class="section-desc">
+    So far the LLM can only reply with text. But what if it could <em>do things</em> — fetch a dog photo, remember something, or run a custom action? That's <strong>tool use</strong>: you tell the LLM "you have these tools available," and it outputs structured tags when it wants to use one. The bot parses those tags, executes the action, and strips them from the response sent to the user.
+  </p>
+  <p class="section-desc">
+    This is the same concept behind function calling in the OpenAI/Anthropic APIs — the model outputs structured instructions, and the surrounding program interprets them. We're doing it with simple text tags so you can see every step in the log.
+  </p>
+
+  <div class="callout callout-amber" style="font-size:0.8rem;">
+    <strong>A lesson in prompt wording.</strong> The first version of this workshop told the LLM it could send dog photos "when it would be fun or relevant." The result? Every single response came with an unsolicited labrador. The LLM was being helpful — it just had a very generous definition of "relevant." The fix was changing the instruction to "ONLY when the user explicitly asks." The wording of tool descriptions matters enormously — it's the difference between a useful assistant and an over-eager golden retriever. Try editing the prompt below to see for yourself.
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="panel-label">tool instructions (editable)</span>
+    </div>
+    <div class="panel-body">
+      <p class="section-desc" style="margin-bottom:0.75rem;">
+        This text gets appended to the system prompt on every LLM call when tools are enabled. Edit it to change how aggressively the LLM uses tools, add new tool tags, or change the descriptions. The bot will parse any <code>[REMEMBER: ...]</code> and <code>[DOG_PHOTO]</code> tags it finds in the response regardless of what's written here — but the LLM only <em>knows</em> to use them if you tell it.
+      </p>
+      <div class="ctrl-group">
+        <textarea id="toolPromptEdit" rows="10" style="font-family:var(--mono); font-size:0.78rem; line-height:1.6;"></textarea>
+      </div>
+      <div class="flex-between" style="margin-top:0.5rem;">
+        <label class="checkbox-row">
+          <input type="checkbox" id="enableTools" checked>
+          Enable tool use for /ask, custom commands, and plain text
+        </label>
+        <button class="btn btn-sm btn-outline" onclick="resetToolPrompt()">Reset to default</button>
+      </div>
+      <div class="callout callout-purple mt" style="font-size:0.8rem;">
+        <strong>Experiment:</strong> Try changing "ONLY use this when the user explicitly asks" to "use this whenever it would be fun" and see what happens. Or add a new tool tag like <code>[WEATHER: city]</code> — the LLM will start outputting it (though the bot won't execute it yet, you'll see it in the raw response). This is how real tool systems are developed: define the tag, see if the model uses it correctly, then wire up the execution.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ STEP 6: GO LIVE ═══ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">STEP 6</span>
+    <span class="section-title">Go Live</span>
+  </div>
+  <p class="section-desc">
+    Hit Start and this page begins polling Telegram for messages. Open your bot in Telegram and try the commands — every message, API call, tool invocation, and memory update shows up in the live log below. <strong>Keep this tab open</strong> — the bot only works while the page is running.
+  </p>
+
+  <div class="status-bar" id="statusBar">
+    <div class="status-dot off" id="statusDot"></div>
+    <span class="status-label" id="statusLabel">Bot is <strong>offline</strong></span>
+    <span class="status-spacer"></span>
+    <span class="status-count" id="statusCount">0 messages handled</span>
+    <button class="btn btn-sm btn-green" id="startBtn" onclick="toggleBot()">&#9654; Start Bot</button>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="panel-label">live log</span>
+      <span class="panel-label" style="margin-left:0;" id="logCountLabel">0 entries</span>
+    </div>
+    <div class="live-log" id="liveLog">
+      <div class="log-empty">Bot is offline. Hit Start above, then message your bot in Telegram.</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+// ═══════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════
+let polling = false;
+let pollTimeout = null;
+let updateOffset = 0;
+let msgCount = 0;
+let logCount = 0;
+let botInfo = null;
+let customCommands = []; // {name, desc, prompt}
+
+// ═══════════════════════════════════════
+//  PERSISTENCE (localStorage)
+// ═══════════════════════════════════════
+
+const STORAGE_PREFIX = 'botworkshop_';
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_PREFIX + 'allowedIds', document.getElementById('allowedIds').value);
+    localStorage.setItem(STORAGE_PREFIX + 'allowAll', document.getElementById('allowAll').checked);
+    localStorage.setItem(STORAGE_PREFIX + 'autoCapture', document.getElementById('autoCapture').checked);
+    localStorage.setItem(STORAGE_PREFIX + 'customCmds', JSON.stringify(customCommands));
+  } catch(e) { /* localStorage unavailable — no-op */ }
+}
+
+function loadState() {
+  try {
+    const ids = localStorage.getItem(STORAGE_PREFIX + 'allowedIds');
+    if (ids !== null) document.getElementById('allowedIds').value = ids;
+
+    const all = localStorage.getItem(STORAGE_PREFIX + 'allowAll');
+    if (all !== null) {
+      document.getElementById('allowAll').checked = all === 'true';
+      document.getElementById('allowListGroup').style.display = all === 'true' ? 'none' : '';
+    }
+
+    const ac = localStorage.getItem(STORAGE_PREFIX + 'autoCapture');
+    if (ac !== null) document.getElementById('autoCapture').checked = ac === 'true';
+
+    const cmds = localStorage.getItem(STORAGE_PREFIX + 'customCmds');
+    if (cmds) {
+      try { customCommands = JSON.parse(cmds); } catch(e) {}
+    }
+  } catch(e) { /* localStorage unavailable — no-op */ }
+}
+
+// ═══════════════════════════════════════
+//  UTILITIES
+// ═══════════════════════════════════════
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function syntaxHL(obj) {
+  return JSON.stringify(obj, null, 2)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(?:[^"\\]|\\.)*")(\s*:)/g, '<span class="jk">$1</span>$2')
+    .replace(/:\s*("(?:[^"\\]|\\.)*")/g, ': <span class="js">$1</span>')
+    .replace(/:\s*(-?\d+\.?\d*)/g, ': <span class="jn">$1</span>')
+    .replace(/:\s*(true|false|null)/g, ': <span class="jn">$1</span>');
+}
+
+function tgAPI(method, body) {
+  const token = document.getElementById('botToken').value.trim();
+  const url = `https://api.telegram.org/bot${token}/${method}`;
+  const opts = body
+    ? { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) }
+    : {};
+  return fetch(url, opts).then(r => r.json()).then(data => {
+    // Attach request info for logging
+    data._request = { method: body ? 'POST' : 'GET', endpoint: method, body: body || null };
+    return data;
+  });
+}
+
+function timeStr() {
+  return new Date().toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+function addLog(dir, msg, jsonData) {
+  const log = document.getElementById('liveLog');
+  const empty = log.querySelector('.log-empty');
+  if (empty) empty.remove();
+  const id = 'log-' + (logCount++);
+  const dirClass = {in:'log-in',out:'log-out',err:'log-err',sys:'log-sys',tool:'log-tool',block:'log-block',mem:'log-mem'}[dir] || 'log-sys';
+  const dirLabel = {in:'IN',out:'OUT',err:'ERR',sys:'SYS',tool:'TOOL',block:'BLOCKED',mem:'MEMORY'}[dir] || 'SYS';
+  const jsonId = id + '-json';
+  let html = `<div class="log-entry" id="${id}">`;
+  html += `<span class="log-time">${timeStr()}</span>`;
+  html += `<span class="log-dir ${dirClass}">${dirLabel}</span>`;
+  html += `<span class="log-text">${msg}</span>`;
+  if (jsonData) {
+    html += `<span class="log-toggle" onclick="let j=document.getElementById('${jsonId}'),t=this;if(j.classList.toggle('show')){t.textContent='▾ details'}else{t.textContent='▸ details'}">▸ details</span>`;
+    html += `<div class="json-preview log-json" id="${jsonId}" style="margin-top:0.4rem;font-size:0.72rem;max-height:250px;">${syntaxHL(jsonData)}</div>`;
+  }
+  html += `</div>`;
+  log.insertAdjacentHTML('beforeend', html);
+  log.scrollTop = log.scrollHeight;
+  document.getElementById('logCountLabel').textContent = logCount + ' entries';
+}
+
+// ═══════════════════════════════════════
+//  ACCESS CONTROL
+// ═══════════════════════════════════════
+
+function isAllowed(userId) {
+  if (document.getElementById('allowAll').checked) return true;
+  const ids = document.getElementById('allowedIds').value.split(',').map(s => s.trim()).filter(Boolean);
+  return ids.includes(String(userId));
+}
+
+function autoCapture(userId) {
+  if (!document.getElementById('autoCapture').checked) return;
+  const el = document.getElementById('allowedIds');
+  const ids = el.value.split(',').map(s => s.trim()).filter(Boolean);
+  if (!ids.includes(String(userId))) {
+    ids.push(String(userId));
+    el.value = ids.join(', ');
+    addLog('sys', `Auto-captured user ID <strong>${userId}</strong> and added to allow list.`);
+    saveState();
+  }
+}
+
+// Hide/show allow list based on "allow all"
+document.getElementById('allowAll').addEventListener('change', function() {
+  document.getElementById('allowListGroup').style.display = this.checked ? 'none' : '';
+  saveState();
+});
+document.getElementById('allowedIds').addEventListener('input', saveState);
+document.getElementById('autoCapture').addEventListener('change', saveState);
+
+// ═══════════════════════════════════════
+//  MEMORY
+// ═══════════════════════════════════════
+
+function getMemory() { return document.getElementById('memoryPad').value; }
+
+function appendMemory(text) {
+  const pad = document.getElementById('memoryPad');
+  pad.value = (pad.value ? pad.value + '\n' : '') + text;
+  updateMemoryInfo();
+}
+
+function updateMemoryInfo() {
+  const len = document.getElementById('memoryPad').value.length;
+  document.getElementById('memoryInfo').textContent = len + ' characters';
+}
+document.getElementById('memoryPad')?.addEventListener('input', updateMemoryInfo);
+
+// Parse [REMEMBER: ...] tags from LLM response
+function extractTools(text) {
+  const memories = [];
+  const dogRequests = [];
+  let cleaned = text;
+
+  // [REMEMBER: ...]
+  cleaned = cleaned.replace(/\[REMEMBER:\s*(.*?)\]/gi, (_, content) => {
+    memories.push(content.trim());
+    return '';
+  });
+
+  // [DOG_PHOTO]
+  cleaned = cleaned.replace(/\[DOG_PHOTO\]/gi, () => {
+    dogRequests.push(true);
+    return '';
+  });
+
+  return { cleaned: cleaned.trim(), memories, dogRequests };
+}
+
+// ═══════════════════════════════════════
+//  TOOL USE PROMPT
+// ═══════════════════════════════════════
+
+const DEFAULT_TOOL_PROMPT = `You have tools available. To use them, include the tag in your response — the system will execute it and strip it from the message sent to the user.
+
+Available tools:
+- [REMEMBER: <information>] — Save a piece of information to your memory. Use this when the user tells you something worth remembering (their name, preferences, facts about them). Example: [REMEMBER: User's name is Alex and they prefer short answers]
+- [DOG_PHOTO] — Send a random dog photo alongside your text response. ONLY use this when the user explicitly asks for a dog photo, a picture of a dog, or something very clearly dog-related. Do NOT use it just to be fun or cute — only when specifically requested.
+
+You can use multiple tools in one response. The tags can appear anywhere in your text. Do NOT use tools unless clearly warranted by the user's request.`;
+
+function getToolPrompt() {
+  return document.getElementById('toolPromptEdit').value;
+}
+
+function resetToolPrompt() {
+  document.getElementById('toolPromptEdit').value = DEFAULT_TOOL_PROMPT;
+}
+
+// Initialize
+document.getElementById('toolPromptEdit').value = DEFAULT_TOOL_PROMPT;
+
+// ═══════════════════════════════════════
+//  CUSTOM COMMANDS
+// ═══════════════════════════════════════
+
+function renderCustomCmds() {
+  const el = document.getElementById('customCmdList');
+  if (!customCommands.length) {
+    el.innerHTML = '<div class="small" style="padding:0.3rem 0;text-align:center;">No custom commands yet. Add one below.</div>';
+    return;
+  }
+  el.innerHTML = customCommands.map((cmd, i) =>
+    `<div class="custom-cmd">
+      <span class="custom-cmd-name">/${esc(cmd.name)}</span>
+      <span class="custom-cmd-prompt">${esc(cmd.prompt)}</span>
+      <span class="custom-cmd-del" onclick="removeCustomCmd(${i})" title="Remove">&#10005;</span>
+    </div>`
+  ).join('');
+}
+
+function addCustomCmd() {
+  let name = document.getElementById('newCmdName').value.trim().replace(/^\//, '').replace(/[^a-z0-9_]/gi, '').toLowerCase();
+  const desc = document.getElementById('newCmdDesc').value.trim();
+  const prompt = document.getElementById('newCmdPrompt').value.trim();
+  if (!name || !prompt) return;
+  if (['start','dog','dogfact','ask'].includes(name)) { alert('That name is reserved for a built-in command.'); return; }
+  if (customCommands.find(c => c.name === name)) { alert('A command with that name already exists.'); return; }
+  customCommands.push({ name, desc: desc || `Custom: ${name}`, prompt });
+  document.getElementById('newCmdName').value = '';
+  document.getElementById('newCmdDesc').value = '';
+  document.getElementById('newCmdPrompt').value = '';
+  renderCustomCmds();
+  saveState();
+}
+
+function removeCustomCmd(i) {
+  customCommands.splice(i, 1);
+  renderCustomCmds();
+  saveState();
+}
+
+function insertCmdVar(varName) {
+  const ta = document.getElementById('newCmdPrompt');
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  ta.value = ta.value.slice(0, start) + varName + ta.value.slice(end);
+  ta.selectionStart = ta.selectionEnd = start + varName.length;
+  ta.focus();
+}
+
+const RANDOM_LANGUAGES = ['Spanish','French','Japanese','Portuguese','German','Mandarin','Italian','Korean','Arabic','Swahili','Hindi','Russian','Dutch','Turkish','Vietnamese'];
+
+function resolveCustomVars(template, input, from, chatId) {
+  return template
+    .replace(/\{input\}/g, input || '(no input provided)')
+    .replace(/\{user_name\}/g, from?.first_name || 'Unknown')
+    .replace(/\{user_id\}/g, String(from?.id || ''))
+    .replace(/\{chat_id\}/g, String(chatId || ''))
+    .replace(/\{today\}/g, new Date().toISOString().slice(0,10))
+    .replace(/\{time\}/g, new Date().toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}))
+    .replace(/\{language\}/g, () => RANDOM_LANGUAGES[Math.floor(Math.random()*RANDOM_LANGUAGES.length)])
+    .replace(/\{random_number\}/g, () => String(Math.floor(Math.random()*100)+1));
+}
+
+loadState();
+renderCustomCmds();
+
+// ═══════════════════════════════════════
+//  LOAD MODELS
+// ═══════════════════════════════════════
+
+const FEATURED_MODELS = new Set([
+  'deepseek-chat','deepseek-r1','deepseek-ai/DeepSeek-V3.1','deepseek/deepseek-v3.2',
+  'openai/gpt-oss-120b','meta-llama/llama-4-maverick','meta-llama/llama-3.3-70b-instruct',
+  'mistralai/mistral-large-3-675b-instruct-2512','mistral-small-31-24b-instruct',
+  'qwen/qwen3-coder','qwen/qwen3-32b','qwq-32b','moonshotai/kimi-k2.5','auto-model',
+]);
+
+function detectProvider(m) {
+  const id = m.id.toLowerCase(), ow = (m.owned_by||'').toLowerCase();
+  if (id.includes('claude') || ow==='anthropic') return 'Anthropic';
+  if (id.includes('gpt') || ow==='openai' || id.startsWith('openai/')) return 'OpenAI';
+  if (id.includes('gemini') || id.includes('gemma') || ow==='google') return 'Google';
+  if (id.includes('deepseek')) return 'DeepSeek';
+  if (id.includes('mistral') || id.includes('codestral') || id.includes('mixtral')) return 'Mistral';
+  if (id.includes('llama') && (id.includes('meta') || ow==='meta')) return 'Meta';
+  if (id.includes('qwen') || id.includes('qwq') || id.includes('qvq')) return 'Qwen';
+  if (id.includes('kimi') || id.includes('moonshot')) return 'Moonshot';
+  return 'Other';
+}
+
+// ═══════════════════════════════════════
+//  LLM PROVIDER ABSTRACTION
+// ═══════════════════════════════════════
+const LLM_PROVIDERS = {
+  nanogpt: {
+    name: 'NanoGPT',
+    baseUrl: 'https://nano-gpt.com/api/v1',
+    hint: 'From <a href="https://nano-gpt.com/api" target="_blank">nano-gpt.com/api</a> — same key as the API Workshop.',
+    needsKey: true,
+  },
+  openrouter: {
+    name: 'OpenRouter',
+    baseUrl: 'https://openrouter.ai/api/v1',
+    hint: 'From <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai/keys</a> — free models available, no credit card required.',
+    needsKey: true,
+  },
+  local: {
+    name: 'Local (Ollama)',
+    baseUrl: 'http://localhost:11434/v1',
+    hint: 'Connects to <a href="https://ollama.com" target="_blank">Ollama</a> on localhost:11434. No key needed — just have Ollama running.',
+    needsKey: false,
+  }
+};
+function getProvider() { return document.getElementById('llmProvider')?.value || 'nanogpt'; }
+function getChatUrl() { return LLM_PROVIDERS[getProvider()].baseUrl + '/chat/completions'; }
+
+function onProviderChange() {
+  const p = LLM_PROVIDERS[getProvider()];
+  document.getElementById('apiKeyHint').innerHTML = p.hint;
+  const keyGroup = document.getElementById('nanoKey').closest('.ctrl-group');
+  keyGroup.style.display = p.needsKey ? '' : 'none';
+  loadModels();
+}
+
+async function loadModels() {
+  const provider = getProvider();
+  const ORDER = ['DeepSeek','OpenAI','Meta','Mistral','Qwen','Moonshot','Google','Other'];
+  try {
+    let allModels;
+    if (provider === 'nanogpt') {
+      const resp = await fetch('https://nano-gpt.com/api/v1/models?detailed=true');
+      const data = await resp.json();
+      allModels = data.data.filter(m => m.subscription?.included);
+    } else if (provider === 'openrouter') {
+      const resp = await fetch('https://openrouter.ai/api/v1/models');
+      const data = await resp.json();
+      allModels = data.data.map(m => ({
+        ...m, name: m.name || m.id,
+        _free: m.id.includes(':free') || (m.pricing?.prompt === '0' && m.pricing?.completion === '0'),
+      }));
+    } else {
+      // Local / Ollama
+      try {
+        const resp = await fetch('http://localhost:11434/v1/models');
+        const data = await resp.json();
+        allModels = (data.data || []).map(m => ({ ...m, name: m.id, owned_by: 'local' }));
+      } catch(e) {
+        document.getElementById('llmModel').innerHTML = '<option value="">⚠ Ollama not running — start it and reload</option>';
+        return;
+      }
+    }
+
+    const sel = document.getElementById('llmModel');
+    sel.innerHTML = '';
+
+    if (provider === 'local') {
+      for (const m of allModels.sort((a,b) => a.name.localeCompare(b.name))) {
+        const opt = document.createElement('option');
+        opt.value = m.id;
+        opt.textContent = m.name;
+        sel.appendChild(opt);
+      }
+      if (!allModels.length) sel.innerHTML = '<option value="">No models — pull one with: ollama pull llama3.2</option>';
+      return;
+    }
+
+    const groups = {};
+    for (const m of allModels) { const p = detectProvider(m); (groups[p]=groups[p]||[]).push(m); }
+    for (const p of Object.keys(groups)) {
+      groups[p].sort((a,b) => {
+        if (provider === 'openrouter') {
+          const af = a._free?0:1, bf = b._free?0:1;
+          if (af !== bf) return af - bf;
+        } else {
+          const af = FEATURED_MODELS.has(a.id)?0:1, bf = FEATURED_MODELS.has(b.id)?0:1;
+          if (af !== bf) return af - bf;
+        }
+        return a.name.localeCompare(b.name);
+      });
+    }
+
+    if (provider === 'openrouter') {
+      const freeModels = allModels.filter(m => m._free);
+      if (freeModels.length) {
+        const og = document.createElement('optgroup');
+        og.label = `★ Free Models (${freeModels.length})`;
+        for (const m of freeModels.sort((a,b) => a.name.localeCompare(b.name))) {
+          const opt = document.createElement('option');
+          opt.value = m.id;
+          opt.textContent = '★ ' + m.name;
+          if (m.id.includes('llama-3.3-70b')) opt.selected = true;
+          og.appendChild(opt);
+        }
+        sel.appendChild(og);
+      }
+    }
+
+    for (const p of ORDER) {
+      const list = (groups[p] || []).filter(m => provider !== 'openrouter' || !m._free);
+      if (!list.length) continue;
+      const og = document.createElement('optgroup');
+      og.label = `${p} (${list.length})`;
+      for (const m of list) {
+        const opt = document.createElement('option');
+        opt.value = m.id;
+        opt.textContent = (FEATURED_MODELS.has(m.id)?'\u2605 ':'') + m.name;
+        if (provider === 'nanogpt' && m.id === 'deepseek-chat') opt.selected = true;
+        og.appendChild(opt);
+      }
+      sel.appendChild(og);
+    }
+  } catch(e) {
+    document.getElementById('llmModel').innerHTML = '<option value="deepseek-chat">DeepSeek V3 (fallback)</option>';
+  }
+}
+loadModels();
+
+// ═══════════════════════════════════════
+//  STEP 1: getMe
+// ═══════════════════════════════════════
+
+async function doGetMe() {
+  const token = document.getElementById('botToken').value.trim();
+  if (!token) { document.getElementById('botToken').focus(); return; }
+  document.getElementById('getMeStatus').innerHTML = '<span class="spinner"></span> Calling...';
+  try {
+    const data = await tgAPI('getMe');
+    if (!data.ok) throw new Error(data.description || 'Unknown error');
+    botInfo = data.result;
+    document.getElementById('getMeStatus').innerHTML = '<span style="color:var(--green)">200 OK</span>';
+    document.getElementById('getMeResult').innerHTML =
+      `<div class="callout callout-green"><strong>@${esc(botInfo.username)}</strong> (${esc(botInfo.first_name)})<br><span class="small">ID: ${botInfo.id} &middot; Can join groups: ${botInfo.can_join_groups?'yes':'no'}</span></div>` +
+      `<div class="json-preview" style="max-height:200px;">${syntaxHL(data)}</div>`;
+  } catch(e) {
+    document.getElementById('getMeStatus').innerHTML = '<span style="color:var(--red)">Error</span>';
+    document.getElementById('getMeResult').innerHTML = `<div class="callout" style="background:var(--red-dim);border-left-color:var(--red);color:var(--red);">${esc(e.message)}</div>`;
+  }
+}
+
+// ═══════════════════════════════════════
+//  STEP 2: setMyCommands
+// ═══════════════════════════════════════
+
+async function doSetCommands() {
+  const token = document.getElementById('botToken').value.trim();
+  if (!token) { document.getElementById('botToken').focus(); return; }
+  document.getElementById('cmdStatus').innerHTML = '<span class="spinner"></span> Registering...';
+  try {
+    const commands = [
+      { command:'start', description:'Say hello' },
+      { command:'dog', description:'Random dog photo' },
+      { command:'dogfact', description:'Random breed + fun fact from an LLM' },
+      { command:'ask', description:'Ask the AI anything' },
+      ...customCommands.map(c => ({ command:c.name, description:c.desc })),
+    ];
+    const data = await tgAPI('setMyCommands', { commands });
+    if (!data.ok) throw new Error(data.description || 'Unknown error');
+    document.getElementById('cmdStatus').innerHTML = '<span style="color:var(--green)">Done</span>';
+    document.getElementById('cmdResult').innerHTML = `<div class="callout callout-green">${commands.length} commands registered! Open your bot in Telegram and type <code>/</code> to see the menu.</div>`;
+  } catch(e) {
+    document.getElementById('cmdStatus').innerHTML = '<span style="color:var(--red)">Error</span>';
+    document.getElementById('cmdResult').innerHTML = `<div class="callout" style="background:var(--red-dim);border-left-color:var(--red);color:var(--red);">${esc(e.message)}</div>`;
+  }
+}
+
+// ═══════════════════════════════════════
+//  LLM CALL HELPER
+// ═══════════════════════════════════════
+
+async function callLLM(systemPrompt, userMessage) {
+  const provider = LLM_PROVIDERS[getProvider()];
+  const apiKey = document.getElementById('nanoKey').value.trim();
+  const model = document.getElementById('llmModel').value;
+  const memory = getMemory();
+  const toolsEnabled = document.getElementById('enableTools').checked;
+
+  let fullSystem = systemPrompt;
+  if (memory) fullSystem += `\n\nYour memory (information from previous conversations):\n${memory}`;
+  if (toolsEnabled) fullSystem += `\n\n${getToolPrompt()}`;
+
+  const requestBody = {
+    model,
+    messages:[
+      { role:'system', content:fullSystem },
+      { role:'user', content:userMessage },
+    ],
+    max_tokens:500, temperature:0.7,
+  };
+
+  const headers = { 'Content-Type':'application/json' };
+  if (provider.needsKey && apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+
+  const resp = await fetch(getChatUrl(), {
+    method:'POST', headers, body:JSON.stringify(requestBody),
+  });
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+
+  // Attach request info for logging
+  data._request = requestBody;
+  return data;
+}
+
+// ═══════════════════════════════════════
+//  PROCESS TOOL TAGS + SEND
+// ═══════════════════════════════════════
+
+async function processAndSend(chatId, llmData, extraCaption) {
+  const raw = llmData.choices[0].message.content;
+  const { cleaned, memories, dogRequests } = extractTools(raw);
+
+  // Log the LLM response with full details — raw text shows tool tags before stripping
+  const hasTools = memories.length || dogRequests.length;
+  addLog('sys', `LLM responded (${llmData.usage?.completion_tokens||'?'} tokens)` + (hasTools ? ' — <strong>tool tags detected</strong>' : ''), {
+    '📤 request_sent': llmData._request || null,
+    '📥 raw_response (before stripping)': raw,
+    ...(hasTools ? { '🔧 tools_found': { remember: memories, dog_photo: dogRequests.length } } : {}),
+    '✉️ cleaned_for_user': cleaned,
+    'model': llmData.model,
+    'usage': llmData.usage,
+    'finish_reason': llmData.choices[0].finish_reason,
+  });
+
+  // Process memories
+  for (const mem of memories) {
+    appendMemory(mem);
+    addLog('mem', `Stored: "${esc(mem)}"`);
+  }
+
+  // Process dog photo requests
+  for (const _ of dogRequests) {
+    addLog('tool', 'LLM requested [DOG_PHOTO] — fetching from Dog CEO...');
+    try {
+      const dogResp = await fetch('https://dog.ceo/api/breeds/image/random');
+      const dogData = await dogResp.json();
+      const breed = dogData.message.split('/breeds/')[1]?.split('/')[0]?.replace(/-/g,' ') || 'dog';
+      addLog('out', `Sending tool dog photo: <strong>${esc(breed)}</strong>`, {
+        '📤 telegram_sendPhoto': { chat_id: chatId, photo: dogData.message, caption: `Random ${breed}!` },
+        '📥 dog_ceo_response': dogData,
+      });
+      await tgAPI('sendPhoto', { chat_id:chatId, photo:dogData.message, caption:`Random ${breed}!` });
+    } catch(e) {
+      addLog('err', `Dog photo tool failed: ${esc(e.message)}`);
+    }
+  }
+
+  // Send the cleaned text
+  if (cleaned) {
+    const text = extraCaption ? `*${extraCaption}*\n\n${cleaned}` : cleaned;
+    const parseMode = extraCaption ? 'Markdown' : undefined;
+    const tgBody = { chat_id:chatId, text, ...(parseMode && {parse_mode:parseMode}) };
+    addLog('out', `Sending reply to user`, { '📤 telegram_sendMessage': tgBody });
+    await tgAPI('sendMessage', tgBody);
+  }
+}
+
+// ═══════════════════════════════════════
+//  COMMAND HANDLERS
+// ═══════════════════════════════════════
+
+async function handleStart(chatId, from) {
+  const name = from?.first_name || 'there';
+  let text = `Hey ${name}! I'm a bot running entirely in someone's browser tab.\n\nBuilt-in commands:\n/dog — Random dog photo\n/dogfact — Random breed + fun fact\n/ask <question> — Ask me anything`;
+  if (customCommands.length) {
+    text += '\n\nCustom commands:';
+    for (const c of customCommands) text += `\n/${c.name} — ${c.desc}`;
+  }
+  const tgBody = { chat_id:chatId, text };
+  addLog('out', `Sending welcome to <strong>${esc(name)}</strong>`, { '📤 telegram_sendMessage': tgBody });
+  await tgAPI('sendMessage', tgBody);
+}
+
+async function handleDog(chatId) {
+  addLog('sys', 'Calling Dog CEO API...', { '📤 request': 'GET https://dog.ceo/api/breeds/image/random' });
+  try {
+    const dogResp = await fetch('https://dog.ceo/api/breeds/image/random');
+    const dogData = await dogResp.json();
+    const url = dogData.message;
+    const breed = url.split('/breeds/')[1]?.split('/')[0]?.replace(/-/g,' ') || 'dog';
+    const tgBody = { chat_id:chatId, photo:url, caption:`Random ${breed}!` };
+    addLog('out', `Sending photo: <strong>${esc(breed)}</strong>`, {
+      '📥 dog_ceo_response': dogData,
+      '📤 telegram_sendPhoto': tgBody,
+    });
+    await tgAPI('sendPhoto', tgBody);
+  } catch(e) {
+    addLog('err', `Dog CEO failed: ${esc(e.message)}`);
+    await tgAPI('sendMessage', { chat_id:chatId, text:'Sorry, the dog API is having a ruff day. Try again!' });
+  }
+}
+
+async function handleDogfact(chatId) {
+  addLog('sys', 'Calling Dog CEO API...', { '📤 request': 'GET https://dog.ceo/api/breeds/image/random' });
+  try {
+    const dogResp = await fetch('https://dog.ceo/api/breeds/image/random');
+    const dogData = await dogResp.json();
+    const url = dogData.message;
+    const breed = url.split('/breeds/')[1]?.split('/')[0]?.replace(/-/g,' ').replace(/\b\w/g, c=>c.toUpperCase()) || 'Dog';
+    addLog('sys', `Got breed: <strong>${esc(breed)}</strong>. Asking LLM...`, { '📥 dog_ceo_response': dogData });
+
+    const sysPrompt = document.getElementById('sysPromptDog').value;
+    const llmData = await callLLM(sysPrompt, `Tell me a fun fact about the ${breed} dog breed.`);
+
+    const fact = llmData.choices[0].message.content;
+    const caption = `*${breed}*\n\n${fact}`;
+    const tgBody = { chat_id:chatId, photo:url, caption, parse_mode:'Markdown' };
+    addLog('out', `Sending dogfact about <strong>${esc(breed)}</strong>`, {
+      '📤 llm_request': llmData._request,
+      '📥 llm_response': fact,
+      'usage': llmData.usage,
+      '📤 telegram_sendPhoto': tgBody,
+    });
+    await tgAPI('sendPhoto', tgBody);
+  } catch(e) {
+    addLog('err', `Dogfact failed: ${esc(e.message)}`);
+    await tgAPI('sendMessage', { chat_id:chatId, text:`Something went wrong: ${e.message}` });
+  }
+}
+
+async function handleAsk(chatId, query) {
+  if (!query.trim()) {
+    await tgAPI('sendMessage', { chat_id:chatId, text:'Usage: /ask <your question>\n\nExample: /ask What is the speed of light?' });
+    return;
+  }
+  addLog('sys', `Asking LLM: "${esc(query.slice(0,80))}${query.length>80?'...':''}"`);
+  try {
+    const sysPrompt = document.getElementById('sysPromptAsk').value;
+    const llmData = await callLLM(sysPrompt, query);
+    await processAndSend(chatId, llmData);
+  } catch(e) {
+    addLog('err', `LLM failed: ${esc(e.message)}`);
+    await tgAPI('sendMessage', { chat_id:chatId, text:`Sorry, something went wrong: ${e.message}` });
+  }
+}
+
+async function handleCustom(chatId, cmd, input, from) {
+  const def = customCommands.find(c => c.name === cmd);
+  if (!def) return;
+  const prompt = resolveCustomVars(def.prompt, input, from, chatId);
+  addLog('sys', `Custom /${esc(cmd)}: "${esc(prompt.slice(0,80))}${prompt.length>80?'...':''}"`);
+  try {
+    const sysPrompt = document.getElementById('sysPromptCustom').value;
+    const llmData = await callLLM(sysPrompt, prompt);
+    await processAndSend(chatId, llmData);
+  } catch(e) {
+    addLog('err', `Custom cmd failed: ${esc(e.message)}`);
+    await tgAPI('sendMessage', { chat_id:chatId, text:`Error: ${e.message}` });
+  }
+}
+
+async function handlePlainText(chatId, text) {
+  // Non-command text goes to /ask handler if tools enabled, otherwise hint
+  const toolsEnabled = document.getElementById('enableTools').checked;
+  if (toolsEnabled) {
+    addLog('sys', 'Plain text received — routing to LLM (tools enabled)');
+    try {
+      const sysPrompt = document.getElementById('sysPromptAsk').value;
+      const llmData = await callLLM(sysPrompt, text);
+      await processAndSend(chatId, llmData);
+    } catch(e) {
+      addLog('err', `LLM failed: ${esc(e.message)}`);
+      await tgAPI('sendMessage', { chat_id:chatId, text:`Error: ${e.message}` });
+    }
+  } else {
+    addLog('out', 'Sending command hint');
+    await tgAPI('sendMessage', { chat_id:chatId, text:`I work with commands! Try /dog, /dogfact, or /ask <question>` });
+  }
+}
+
+// ═══════════════════════════════════════
+//  POLLING LOOP
+// ═══════════════════════════════════════
+
+async function poll() {
+  if (!polling) return;
+  try {
+    const data = await tgAPI('getUpdates', { offset:updateOffset, timeout:15, allowed_updates:['message'] });
+    if (!data.ok) {
+      addLog('err', `Polling error: ${data.description||'unknown'}`, data);
+      pollTimeout = setTimeout(poll, 5000);
+      return;
+    }
+
+    for (const update of (data.result || [])) {
+      updateOffset = update.update_id + 1;
+      const msg = update.message;
+      if (!msg || !msg.text) continue;
+
+      const text = msg.text.trim();
+      const chatId = msg.chat.id;
+      const from = msg.from;
+      const userId = from?.id;
+      const fromName = from?.first_name || 'Unknown';
+
+      addLog('in', `<span class="log-cmd">${esc(text)}</span> from <strong>${esc(fromName)}</strong> (${userId})`, { update_id:update.update_id, chat_id:chatId, from, text });
+
+      // Access control
+      if (!isAllowed(userId)) {
+        autoCapture(userId);
+        if (!isAllowed(userId)) {
+          addLog('block', `Blocked user <strong>${esc(fromName)}</strong> (${userId}) — not in allow list.`, {
+            'reason': 'User ID not in allowed list',
+            'user_id': userId,
+            'user_name': fromName,
+            'message_text': text,
+            'allow_all': document.getElementById('allowAll').checked,
+            'allowed_ids': document.getElementById('allowedIds').value,
+          });
+          await tgAPI('sendMessage', { chat_id:chatId, text:'Sorry, this bot is currently restricted to authorized users.' });
+          continue;
+        }
+      }
+
+      msgCount++;
+      document.getElementById('statusCount').textContent = msgCount + ' messages handled';
+
+      // Route
+      const botSuffix = botInfo?.username ? `@${botInfo.username}` : '';
+      if (text === '/start' || text === `/start${botSuffix}`) {
+        await handleStart(chatId, from);
+      } else if (text === '/dog' || text === `/dog${botSuffix}`) {
+        await handleDog(chatId);
+      } else if (text === '/dogfact' || text === `/dogfact${botSuffix}`) {
+        await handleDogfact(chatId);
+      } else if (text.startsWith('/ask')) {
+        const query = text.replace(/^\/ask(@\S+)?\s*/, '');
+        await handleAsk(chatId, query);
+      } else if (text.startsWith('/')) {
+        // Check custom commands
+        const parts = text.match(/^\/(\w+)(?:@\S+)?\s*([\s\S]*)?$/);
+        if (parts) {
+          const cmdName = parts[1].toLowerCase();
+          const input = (parts[2] || '').trim();
+          if (customCommands.find(c => c.name === cmdName)) {
+            await handleCustom(chatId, cmdName, input, from);
+          } else {
+            addLog('out', `Unknown command: /${esc(cmdName)}`);
+            await tgAPI('sendMessage', { chat_id:chatId, text:`Unknown command: /${cmdName}\n\nTry /start to see available commands.` });
+          }
+        }
+      } else {
+        await handlePlainText(chatId, text);
+      }
+    }
+  } catch(e) {
+    addLog('err', `Poll error: ${esc(e.message)}`);
+  }
+  if (polling) pollTimeout = setTimeout(poll, 500);
+}
+
+// ═══════════════════════════════════════
+//  START / STOP
+// ═══════════════════════════════════════
+
+async function toggleBot() {
+  if (polling) {
+    polling = false;
+    clearTimeout(pollTimeout);
+    document.getElementById('statusDot').className = 'status-dot off';
+    document.getElementById('statusLabel').innerHTML = 'Bot is <strong>offline</strong>';
+    document.getElementById('startBtn').innerHTML = '&#9654; Start Bot';
+    document.getElementById('startBtn').className = 'btn btn-sm btn-green';
+    addLog('sys', 'Bot stopped.');
+    return;
+  }
+
+  const token = document.getElementById('botToken').value.trim();
+  const llmKey = document.getElementById('nanoKey').value.trim();
+  if (!token) { document.getElementById('botToken').focus(); return; }
+  if (LLM_PROVIDERS[getProvider()].needsKey && !llmKey) { document.getElementById('nanoKey').focus(); return; }
+
+  addLog('sys', 'Verifying bot token...');
+  try {
+    const me = await tgAPI('getMe');
+    if (!me.ok) throw new Error(me.description);
+    botInfo = me.result;
+    addLog('sys', `Connected as <strong>@${esc(botInfo.username)}</strong>`);
+
+    addLog('sys', 'Flushing old messages...');
+    const flush = await tgAPI('getUpdates', { offset:-1, timeout:0 });
+    if (flush.ok && flush.result?.length) {
+      updateOffset = flush.result[flush.result.length-1].update_id + 1;
+    }
+  } catch(e) {
+    addLog('err', `Failed to connect: ${esc(e.message)}`);
+    return;
+  }
+
+  polling = true;
+  document.getElementById('statusDot').className = 'status-dot on';
+  document.getElementById('statusLabel').innerHTML = `Bot is <strong>online</strong> as @${esc(botInfo.username)}`;
+  document.getElementById('startBtn').innerHTML = '&#9632; Stop Bot';
+  document.getElementById('startBtn').className = 'btn btn-sm btn-red';
+  addLog('sys', 'Polling started. Send a message to your bot in Telegram!');
+  poll();
+}
+
+</script>
+</body>
+</html>

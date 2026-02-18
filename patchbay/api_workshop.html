@@ -1,0 +1,1625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Workshop — How APIs Actually Work</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:wght@400;700;900&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #111110;
+  --surface: #1a1a18;
+  --surface2: #222220;
+  --border: #333330;
+  --border-hi: #4a4a44;
+  --text: #e8e4d9;
+  --text-dim: #999688;
+  --text-faint: #666460;
+  --amber: #e5a430;
+  --amber-dim: rgba(229,164,48,0.12);
+  --amber-mid: rgba(229,164,48,0.25);
+  --green: #5ccc5c;
+  --green-dim: rgba(92,204,92,0.10);
+  --red: #e55050;
+  --red-dim: rgba(229,80,80,0.10);
+  --blue: #5a9fd4;
+  --blue-dim: rgba(90,159,212,0.10);
+  --purple: #b07acc;
+  --mono: 'IBM Plex Mono', monospace;
+  --display: 'Fraunces', serif;
+  --body: 'Outfit', sans-serif;
+  --radius: 8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body { background:var(--bg); color:var(--text); font-family:var(--body); line-height:1.65; font-weight:400; }
+
+/* ── Layout ── */
+.wrap { max-width:900px; margin:0 auto; padding:2rem 1.5rem 6rem; }
+
+/* ── Hero ── */
+.hero { text-align:center; padding:3rem 0 2.5rem; border-bottom:1px solid var(--border); margin-bottom:2.5rem; }
+.hero h1 { font-family:var(--display); font-size:2.4rem; font-weight:900; letter-spacing:-0.03em; margin-bottom:0.4rem; }
+.hero h1 .accent { color:var(--amber); }
+.hero p { color:var(--text-dim); font-size:1rem; max-width:560px; margin:0 auto; font-weight:300; }
+
+/* ── Sections ── */
+.section { margin-bottom:3rem; }
+.section-head { display:flex; align-items:center; gap:0.75rem; margin-bottom:1.25rem; padding-bottom:0.75rem; border-bottom:1px solid var(--border); }
+.section-num { font-family:var(--mono); font-size:0.7rem; font-weight:600; color:var(--amber); background:var(--amber-dim); padding:0.2rem 0.6rem; border-radius:4px; letter-spacing:0.05em; }
+.section-title { font-family:var(--display); font-size:1.35rem; font-weight:700; }
+.section-desc { color:var(--text-dim); font-size:0.9rem; margin-bottom:1.25rem; font-weight:300; line-height:1.7; }
+
+/* ── Panels ── */
+.panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:1rem; overflow:hidden; }
+.panel-header { padding:0.7rem 1rem; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:0.6rem; background:var(--surface2); }
+.panel-header .dot { width:8px; height:8px; border-radius:50%; }
+.panel-header .dot.r { background:var(--red); }
+.panel-header .dot.y { background:var(--amber); }
+.panel-header .dot.g { background:var(--green); }
+.panel-header .panel-label { font-family:var(--mono); font-size:0.72rem; color:var(--text-dim); margin-left:auto; text-transform:uppercase; letter-spacing:0.06em; }
+.panel-body { padding:1rem 1.15rem; }
+
+/* ── Controls ── */
+.ctrl-group { margin-bottom:1rem; }
+.ctrl-group:last-child { margin-bottom:0; }
+.ctrl-label { font-family:var(--mono); font-size:0.72rem; font-weight:600; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.35rem; display:flex; align-items:center; gap:0.5rem; }
+.ctrl-label .tag { font-size:0.65rem; padding:0.1rem 0.4rem; border-radius:3px; font-weight:500; letter-spacing:0; text-transform:none; }
+.tag-get { background:var(--green-dim); color:var(--green); }
+.tag-post { background:var(--blue-dim); color:var(--blue); }
+.tag-header { background:var(--purple); color:#fff; opacity:0.8; }
+.tag-body { background:var(--amber-dim); color:var(--amber); }
+
+.ctrl-hint { font-size:0.78rem; color:var(--text-faint); margin-bottom:0.4rem; font-style:italic; }
+
+input[type="text"], input[type="password"], input[type="number"], select, textarea {
+  width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text);
+  padding:0.55rem 0.8rem; border-radius:6px; font-family:var(--mono); font-size:0.82rem;
+  outline:none; transition:border-color 0.2s;
+}
+input:focus, select:focus, textarea:focus { border-color:var(--amber); }
+input::placeholder, textarea::placeholder { color:var(--text-faint); }
+textarea { resize:vertical; min-height:3rem; line-height:1.5; font-family:var(--body); font-size:0.88rem; }
+select { cursor:pointer; appearance:none; -webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999688' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 0.7rem center; padding-right:2rem;
+}
+select optgroup { font-weight:700; color:var(--text); background:var(--surface); }
+select option { font-weight:400; color:var(--text); background:var(--bg); }
+
+.ctrl-row { display:flex; gap:0.6rem; align-items:center; }
+.ctrl-row > * { flex:1; }
+.ctrl-row > .narrow { flex:0 0 auto; }
+
+/* Range slider */
+input[type="range"] {
+  -webkit-appearance:none; width:100%; height:4px; border-radius:2px; background:var(--border);
+  outline:none; margin:0.3rem 0;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+  background:var(--amber); cursor:pointer; border:2px solid var(--bg);
+}
+.range-row { display:flex; align-items:center; gap:0.75rem; }
+.range-row input[type="range"] { flex:1; }
+.range-val { font-family:var(--mono); font-size:0.8rem; color:var(--amber); min-width:3rem; text-align:right; }
+
+/* ── URL Preview ── */
+.url-preview {
+  background:var(--bg); border:1px solid var(--border); border-radius:6px;
+  padding:0.6rem 0.9rem; font-family:var(--mono); font-size:0.82rem;
+  word-break:break-all; line-height:1.6; margin-top:0.5rem; position:relative;
+  overflow-x:auto;
+}
+.url-preview .base { color:var(--text-dim); }
+.url-preview .path { color:var(--green); }
+.url-preview .param { color:var(--amber); }
+.url-preview .variable { color:var(--blue); font-weight:600; }
+
+/* ── JSON Preview ── */
+.json-preview {
+  background:var(--bg); border:1px solid var(--border); border-radius:6px;
+  padding:0.8rem 1rem; font-family:var(--mono); font-size:0.78rem;
+  line-height:1.7; overflow-x:auto; white-space:pre-wrap; word-break:break-word;
+  max-height:400px; overflow-y:auto;
+}
+.json-preview .jk { color:var(--blue); }
+.json-preview .js { color:var(--green); }
+.json-preview .jn { color:var(--amber); }
+.json-preview .jl { color:var(--amber); font-weight:600; font-style:italic; }
+.json-preview .jc { color:var(--text-faint); }
+
+/* ── Buttons ── */
+.btn {
+  display:inline-flex; align-items:center; gap:0.4rem;
+  background:var(--amber); color:#111; border:none; padding:0.6rem 1.3rem;
+  border-radius:6px; font-family:var(--body); font-weight:600; font-size:0.85rem;
+  cursor:pointer; transition:all 0.15s; white-space:nowrap;
+}
+.btn:hover { filter:brightness(1.1); }
+.btn:active { transform:scale(0.97); }
+.btn:disabled { opacity:0.35; cursor:not-allowed; }
+.btn-sm { padding:0.4rem 0.8rem; font-size:0.78rem; }
+.btn-outline {
+  background:transparent; border:1px solid var(--border); color:var(--text-dim);
+}
+.btn-outline:hover { border-color:var(--text-dim); color:var(--text); }
+.btn-green { background:var(--green); }
+.btn-copy::after { content:''; }
+.btn-copy.copied { background:var(--green); }
+.btn-copy.copied::after { content:' Copied!'; }
+
+/* ── Response area ── */
+.response-area { margin-top:0.75rem; }
+.response-ok {
+  background:var(--green-dim); border-left:3px solid var(--green);
+  padding:0.75rem 1rem; border-radius:0 6px 6px 0; font-size:0.88rem;
+}
+.response-err {
+  background:var(--red-dim); border-left:3px solid var(--red);
+  padding:0.75rem 1rem; border-radius:0 6px 6px 0; font-size:0.85rem; color:var(--red);
+}
+.response-img { margin-top:0.5rem; }
+.response-img img {
+  max-width:280px; max-height:280px; border-radius:8px; border:2px solid var(--border);
+  display:block;
+}
+
+.spinner { display:inline-block; width:14px; height:14px; border:2px solid var(--border);
+  border-top-color:var(--amber); border-radius:50%; animation:spin 0.6s linear infinite;
+  vertical-align:middle; margin-right:0.4rem; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* ── Warning box ── */
+.warning {
+  background:rgba(229,80,80,0.06); border:1px solid rgba(229,80,80,0.2);
+  border-radius:var(--radius); padding:1rem 1.15rem; margin-bottom:1rem;
+}
+.warning-title { font-weight:600; color:var(--red); font-size:0.85rem; margin-bottom:0.3rem; display:flex; align-items:center; gap:0.4rem; }
+.warning p { font-size:0.82rem; color:var(--text-dim); line-height:1.6; }
+.warning code { background:var(--red-dim); padding:0.1em 0.35em; border-radius:3px; font-family:var(--mono); font-size:0.8em; color:var(--red); }
+
+/* ── Tabs ── */
+.tabs { display:flex; gap:0; border-bottom:1px solid var(--border); margin-bottom:0; }
+.tab {
+  padding:0.55rem 1.1rem; font-family:var(--mono); font-size:0.78rem;
+  color:var(--text-dim); cursor:pointer; border-bottom:2px solid transparent;
+  transition:all 0.2s; letter-spacing:0.02em; user-select:none;
+}
+.tab:hover { color:var(--text); }
+.tab.active { color:var(--amber); border-bottom-color:var(--amber); }
+.tab-content { display:none; }
+.tab-content.active { display:block; }
+
+/* ── Annotation markers ── */
+.anno {
+  display:inline-block; font-family:var(--mono); font-size:0.65rem; font-weight:600;
+  width:18px; height:18px; line-height:18px; text-align:center; border-radius:50%;
+  margin:0 0.15rem; vertical-align:middle; cursor:help;
+}
+.anno-blue { background:var(--blue-dim); color:var(--blue); }
+.anno-green { background:var(--green-dim); color:var(--green); }
+.anno-amber { background:var(--amber-dim); color:var(--amber); }
+
+/* ── Misc ── */
+.flex-between { display:flex; justify-content:space-between; align-items:center; }
+.gap-sm { gap:0.4rem; }
+.mt { margin-top:1rem; }
+.mb { margin-bottom:1rem; }
+.small { font-size:0.8rem; color:var(--text-dim); }
+hr { border:none; border-top:1px solid var(--border); margin:1.5rem 0; }
+a { color:var(--amber); text-decoration:none; }
+a:hover { text-decoration:underline; }
+
+/* ── Preamble ── */
+.preamble p {
+  color:var(--text-dim); font-size:0.92rem; line-height:1.75; margin-bottom:1rem; font-weight:300;
+}
+.preamble p strong { color:var(--text); font-weight:500; }
+.preamble p em { color:var(--amber); font-style:normal; }
+
+.diagram-wrap {
+  background:var(--bg); border:1px solid var(--border); border-radius:var(--radius);
+  padding:1.25rem 0.75rem; margin:1.5rem 0; overflow-x:auto;
+}
+.api-diagram { width:100%; max-width:780px; height:auto; display:block; margin:0 auto; }
+
+.preamble-methods {
+  display:flex; flex-direction:column; gap:0.65rem; margin:0.75rem 0 1.25rem;
+}
+.preamble-method {
+  display:flex; align-items:flex-start; gap:0.7rem; padding:0.65rem 0.9rem;
+  background:var(--surface); border:1px solid var(--border); border-radius:6px;
+  font-size:0.87rem; color:var(--text-dim); line-height:1.6; font-weight:300;
+}
+.preamble-method .tag { flex-shrink:0; margin-top:0.15rem; }
+
+/* ── Scrollbars ── */
+* { scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+::-webkit-scrollbar { width:7px; height:7px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+::-webkit-scrollbar-thumb:hover { background:var(--border-hi); }
+::-webkit-scrollbar-corner { background:transparent; }
+
+/* ── Code syntax (exports) ── */
+.code-preview {
+  background:var(--bg); border:1px solid var(--border); border-radius:6px;
+  padding:0.8rem 1rem; font-family:var(--mono); font-size:0.76rem;
+  line-height:1.65; overflow-x:auto; white-space:pre-wrap; word-break:break-word;
+  max-height:500px; overflow-y:auto; tab-size:4;
+}
+.code-preview .ck  { color:#cc99cd; }       /* keyword */
+.code-preview .cs  { color:var(--green); }  /* string */
+.code-preview .cc  { color:var(--text-faint); font-style:italic; }  /* comment */
+.code-preview .cf  { color:#6cb6ff; }       /* function/method */
+.code-preview .cn  { color:var(--amber); }  /* number */
+.code-preview .co  { color:var(--text); }   /* operator */
+.code-preview .ct  { color:#e06c75; }       /* html tag */
+.code-preview .ca  { color:var(--amber); }  /* attribute */
+
+/* ── Variable chips ── */
+.var-chips { display:flex; flex-wrap:wrap; gap:0.35rem; margin-top:0.45rem; }
+.var-chip {
+  font-family:var(--mono); font-size:0.72rem; padding:0.2rem 0.55rem;
+  border-radius:4px; cursor:pointer; transition:all 0.15s; user-select:none;
+  border:1px solid var(--border);
+}
+.var-chip:hover { border-color:var(--amber); color:var(--amber); }
+.var-chip.dog { background:var(--green-dim); color:var(--green); border-color:rgba(92,204,92,0.25); }
+.var-chip.dog:hover { background:rgba(92,204,92,0.2); }
+.var-chip.fun { background:var(--blue-dim); color:var(--blue); border-color:rgba(90,159,212,0.25); }
+.var-chip.fun:hover { background:rgba(90,159,212,0.2); }
+.var-chip-label { font-size:0.68rem; color:var(--text-faint); margin-right:0.3rem; white-space:nowrap; }
+
+@media(max-width:600px) {
+  .ctrl-row { flex-direction:column; }
+  .hero h1 { font-size:1.8rem; }
+  .tabs { overflow-x:auto; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ═══════════ HERO ═══════════ -->
+<div class="hero">
+  <h1>API <span class="accent">Workshop</span></h1>
+  <p>Build, tweak, and fire real API requests — then take the code home.</p>
+</div>
+
+<!-- ═══════════ PREAMBLE ═══════════ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">INTRO</span>
+    <span class="section-title">What is an API, actually?</span>
+  </div>
+
+  <div class="preamble">
+    <p>
+      When you open a website, your browser sends a request to a server and gets back HTML — a document designed for humans to look at. An <strong>API</strong> (Application Programming Interface) works the same way, except the response is designed for <em>programs</em> to read: structured data instead of a pretty page.
+    </p>
+    <p>
+      That's the whole idea. Your code sends an HTTP request to a URL, and the server sends back data — almost always as <strong>JSON</strong>, which is just a standardized way of writing nested key-value pairs. The same protocol, the same infrastructure, the same internet. No special technology, no magic.
+    </p>
+
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 780 310" xmlns="http://www.w3.org/2000/svg" class="api-diagram">
+        <!-- client box -->
+        <rect x="16" y="24" width="200" height="264" rx="10" fill="#1a1a18" stroke="#333330" stroke-width="1.5"/>
+        <text x="116" y="52" text-anchor="middle" font-family="Fraunces,serif" font-weight="700" font-size="14" fill="#e8e4d9">Your Program</text>
+        <text x="116" y="70" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#666460">(browser, Python script, app)</text>
+
+        <rect x="32" y="86" width="168" height="80" rx="5" fill="#111110" stroke="#333330"/>
+        <text x="42" y="102" font-family="IBM Plex Mono,monospace" font-size="9" fill="#666460">I want to know:</text>
+        <text x="42" y="120" font-family="IBM Plex Mono,monospace" font-size="10" fill="#5a9fd4">GET</text>
+        <text x="68" y="120" font-family="IBM Plex Mono,monospace" font-size="9.5" fill="#e8e4d9">/breeds/image/random</text>
+        <text x="42" y="140" font-family="IBM Plex Mono,monospace" font-size="9" fill="#666460">or, process this:</text>
+        <text x="42" y="158" font-family="IBM Plex Mono,monospace" font-size="10" fill="#e5a430">POST</text>
+        <text x="72" y="158" font-family="IBM Plex Mono,monospace" font-size="9.5" fill="#e8e4d9">/chat/completions</text>
+
+        <rect x="32" y="180" width="168" height="96" rx="5" fill="#111110" stroke="#333330"/>
+        <text x="42" y="196" font-family="IBM Plex Mono,monospace" font-size="9" fill="#666460">I got back:</text>
+        <text x="42" y="214" font-family="IBM Plex Mono,monospace" font-size="9.5" fill="#5ccc5c">"message"</text>
+        <text x="107" y="214" font-family="IBM Plex Mono,monospace" font-size="9.5" fill="#e8e4d9">: "https://..."</text>
+        <text x="42" y="232" font-family="IBM Plex Mono,monospace" font-size="9.5" fill="#5ccc5c">"status"</text>
+        <text x="99" y="232" font-family="IBM Plex Mono,monospace" font-size="9.5" fill="#e8e4d9">: "success"</text>
+        <text x="42" y="254" font-family="IBM Plex Mono,monospace" font-size="9" fill="#999688">&#8594; now I can use this data</text>
+        <text x="46" y="268" font-family="IBM Plex Mono,monospace" font-size="9" fill="#999688">   in my program</text>
+
+        <!-- server box -->
+        <rect x="564" y="24" width="200" height="264" rx="10" fill="#1a1a18" stroke="#333330" stroke-width="1.5"/>
+        <text x="664" y="52" text-anchor="middle" font-family="Fraunces,serif" font-weight="700" font-size="14" fill="#e8e4d9">Server</text>
+        <text x="664" y="70" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#666460">(dog.ceo, OpenRouter, Ollama, etc.)</text>
+
+        <rect x="580" y="86" width="168" height="80" rx="5" fill="#111110" stroke="#333330"/>
+        <text x="590" y="102" font-family="IBM Plex Mono,monospace" font-size="9" fill="#666460">Received request.</text>
+        <text x="590" y="120" font-family="IBM Plex Mono,monospace" font-size="9" fill="#999688">&#8226; Valid URL? &#10003;</text>
+        <text x="590" y="136" font-family="IBM Plex Mono,monospace" font-size="9" fill="#999688">&#8226; Authorized? &#10003;</text>
+        <text x="590" y="152" font-family="IBM Plex Mono,monospace" font-size="9" fill="#999688">&#8226; Processing...</text>
+
+        <rect x="580" y="180" width="168" height="96" rx="5" fill="#111110" stroke="#333330"/>
+        <text x="590" y="196" font-family="IBM Plex Mono,monospace" font-size="9" fill="#666460">Sending response:</text>
+        <text x="590" y="214" font-family="IBM Plex Mono,monospace" font-size="9.5" fill="#5ccc5c">200 OK</text>
+        <text x="590" y="234" font-family="IBM Plex Mono,monospace" font-size="9" fill="#999688">+ JSON body with the</text>
+        <text x="592" y="250" font-family="IBM Plex Mono,monospace" font-size="9" fill="#999688">  data you asked for</text>
+        <text x="592" y="270" font-family="IBM Plex Mono,monospace" font-size="9" fill="#e5a430">(or an error code)</text>
+
+        <!-- request arrow -->
+        <line x1="220" y1="120" x2="555" y2="120" stroke="#5a9fd4" stroke-width="2" stroke-dasharray="6,4"/>
+        <polygon points="558,120 548,114 548,126" fill="#5a9fd4"/>
+        <rect x="310" y="100" width="160" height="24" rx="4" fill="#111110" stroke="#5a9fd4" stroke-width="1" opacity="0.9"/>
+        <text x="390" y="116" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#5a9fd4">HTTP Request &#8594;</text>
+
+        <!-- response arrow -->
+        <line x1="560" y1="220" x2="225" y2="220" stroke="#5ccc5c" stroke-width="2" stroke-dasharray="6,4"/>
+        <polygon points="222,220 232,214 232,226" fill="#5ccc5c"/>
+        <rect x="310" y="204" width="160" height="24" rx="4" fill="#111110" stroke="#5ccc5c" stroke-width="1" opacity="0.9"/>
+        <text x="390" y="220" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#5ccc5c">&#8592; JSON Response</text>
+      </svg>
+    </div>
+
+    <p>
+      There are two kinds of requests you'll see most:
+    </p>
+    <div class="preamble-methods">
+      <div class="preamble-method">
+        <span class="tag tag-get" style="font-size:0.8rem; padding:0.15rem 0.6rem;">GET</span>
+        <span>"Give me data." You encode everything in the URL itself. This is what happens when you paste a URL into your browser's address bar — your browser is making a GET request. No API key needed for public APIs.</span>
+      </div>
+      <div class="preamble-method">
+        <span class="tag tag-post" style="font-size:0.8rem; padding:0.15rem 0.6rem;">POST</span>
+        <span>"Here's some data, process it and give me a result." You send a JSON body alongside the URL, plus headers like your API key. This is how LLM APIs work: you POST a prompt, you get back a completion.</span>
+      </div>
+    </div>
+
+    <p>
+      Almost every app you use — weather, maps, payments, AI chatbots — is built by chaining API calls together: the output of one becomes the input of the next. Below, you'll build and fire both kinds of request, see the raw data exchanged, and take the code home to run yourself.
+    </p>
+  </div>
+</div>
+
+<!-- ═══════════ SETUP ═══════════ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">SETUP</span>
+    <span class="section-title">Your API Key</span>
+  </div>
+
+  <div class="warning">
+    <div class="warning-title">&#9888; API Key Safety</div>
+    <p>Your key stays in this browser tab — it is never stored, logged, or sent anywhere except directly to the provider's API when you click "Send". Never paste API keys into websites you don't trust. The code exports below ask for the key at runtime so it's never hardcoded.</p>
+  </div>
+
+  <div class="panel">
+    <div class="panel-body">
+      <div class="ctrl-group">
+        <div class="ctrl-label">LLM Provider</div>
+        <div class="ctrl-hint">Both use the same request format. OpenRouter has free models — no credit card needed.</div>
+        <select id="llmProvider" onchange="onProviderChange()">
+          <option value="nanogpt">NanoGPT (pay-per-prompt)</option>
+          <option value="openrouter">OpenRouter (free models available)</option>
+          <option value="local">Local / Ollama (no key needed)</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">API Key</div>
+        <div class="ctrl-hint" id="apiKeyHint">Get one at <a href="https://nano-gpt.com/api" target="_blank">nano-gpt.com/api</a> — pay-per-prompt, no subscription needed.</div>
+        <input type="password" id="apiKey" placeholder="paste your key here...">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 1: DOG CEO ═══════════ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">PART 1</span>
+    <span class="section-title">Dog CEO API — Building a GET Request</span>
+  </div>
+  <p class="section-desc">
+    A GET request is the simplest thing in APIs: you construct a URL, and the server sends back data. No password, no body — just a URL. This is what your browser does every time you visit a webpage. Let's build one piece by piece.
+  </p>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="panel-label">url builder</span>
+    </div>
+    <div class="panel-body">
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">Endpoint <span class="tag tag-get">GET</span></div>
+        <div class="ctrl-hint">Each endpoint is a different "question" you can ask the API.</div>
+        <select id="dogEndpoint" onchange="updateDogURL()">
+          <option value="random">Random image (any breed)</option>
+          <option value="random-n">Multiple random images</option>
+          <option value="breed-random">Random image of a specific breed</option>
+          <option value="breed-random-n">Multiple images of a specific breed</option>
+          <option value="breed-list">List all breeds</option>
+          <option value="breed-images">All images of a breed</option>
+          <option value="sub-breeds">List sub-breeds</option>
+        </select>
+      </div>
+
+      <div class="ctrl-group" id="dogBreedGroup" style="display:none;">
+        <div class="ctrl-label">Breed</div>
+        <div class="ctrl-hint">Type or pick a breed — this becomes part of the URL path.</div>
+        <select id="dogBreed" onchange="updateDogURL()">
+          <option value="loading">Loading breeds...</option>
+        </select>
+      </div>
+
+      <div class="ctrl-group" id="dogCountGroup" style="display:none;">
+        <div class="ctrl-label">Count</div>
+        <div class="ctrl-hint">How many images to request (1-50).</div>
+        <div class="range-row">
+          <input type="range" id="dogCount" min="1" max="50" value="3" oninput="updateDogURL()">
+          <span class="range-val" id="dogCountVal">3</span>
+        </div>
+      </div>
+
+      <hr>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">Constructed URL</div>
+        <div class="ctrl-hint">This is what gets sent to the server. Every piece of the URL means something.</div>
+        <div class="url-preview" id="dogURL"></div>
+      </div>
+
+      <div class="flex-between mt">
+        <button class="btn" id="dogSendBtn" onclick="sendDogRequest()">&#9654; Send Request</button>
+        <span class="small" id="dogStatus"></span>
+      </div>
+
+      <div class="response-area" id="dogResponse"></div>
+
+      <div class="mt" id="dogRawWrap" style="display:none;">
+        <div class="flex-between mb" style="margin-bottom:0.4rem;">
+          <div class="ctrl-label" style="margin:0;">Raw JSON Response</div>
+          <button class="btn btn-sm btn-outline" onclick="toggleEl('dogRawJSON')">Toggle</button>
+        </div>
+        <div class="json-preview" id="dogRawJSON" style="display:none;"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 2: NANOGPT ═══════════ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">PART 2</span>
+    <span class="section-title">LLM Chat — Building a POST Request</span>
+  </div>
+  <p class="section-desc">
+    A POST request is more complex: you send data <em>to</em> the server (a JSON body), along with headers that include your API key. The server processes your request and sends back a response. This is how every LLM API works — OpenAI, Anthropic, Google, Mistral — they all use the same format.
+  </p>
+
+  <!-- Headers panel -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="panel-label">request headers</span>
+    </div>
+    <div class="panel-body">
+      <div class="ctrl-hint">Headers are metadata sent alongside your request. Two are essential:</div>
+      <div class="json-preview" id="headersPreview" style="margin-top:0.5rem;"></div>
+    </div>
+  </div>
+
+  <!-- Body builder panel -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="panel-label">request body builder <span class="tag tag-post" style="margin-left:0.5rem;">POST</span></span>
+    </div>
+    <div class="panel-body">
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">Model <span class="tag tag-body">body</span></div>
+        <div class="ctrl-hint">Which AI model processes your prompt. Same API, different brain.</div>
+        <select id="llmModel" onchange="updateLLMPreview()">
+          <option value="deepseek-chat">Loading models...</option>
+        </select>
+        <div class="small mt" id="modelMeta" style="margin-top:0.35rem;"></div>
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">System Prompt <span class="tag tag-body">messages[0]</span></div>
+        <div class="ctrl-hint">Sets the AI's persona and behavior. The user never sees this directly.</div>
+        <textarea id="llmSystem" rows="2" oninput="updateLLMPreview()">You are a friendly dog expert. Give a single fun fact about the requested breed in 2-3 sentences. Keep it casual.</textarea>
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">User Prompt <span class="tag tag-body">messages[1]</span></div>
+        <div class="ctrl-hint">The actual question. Use <code style="color:var(--green);">{variables}</code> from the Dog CEO result &mdash; they get replaced before sending. Click a chip to insert it at cursor.</div>
+        <textarea id="llmUser" rows="2" oninput="updateLLMPreview()">Tell me a fun fact about the {breed} dog breed.</textarea>
+        <div class="var-chips">
+          <span class="var-chip-label">Dog CEO:</span>
+          <span class="var-chip dog" onclick="insertVar('{breed}')" title="Breed name, title case (e.g. Golden Retriever)">{breed}</span>
+          <span class="var-chip dog" onclick="insertVar('{breed_raw}')" title="Raw breed slug from URL (e.g. retriever-golden)">{breed_raw}</span>
+          <span class="var-chip dog" onclick="insertVar('{image_url}')" title="Direct URL to the dog photo">{image_url}</span>
+          <span class="var-chip-label" style="margin-left:0.4rem;">Extras:</span>
+          <span class="var-chip fun" onclick="insertVar('{today}')" title="Today's date (YYYY-MM-DD)">{today}</span>
+          <span class="var-chip fun" onclick="insertVar('{random_number}')" title="Random integer 1-100">{random_number}</span>
+          <span class="var-chip fun" onclick="insertVar('{language}')" title="A random language">{language}</span>
+          <span class="var-chip fun" onclick="insertVar('{emoji}')" title="A random animal emoji">{emoji}</span>
+        </div>
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">Temperature <span class="tag tag-body">optional</span></div>
+        <div class="ctrl-hint">0 = deterministic (same answer every time) &rarr; 2 = very creative/random.</div>
+        <div class="range-row">
+          <input type="range" id="llmTemp" min="0" max="2" step="0.1" value="0.7" oninput="updateLLMPreview()">
+          <span class="range-val" id="llmTempVal">0.7</span>
+        </div>
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">Max Tokens <span class="tag tag-body">optional</span></div>
+        <div class="ctrl-hint">Upper limit on response length. 1 token &#8776; 0.75 words.</div>
+        <div class="range-row">
+          <input type="range" id="llmMaxTok" min="50" max="4096" step="50" value="500" oninput="updateLLMPreview()">
+          <span class="range-val" id="llmMaxTokVal">500</span>
+        </div>
+      </div>
+
+      <hr>
+
+      <div class="ctrl-group">
+        <div class="flex-between" style="margin-bottom:0.4rem;">
+          <div class="ctrl-label" style="margin:0;">Live Request JSON</div>
+        </div>
+        <div class="ctrl-hint">This is exactly what gets sent to the server. Every field you changed above is reflected here.</div>
+        <div class="json-preview" id="llmRequestPreview"></div>
+      </div>
+
+      <div class="flex-between mt">
+        <button class="btn" id="llmSendBtn" onclick="sendLLMRequest()">&#9654; Send Request</button>
+        <span class="small" id="llmStatus"></span>
+      </div>
+
+      <div class="response-area" id="llmResponse"></div>
+
+      <div class="mt" id="llmRawWrap" style="display:none;">
+        <div class="flex-between mb" style="margin-bottom:0.4rem;">
+          <div class="ctrl-label" style="margin:0;">Raw JSON Response</div>
+          <button class="btn btn-sm btn-outline" onclick="toggleEl('llmRawJSON')">Toggle</button>
+        </div>
+        <div class="json-preview" id="llmRawJSON" style="display:none;"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 3: CHAIN ═══════════ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">PART 3</span>
+    <span class="section-title">Chain Them Together</span>
+  </div>
+  <p class="section-desc">
+    The real power of APIs: the output of one becomes the input of another. Click below to get a random breed from Dog CEO, automatically plug it into the LLM prompt, and fire both requests in sequence.
+  </p>
+
+  <div class="panel">
+    <div class="panel-body" style="text-align:center; padding:1.5rem;">
+      <button class="btn btn-green" id="chainBtn" onclick="runChain()" style="font-size:1rem; padding:0.75rem 2rem;">
+        &#9654; Run the Full Chain
+      </button>
+      <p class="small mt">Dog CEO &rarr; extract breed &rarr; build prompt &rarr; LLM &rarr; fun fact</p>
+      <div id="chainLog" style="text-align:left; margin-top:1rem;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 4: CODE EXPORT ═══════════ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">TAKE HOME</span>
+    <span class="section-title">Export as Code</span>
+  </div>
+  <p class="section-desc">
+    These scripts match your current settings above. They ask for the API key at runtime so it's never stored in the file. Copy, paste, run.
+  </p>
+
+  <div class="warning">
+    <div class="warning-title">&#9888; Never share files containing your API key</div>
+    <p>Both scripts below ask for the key at runtime. If you hardcode a key and share the file (or push it to GitHub), anyone who finds it can use your account and run up charges. Treat API keys like passwords.</p>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header" style="padding:0;">
+      <div class="tabs" style="border:none; width:100%;">
+        <div class="tab active" onclick="switchExportTab('python')">Python</div>
+        <div class="tab" onclick="switchExportTab('html')">HTML + JS</div>
+        <div class="tab" onclick="switchExportTab('curl')">cURL</div>
+      </div>
+    </div>
+    <div class="panel-body">
+
+      <div class="tab-content active" id="export-python">
+        <div class="flex-between mb" style="margin-bottom:0.5rem;">
+          <span class="small">Save as <code style="color:var(--amber);">dog_facts.py</code> and run with <code style="color:var(--amber);">python dog_facts.py</code></span>
+          <div class="ctrl-row narrow gap-sm">
+            <button class="btn btn-sm btn-outline btn-copy" onclick="copyExport('python')">Copy</button>
+            <button class="btn btn-sm btn-outline" onclick="downloadExport('python')">Download</button>
+          </div>
+        </div>
+        <div class="code-preview" id="exportPython" style="max-height:500px;"></div>
+      </div>
+
+      <div class="tab-content" id="export-html">
+        <div class="flex-between mb" style="margin-bottom:0.5rem;">
+          <span class="small">Save as <code style="color:var(--amber);">dog_facts.html</code> and open in browser</span>
+          <div class="ctrl-row narrow gap-sm">
+            <button class="btn btn-sm btn-outline btn-copy" onclick="copyExport('html')">Copy</button>
+            <button class="btn btn-sm btn-outline" onclick="downloadExport('html')">Download</button>
+          </div>
+        </div>
+        <div class="code-preview" id="exportHTML" style="max-height:500px;"></div>
+      </div>
+
+      <div class="tab-content" id="export-curl">
+        <div class="flex-between mb" style="margin-bottom:0.5rem;">
+          <span class="small">Paste into terminal. Replace <code style="color:var(--amber);">YOUR_KEY</code> with your actual key.</span>
+          <div class="ctrl-row narrow gap-sm">
+            <button class="btn btn-sm btn-outline btn-copy" onclick="copyExport('curl')">Copy</button>
+          </div>
+        </div>
+        <div class="code-preview" id="exportCurl" style="max-height:300px;"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+// ═══════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════
+let allBreeds = [];
+let allModels = [];
+let lastDogData = null;
+let lastLLMData = null;
+let lastLLMRequest = null;
+
+// ═══════════════════════════════════════
+//  UTILITIES
+// ═══════════════════════════════════════
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function syntaxHL(obj) {
+  const raw = JSON.stringify(obj, null, 2);
+  return raw
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(?:[^"\\]|\\.)*")(\s*:)/g, '<span class="jk">$1</span>$2')
+    .replace(/:\s*("(?:[^"\\]|\\.)*")/g, ': <span class="js">$1</span>')
+    .replace(/:\s*(\d+\.?\d*)/g, ': <span class="jn">$1</span>')
+    .replace(/:\s*(true|false|null)/g, ': <span class="jn">$1</span>');
+}
+
+function toggleEl(id) {
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function copyToClipboard(text, btnEl) {
+  navigator.clipboard.writeText(text).then(() => {
+    if (btnEl) {
+      btnEl.classList.add('copied');
+      setTimeout(() => btnEl.classList.remove('copied'), 1500);
+    }
+  });
+}
+
+// ═══════════════════════════════════════
+//  VARIABLE INTERPOLATION
+// ═══════════════════════════════════════
+
+// Dog CEO results fill these after a successful request
+let dogVars = { breed: 'Golden Retriever', breed_raw: 'retriever-golden', image_url: '' };
+let chainVars = null; // set during chain run
+
+const LANGUAGES = ['Spanish','French','Japanese','Portuguese','German','Mandarin','Italian','Korean','Arabic','Swahili','Hindi','Russian','Dutch','Turkish','Vietnamese'];
+const EMOJIS = ['\uD83D\uDC36','\uD83D\uDC31','\uD83D\uDC3B','\uD83E\uDD8A','\uD83D\uDC27','\uD83E\uDD89','\uD83D\uDC22','\uD83E\uDD94','\uD83E\uDD9B','\uD83D\uDC18','\uD83E\uDD92','\uD83D\uDC2C','\uD83E\uDD88','\uD83E\uDD9C','\uD83D\uDC1D'];
+
+function resolveVars(text) {
+  const v = chainVars || dogVars;
+  return text
+    .replace(/\{breed\}/g, v.breed || 'Golden Retriever')
+    .replace(/\{breed_raw\}/g, v.breed_raw || 'retriever-golden')
+    .replace(/\{image_url\}/g, v.image_url || 'https://images.dog.ceo/breeds/...')
+    .replace(/\{today\}/g, new Date().toISOString().slice(0,10))
+    .replace(/\{random_number\}/g, () => Math.floor(Math.random()*100)+1)
+    .replace(/\{language\}/g, () => LANGUAGES[Math.floor(Math.random()*LANGUAGES.length)])
+    .replace(/\{emoji\}/g, () => EMOJIS[Math.floor(Math.random()*EMOJIS.length)]);
+}
+
+function insertVar(varName) {
+  const ta = document.getElementById('llmUser');
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  ta.value = ta.value.slice(0, start) + varName + ta.value.slice(end);
+  ta.selectionStart = ta.selectionEnd = start + varName.length;
+  ta.focus();
+  updateLLMPreview();
+}
+
+// ═══════════════════════════════════════
+//  CODE SYNTAX HIGHLIGHTING
+// ═══════════════════════════════════════
+
+function hlPython(code) {
+  // Tokenize first, then render. Avoids chained-regex escaping issues.
+  const tokens = [];
+  let i = 0;
+  while (i < code.length) {
+    // Triple-quoted strings
+    if (code.slice(i, i+3) === '"""' || code.slice(i, i+3) === "'''") {
+      const q = code.slice(i, i+3);
+      const end = code.indexOf(q, i+3);
+      if (end !== -1) { tokens.push({t:'s', v:code.slice(i, end+3)}); i = end+3; continue; }
+    }
+    // Comments
+    if (code[i] === '#') {
+      const nl = code.indexOf('\n', i);
+      const end = nl === -1 ? code.length : nl;
+      tokens.push({t:'c', v:code.slice(i, end)}); i = end; continue;
+    }
+    // f-strings and strings
+    if ((code[i] === '"' || code[i] === "'") || (code[i] === 'f' && (code[i+1] === '"' || code[i+1] === "'"))) {
+      const isF = code[i] === 'f';
+      const start = isF ? i+1 : i;
+      const q = code[start];
+      let j = start + 1, escaped = false;
+      while (j < code.length) {
+        if (escaped) { escaped = false; j++; continue; }
+        if (code[j] === '\\') { escaped = true; j++; continue; }
+        if (code[j] === q) { j++; break; }
+        j++;
+      }
+      tokens.push({t:'s', v:code.slice(i, j)}); i = j; continue;
+    }
+    // Words (keywords, builtins, identifiers)
+    if (/[a-zA-Z_]/.test(code[i])) {
+      let j = i; while (j < code.length && /[\w]/.test(code[j])) j++;
+      const w = code.slice(i, j);
+      const KW = ['import','from','if','else','elif','for','in','return','def','class','try','except','as','with','print','exit','not','or','and','True','False','None','isinstance'];
+      const BI = ['json','os','urllib','getpass','int','str','float','len','type','dict','list','set','round','encode','decode','dumps','loads','urlopen','Request','environ','get'];
+      if (KW.includes(w)) tokens.push({t:'k', v:w});
+      else if (BI.includes(w)) tokens.push({t:'f', v:w});
+      else tokens.push({t:'x', v:w});
+      i = j; continue;
+    }
+    // Numbers
+    if (/\d/.test(code[i])) {
+      let j = i; while (j < code.length && /[\d.]/.test(code[j])) j++;
+      tokens.push({t:'n', v:code.slice(i, j)}); i = j; continue;
+    }
+    // Plain char
+    tokens.push({t:'x', v:code[i]}); i++;
+  }
+  // Render
+  const cls = {s:'cs', c:'cc', k:'ck', f:'cf', n:'cn'};
+  return tokens.map(tk => {
+    const safe = tk.v.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return cls[tk.t] ? `<span class="${cls[tk.t]}">${safe}</span>` : safe;
+  }).join('');
+}
+
+function hlHTML(code) {
+  const tokens = [];
+  let i = 0;
+  while (i < code.length) {
+    // HTML comments
+    if (code.slice(i, i+4) === '<!--') {
+      const end = code.indexOf('-->', i+4);
+      const j = end === -1 ? code.length : end + 3;
+      tokens.push({t:'c', v:code.slice(i, j)}); i = j; continue;
+    }
+    // Tags
+    if (code[i] === '<' && /[a-zA-Z\/!]/.test(code[i+1] || '')) {
+      const end = code.indexOf('>', i);
+      if (end !== -1) { tokens.push({t:'tag', v:code.slice(i, end+1)}); i = end+1; continue; }
+    }
+    // JS keywords (inside script blocks)
+    if (/[a-zA-Z_]/.test(code[i])) {
+      let j = i; while (j < code.length && /[\w]/.test(code[j])) j++;
+      const w = code.slice(i, j);
+      const JSK = ['const','let','var','function','async','await','if','else','return','try','catch','throw','new','typeof','document','alert','getElementById','fetch','method','JSON','stringify','innerHTML','headers','body','value','trim'];
+      if (JSK.includes(w)) tokens.push({t:'k', v:w});
+      else tokens.push({t:'x', v:w});
+      i = j; continue;
+    }
+    // Strings
+    if (code[i] === "'" || code[i] === '"' || code[i] === '`') {
+      const q = code[i];
+      let j = i+1, esc = false;
+      while (j < code.length) {
+        if (esc) { esc=false; j++; continue; }
+        if (code[j] === '\\') { esc=true; j++; continue; }
+        if (code[j] === q) { j++; break; }
+        j++;
+      }
+      tokens.push({t:'s', v:code.slice(i,j)}); i = j; continue;
+    }
+    tokens.push({t:'x', v:code[i]}); i++;
+  }
+  const cls = {c:'cc', k:'ck', s:'cs'};
+  return tokens.map(tk => {
+    const safe = tk.v.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    if (tk.t === 'tag') {
+      // Colorize tag name and attributes inside
+      return safe.replace(/^(&lt;\/?)([\w-]+)/, '$1<span class="ct">$2</span>')
+                 .replace(/\s([\w-]+)=/g, ' <span class="ca">$1</span>=');
+    }
+    return cls[tk.t] ? `<span class="${cls[tk.t]}">${safe}</span>` : safe;
+  }).join('');
+}
+
+function hlCurl(code) {
+  const tokens = [];
+  let i = 0;
+  while (i < code.length) {
+    // Comments
+    if (code[i] === '#') {
+      const nl = code.indexOf('\n', i);
+      const end = nl === -1 ? code.length : nl;
+      tokens.push({t:'c', v:code.slice(i, end)}); i = end; continue;
+    }
+    // Strings
+    if (code[i] === "'" || code[i] === '"') {
+      const q = code[i];
+      let j = i+1, esc = false;
+      while (j < code.length) {
+        if (esc) { esc=false; j++; continue; }
+        if (code[j] === '\\') { esc=true; j++; continue; }
+        if (code[j] === q) { j++; break; }
+        j++;
+      }
+      tokens.push({t:'s', v:code.slice(i,j)}); i = j; continue;
+    }
+    // Words
+    if (/[a-zA-Z_]/.test(code[i])) {
+      let j = i; while (j < code.length && /[\w]/.test(code[j])) j++;
+      const w = code.slice(i, j);
+      if (w === 'curl' || w === 'python3') tokens.push({t:'k', v:w});
+      else if (w === 'YOUR_KEY') tokens.push({t:'n', v:w});
+      else tokens.push({t:'x', v:w});
+      i = j; continue;
+    }
+    // Flags
+    if (code[i] === '-' && /[a-zA-Z]/.test(code[i+1] || '')) {
+      let j = i; while (j < code.length && /[\w-]/.test(code[j])) j++;
+      tokens.push({t:'f', v:code.slice(i,j)}); i = j; continue;
+    }
+    tokens.push({t:'x', v:code[i]}); i++;
+  }
+  const cls = {c:'cc', k:'ck', s:'cs', f:'cf', n:'cn'};
+  return tokens.map(tk => {
+    const safe = tk.v.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return cls[tk.t] ? `<span class="${cls[tk.t]}">${safe}</span>` : safe;
+  }).join('');
+}
+
+// ═══════════════════════════════════════
+//  DOG CEO: Load breeds
+// ═══════════════════════════════════════
+
+async function loadBreeds() {
+  try {
+    const resp = await fetch('https://dog.ceo/api/breeds/list/all');
+    const data = await resp.json();
+    allBreeds = [];
+    for (const [breed, subs] of Object.entries(data.message)) {
+      allBreeds.push(breed);
+      for (const sub of subs) allBreeds.push(`${breed}/${sub}`);
+    }
+    const sel = document.getElementById('dogBreed');
+    sel.innerHTML = allBreeds.map(b =>
+      `<option value="${b}">${b.replace('/', ' &rarr; ')}</option>`
+    ).join('');
+  } catch(e) {
+    console.error('Failed to load breeds', e);
+  }
+}
+
+// ═══════════════════════════════════════
+//  DOG CEO: URL Builder
+// ═══════════════════════════════════════
+
+function updateDogURL() {
+  const endpoint = document.getElementById('dogEndpoint').value;
+  const breed = document.getElementById('dogBreed').value;
+  const count = document.getElementById('dogCount').value;
+  document.getElementById('dogCountVal').textContent = count;
+
+  // Show/hide controls
+  const needsBreed = ['breed-random','breed-random-n','breed-images','sub-breeds'].includes(endpoint);
+  const needsCount = ['random-n','breed-random-n'].includes(endpoint);
+  document.getElementById('dogBreedGroup').style.display = needsBreed ? '' : 'none';
+  document.getElementById('dogCountGroup').style.display = needsCount ? '' : 'none';
+
+  // Build URL
+  const base = 'https://dog.ceo/api';
+  let path = '';
+  switch(endpoint) {
+    case 'random':        path = '/breeds/image/random'; break;
+    case 'random-n':      path = `/breeds/image/random/${count}`; break;
+    case 'breed-random':  path = `/breed/${breed}/images/random`; break;
+    case 'breed-random-n':path = `/breed/${breed}/images/random/${count}`; break;
+    case 'breed-list':    path = '/breeds/list/all'; break;
+    case 'breed-images':  path = `/breed/${breed}/images`; break;
+    case 'sub-breeds':    path = `/breed/${breed}/list`; break;
+  }
+
+  // Render with color coding
+  const el = document.getElementById('dogURL');
+  const coloredPath = path
+    .replace(/\/(breeds?|images?|list|all|random)/g, '/<span class="path">$1</span>')
+    .replace(new RegExp(`/${escRegex(breed)}`, 'g'), `/<span class="variable">${esc(breed)}</span>`)
+    .replace(new RegExp(`/${escRegex(count)}$`), `/<span class="param">${esc(count)}</span>`);
+
+  el.innerHTML = `<span class="base">${esc(base)}</span>${coloredPath}`;
+  el.dataset.url = base + path;
+
+  updateExports();
+}
+
+function escRegex(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+// ═══════════════════════════════════════
+//  DOG CEO: Send
+// ═══════════════════════════════════════
+
+async function sendDogRequest() {
+  const url = document.getElementById('dogURL').dataset.url;
+  const btn = document.getElementById('dogSendBtn');
+  const status = document.getElementById('dogStatus');
+  const resp_area = document.getElementById('dogResponse');
+
+  btn.disabled = true;
+  status.innerHTML = '<span class="spinner"></span> Fetching...';
+  resp_area.innerHTML = '';
+
+  const t0 = performance.now();
+  try {
+    const resp = await fetch(url);
+    const data = await resp.json();
+    const ms = Math.round(performance.now() - t0);
+    lastDogData = data;
+
+    status.innerHTML = `<span style="color:var(--green)">200 OK</span> &middot; ${ms}ms`;
+
+    // Show result
+    let html = '';
+    if (data.message && typeof data.message === 'string' && data.message.match(/\.(jpg|jpeg|png|gif)$/i)) {
+      // Single image
+      const breed = data.message.split('/breeds/')[1]?.split('/')[0]?.replace(/-/g,' ') || '';
+      html = `<div class="response-ok"><strong>${breed}</strong></div>
+              <div class="response-img"><img src="${data.message}" alt="${breed}" onerror="this.style.display='none'"></div>`;
+      // Update variables for interpolation
+      const prettyBreed = breed.replace(/\b\w/g, c => c.toUpperCase());
+      const rawBreed = data.message.split('/breeds/')[1]?.split('/')[0] || '';
+      dogVars = { breed: prettyBreed, breed_raw: rawBreed, image_url: data.message };
+      chainVars = null; // reset chain vars so dogVars are used
+      document.getElementById('llmUser').value = `Tell me a fun fact about the {breed} dog breed.`;
+      updateLLMPreview();
+    } else if (Array.isArray(data.message)) {
+      html = `<div class="response-ok">${data.message.length} result(s) returned</div>`;
+      if (data.message[0]?.match?.(/\.(jpg|jpeg|png|gif)$/i)) {
+        html += '<div class="response-img" style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem;">';
+        for (const img of data.message.slice(0, 6)) {
+          html += `<img src="${img}" style="width:100px;height:100px;object-fit:cover;border-radius:6px;border:1px solid var(--border);" onerror="this.style.display='none'">`;
+        }
+        if (data.message.length > 6) html += `<span class="small" style="align-self:center;">+${data.message.length-6} more</span>`;
+        html += '</div>';
+      }
+    } else if (typeof data.message === 'object') {
+      const keys = Object.keys(data.message);
+      html = `<div class="response-ok">${keys.length} breed(s) returned</div>`;
+    }
+    resp_area.innerHTML = html;
+
+    // Show raw
+    document.getElementById('dogRawWrap').style.display = '';
+    document.getElementById('dogRawJSON').innerHTML = syntaxHL(data);
+
+  } catch(err) {
+    const ms = Math.round(performance.now() - t0);
+    status.innerHTML = `<span style="color:var(--red)">Error</span> &middot; ${ms}ms`;
+    resp_area.innerHTML = `<div class="response-err">${esc(err.message)}</div>`;
+  }
+  btn.disabled = false;
+}
+
+// ═══════════════════════════════════════
+//  NANOGPT: Load models
+// ═══════════════════════════════════════
+
+const PROVIDER_ORDER = ['Anthropic','OpenAI','Google','DeepSeek','Mistral','Meta','Qwen','Moonshot','xAI','NousResearch','StepFun','Other'];
+
+const FEATURED = new Set([
+  'deepseek-chat','deepseek-r1','deepseek-ai/DeepSeek-R1-0528','deepseek-ai/DeepSeek-V3.1','deepseek/deepseek-v3.2',
+  'openai/gpt-oss-120b','openai/gpt-oss-20b',
+  'meta-llama/llama-4-maverick','meta-llama/llama-4-scout','meta-llama/llama-3.3-70b-instruct',
+  'mistralai/mistral-large-3-675b-instruct-2512','mistralai/devstral-2-123b-instruct-2512',
+  'mistral-small-31-24b-instruct',
+  'qwen/qwen3-coder','qwen/qwen3-32b','qwq-32b','qvq-max','qwen/qwen3.5-397b-a17b',
+  'moonshotai/kimi-k2.5','moonshotai/kimi-k2-thinking',
+  'nousresearch/hermes-4-405b','nousresearch/hermes-4-405b:thinking',
+  'stepfun-ai/step-3.5-flash','auto-model','microsoft/MAI-DS-R1-FP8',
+  'unsloth/gemma-3-27b-it','nvidia/Llama-3.1-Nemotron-Ultra-253B-v1',
+]);
+
+function detectProvider(m) {
+  const id = m.id.toLowerCase(), ow = (m.owned_by||'').toLowerCase();
+  if (id.includes('claude') || ow==='anthropic') return 'Anthropic';
+  if (id.includes('gpt') || id.includes('chatgpt') || ow==='openai' || id.startsWith('openai/')) return 'OpenAI';
+  if (id.includes('gemini') || id.includes('gemma') || ow==='google' || id.startsWith('google/')) return 'Google';
+  if (id.includes('llama') && (id.includes('meta') || ow==='meta')) return 'Meta';
+  if (id.includes('deepseek')) return 'DeepSeek';
+  if (id.includes('mistral') || id.includes('codestral') || id.includes('ministral') || id.includes('mixtral') || id.includes('magistral')) return 'Mistral';
+  if (id.includes('qwen') || id.includes('qwq') || id.includes('qvq')) return 'Qwen';
+  if (id.includes('kimi') || id.includes('moonshot')) return 'Moonshot';
+  if (id.includes('grok') || id.includes('x-ai')) return 'xAI';
+  if (id.includes('hermes') || id.includes('nousresearch')) return 'NousResearch';
+  if (id.includes('stepfun') || id.includes('step-')) return 'StepFun';
+  return 'Other';
+}
+
+// ═══════════════════════════════════════
+//  LLM PROVIDER ABSTRACTION
+// ═══════════════════════════════════════
+const LLM_PROVIDERS = {
+  nanogpt: {
+    name: 'NanoGPT',
+    baseUrl: 'https://nano-gpt.com/api/v1',
+    keyUrl: 'https://nano-gpt.com/api',
+    hint: 'Get one at <a href="https://nano-gpt.com/api" target="_blank">nano-gpt.com/api</a> — pay-per-prompt, no subscription needed.',
+    needsKey: true,
+  },
+  openrouter: {
+    name: 'OpenRouter',
+    baseUrl: 'https://openrouter.ai/api/v1',
+    keyUrl: 'https://openrouter.ai/keys',
+    hint: 'Get one at <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai/keys</a> — free models available, no credit card required.',
+    needsKey: true,
+  },
+  local: {
+    name: 'Local (Ollama)',
+    baseUrl: 'http://localhost:11434/v1',
+    keyUrl: '',
+    hint: 'Connects to <a href="https://ollama.com" target="_blank">Ollama</a> on localhost:11434. No key needed — just have Ollama running with a model pulled. One fewer reason to pretend that airplanes in the night sky still have access to all the APIs.',
+    needsKey: false,
+  }
+};
+
+function getProvider() { return document.getElementById('llmProvider')?.value || 'nanogpt'; }
+function getBaseUrl() { return LLM_PROVIDERS[getProvider()].baseUrl; }
+function getChatUrl() { return getBaseUrl() + '/chat/completions'; }
+
+function onProviderChange() {
+  const p = LLM_PROVIDERS[getProvider()];
+  document.getElementById('apiKeyHint').innerHTML = p.hint;
+  const keyGroup = document.getElementById('apiKey').closest('.ctrl-group');
+  keyGroup.style.display = p.needsKey ? '' : 'none';
+  loadModels();
+}
+
+async function loadModels() {
+  const provider = getProvider();
+  try {
+    if (provider === 'nanogpt') {
+      const resp = await fetch('https://nano-gpt.com/api/v1/models?detailed=true');
+      const data = await resp.json();
+      allModels = data.data.filter(m => m.subscription?.included);
+    } else if (provider === 'openrouter') {
+      const resp = await fetch('https://openrouter.ai/api/v1/models');
+      const data = await resp.json();
+      allModels = data.data.map(m => ({
+        ...m, name: m.name || m.id,
+        _free: m.id.includes(':free') || (m.pricing?.prompt === '0' && m.pricing?.completion === '0'),
+      }));
+    } else {
+      // Local / Ollama
+      try {
+        const resp = await fetch('http://localhost:11434/v1/models');
+        const data = await resp.json();
+        allModels = (data.data || []).map(m => ({ ...m, name: m.id, owned_by: 'local' }));
+      } catch(e) {
+        allModels = [];
+        const sel = document.getElementById('llmModel');
+        sel.innerHTML = '<option value="">⚠ Ollama not running — start it and reload</option>';
+        return;
+      }
+    }
+
+    const groups = {};
+    for (const m of allModels) {
+      const p = detectProvider(m);
+      (groups[p] = groups[p] || []).push(m);
+    }
+    for (const p of Object.keys(groups)) {
+      groups[p].sort((a,b) => {
+        if (provider === 'openrouter') {
+          // Free models first
+          const af = a._free?0:1, bf = b._free?0:1;
+          if (af !== bf) return af - bf;
+        } else {
+          const af = FEATURED.has(a.id)?0:1, bf = FEATURED.has(b.id)?0:1;
+          if (af !== bf) return af - bf;
+        }
+        return a.name.localeCompare(b.name);
+      });
+    }
+
+    const sel = document.getElementById('llmModel');
+    sel.innerHTML = '';
+
+    if (provider === 'local') {
+      // Flat list for local models
+      for (const m of allModels.sort((a,b) => a.name.localeCompare(b.name))) {
+        const opt = document.createElement('option');
+        opt.value = m.id;
+        opt.textContent = m.name;
+        sel.appendChild(opt);
+      }
+      if (!allModels.length) sel.innerHTML = '<option value="">No models found — pull one with: ollama pull llama3.2</option>';
+      updateLLMPreview();
+      return;
+    }
+
+    if (provider === 'openrouter') {
+      // Free models group first
+      const freeModels = allModels.filter(m => m._free);
+      if (freeModels.length) {
+        const og = document.createElement('optgroup');
+        og.label = `★ Free Models (${freeModels.length})`;
+        for (const m of freeModels.sort((a,b) => a.name.localeCompare(b.name))) {
+          const opt = document.createElement('option');
+          opt.value = m.id;
+          opt.textContent = '★ ' + m.name;
+          if (m.id.includes('gemma-3-27b') || m.id.includes('llama-3.3-70b')) opt.selected = true;
+          og.appendChild(opt);
+        }
+        sel.appendChild(og);
+      }
+    }
+
+    for (const p of PROVIDER_ORDER) {
+      const list = (groups[p] || []).filter(m => provider !== 'openrouter' || !m._free);
+      if (!list.length) continue;
+      const og = document.createElement('optgroup');
+      og.label = `${p} (${list.length})`;
+      for (const m of list) {
+        const opt = document.createElement('option');
+        opt.value = m.id;
+        opt.textContent = (FEATURED.has(m.id)?'\u2605 ':'') + m.name;
+        if (provider === 'nanogpt' && m.id === 'deepseek-chat') opt.selected = true;
+        og.appendChild(opt);
+      }
+      sel.appendChild(og);
+    }
+    updateLLMPreview();
+  } catch(e) {
+    console.error('Model load failed', e);
+  }
+}
+
+// ═══════════════════════════════════════
+//  LLM: Preview
+// ═══════════════════════════════════════
+
+function buildLLMRequest() {
+  return {
+    model: document.getElementById('llmModel').value,
+    messages: [
+      { role: 'system', content: resolveVars(document.getElementById('llmSystem').value) },
+      { role: 'user', content: resolveVars(document.getElementById('llmUser').value) }
+    ],
+    temperature: parseFloat(document.getElementById('llmTemp').value),
+    max_tokens: parseInt(document.getElementById('llmMaxTok').value),
+  };
+}
+
+function updateLLMPreview() {
+  const temp = document.getElementById('llmTemp').value;
+  const maxTok = document.getElementById('llmMaxTok').value;
+  document.getElementById('llmTempVal').textContent = temp;
+  document.getElementById('llmMaxTokVal').textContent = maxTok;
+
+  const body = buildLLMRequest();
+  document.getElementById('llmRequestPreview').innerHTML = syntaxHL(body);
+
+  // Headers preview
+  const key = document.getElementById('apiKey').value;
+  const prov = LLM_PROVIDERS[getProvider()];
+  if (prov.needsKey) {
+    const masked = key ? '****' + key.slice(-4) : 'YOUR_API_KEY';
+    document.getElementById('headersPreview').innerHTML =
+      `<span class="jc">// These go in the HTTP headers, not the body</span>\n` +
+      `<span class="jk">"Authorization"</span>: <span class="js">"Bearer ${esc(masked)}"</span>  <span class="jc">// proves who you are</span>\n` +
+      `<span class="jk">"Content-Type"</span>:  <span class="js">"application/json"</span>       <span class="jc">// says we're sending JSON</span>`;
+  } else {
+    document.getElementById('headersPreview').innerHTML =
+      `<span class="jc">// Local server — no auth needed, just Content-Type</span>\n` +
+      `<span class="jk">"Content-Type"</span>: <span class="js">"application/json"</span>`;
+  }
+
+  // Model meta
+  const m = allModels.find(x => x.id === body.model);
+  if (m) {
+    const caps = [];
+    if (m.capabilities?.vision) caps.push('vision');
+    if (m.capabilities?.reasoning) caps.push('reasoning');
+    if (m.capabilities?.tool_calling) caps.push('tools');
+    const ctx = m.context_length ? `${(m.context_length/1000).toFixed(0)}k ctx` : '';
+    document.getElementById('modelMeta').innerHTML =
+      `<span style="color:var(--text-faint)">${m.description?.slice(0,120) || ''}${m.description?.length>120?'...':''}</span>` +
+      (ctx ? ` &middot; <span style="color:var(--amber)">${ctx}</span>` : '') +
+      (caps.length ? ` &middot; ${caps.join(', ')}` : '');
+  }
+
+  updateExports();
+}
+
+// ═══════════════════════════════════════
+//  LLM: Send
+// ═══════════════════════════════════════
+
+async function sendLLMRequest() {
+  const provider = LLM_PROVIDERS[getProvider()];
+  const apiKey = document.getElementById('apiKey').value.trim();
+  if (provider.needsKey && !apiKey) { document.getElementById('apiKey').focus(); return; }
+
+  const btn = document.getElementById('llmSendBtn');
+  const status = document.getElementById('llmStatus');
+  const resp_area = document.getElementById('llmResponse');
+
+  btn.disabled = true;
+  status.innerHTML = '<span class="spinner"></span> Thinking...';
+  resp_area.innerHTML = '';
+
+  const body = buildLLMRequest();
+  lastLLMRequest = body;
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (provider.needsKey && apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+
+  const t0 = performance.now();
+  try {
+    const resp = await fetch(getChatUrl(), {
+      method: 'POST', headers, body: JSON.stringify(body),
+    });
+    const data = await resp.json();
+    const ms = Math.round(performance.now() - t0);
+
+    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+
+    lastLLMData = data;
+    const answer = data.choices[0].message.content;
+    const usage = data.usage;
+
+    status.innerHTML = `<span style="color:var(--green)">200 OK</span> &middot; ${ms}ms` +
+      (usage ? ` &middot; ${usage.prompt_tokens}+${usage.completion_tokens} tokens` : '');
+
+    resp_area.innerHTML = `<div class="response-ok">${esc(answer)}</div>`;
+
+    document.getElementById('llmRawWrap').style.display = '';
+    document.getElementById('llmRawJSON').innerHTML = syntaxHL({
+      model: data.model,
+      message: data.choices[0].message,
+      usage: data.usage,
+      finish_reason: data.choices[0].finish_reason,
+    });
+
+  } catch(err) {
+    const ms = Math.round(performance.now() - t0);
+    const isCors = err.message === 'Failed to fetch' || err.name === 'TypeError';
+    status.innerHTML = `<span style="color:var(--red)">${isCors?'CORS Blocked':'Error'}</span> &middot; ${ms}ms`;
+    resp_area.innerHTML = `<div class="response-err">${
+      isCors
+        ? '<strong>CORS blocked</strong> — the server did not allow this browser request. This is normal for many APIs. ' +
+          'The Python script and cURL exports below will work fine. ' +
+          'Browsers enforce <strong>CORS</strong> (Cross-Origin Resource Sharing) as a security measure.'
+        : esc(err.message)
+    }</div>`;
+  }
+  btn.disabled = false;
+}
+
+// ═══════════════════════════════════════
+//  CHAIN: Run both
+// ═══════════════════════════════════════
+
+async function runChain() {
+  const provider = LLM_PROVIDERS[getProvider()];
+  const apiKey = document.getElementById('apiKey').value.trim();
+  if (provider.needsKey && !apiKey) { document.getElementById('apiKey').focus(); return; }
+
+  const btn = document.getElementById('chainBtn');
+  const log = document.getElementById('chainLog');
+  btn.disabled = true;
+
+  let stepId = 0;
+  function addLog(icon, msg, id) {
+    const sid = id || ('clog-' + (stepId++));
+    log.innerHTML += `<div class="small" style="margin-bottom:0.3rem;" id="${sid}">${icon} ${msg}</div>`;
+    return sid;
+  }
+  function replaceLog(id, icon, msg) {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = `${icon} ${msg}`;
+  }
+
+  log.innerHTML = '';
+  const s1 = addLog('<span class="spinner"></span>', 'Step 1: Asking Dog CEO for a random breed...', 'chain-s1');
+
+  try {
+    const dogResp = await fetch('https://dog.ceo/api/breeds/image/random');
+    const dogData = await dogResp.json();
+    const imgUrl = dogData.message;
+    const parts = imgUrl.split('/breeds/')[1].split('/')[0];
+    const breed = parts.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+
+    replaceLog('chain-s1', '\u2705', `Got: <strong>${breed}</strong> &mdash; <a href="${imgUrl}" target="_blank">view photo</a>`);
+    const s2 = addLog('<span class="spinner"></span>', `Step 2: Asking ${document.getElementById('llmModel').selectedOptions[0]?.textContent?.replace(/^\u2605 /,'')} about ${breed}...`, 'chain-s2');
+
+    // Update variables and user prompt field
+    chainVars = { breed, breed_raw: parts, image_url: imgUrl };
+    dogVars = { ...chainVars };
+    document.getElementById('llmUser').value = 'Tell me a fun fact about the {breed} dog breed.';
+    updateLLMPreview();
+
+    const body = buildLLMRequest();
+    const headers = { 'Content-Type': 'application/json' };
+    if (provider.needsKey && apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+    const llmResp = await fetch(getChatUrl(), {
+      method: 'POST', headers, body: JSON.stringify(body),
+    });
+    const llmData = await llmResp.json();
+    if (llmData.error) throw new Error(llmData.error.message || JSON.stringify(llmData.error));
+
+    const fact = llmData.choices[0].message.content;
+    replaceLog('chain-s2', '\u2705', `LLM says: <em>"${esc(fact)}"</em>`);
+    addLog('\u2b50', 'Done! Two APIs, chained together. The breed from API #1 became the prompt for API #2.');
+
+  } catch(err) {
+    const isCors = err.message === 'Failed to fetch';
+    replaceLog('chain-s2', '\u274c', isCors
+      ? 'CORS blocked the LLM request. Try the Python export below instead!'
+      : `Error: ${esc(err.message)}`
+    );
+  }
+  btn.disabled = false;
+}
+
+// ═══════════════════════════════════════
+//  CODE EXPORTS
+// ═══════════════════════════════════════
+
+function getExportParams() {
+  return {
+    model: document.getElementById('llmModel').value,
+    system: document.getElementById('llmSystem').value,
+    user: document.getElementById('llmUser').value,
+    temp: parseFloat(document.getElementById('llmTemp').value),
+    maxTok: parseInt(document.getElementById('llmMaxTok').value),
+    dogUrl: document.getElementById('dogURL')?.dataset?.url || 'https://dog.ceo/api/breeds/image/random',
+  };
+}
+
+function generatePython() {
+  const p = getExportParams();
+  return `"""
+dog_facts.py — Generated by API Workshop
+Run: python dog_facts.py
+No dependencies needed (stdlib only).
+"""
+import json, os, urllib.request, getpass
+
+# ── Get API key securely at runtime ──
+API_KEY = os.environ.get("LLM_API_KEY") or getpass.getpass("${LLM_PROVIDERS[getProvider()].name} API key: ")
+
+# ── Step 1: Dog CEO API (GET, free, no key) ──
+print("Fetching a dog breed...")
+dog_resp = urllib.request.urlopen("${p.dogUrl}")
+dog_data = json.loads(dog_resp.read().decode())
+
+if isinstance(dog_data["message"], str) and "/breeds/" in dog_data["message"]:
+    breed = dog_data["message"].split("/breeds/")[1].split("/")[0].replace("-", " ").title()
+    print(f"  Breed: {breed}")
+    print(f"  Photo: {dog_data['message']}")
+    prompt = f"Tell me a fun fact about the {breed} dog breed."
+else:
+    print(f"  Result: {json.dumps(dog_data, indent=2)}")
+    prompt = ${JSON.stringify(p.user)}
+
+# ── Step 2: ${LLM_PROVIDERS[getProvider()].name} API (POST, key required) ──
+print(f"\\nAsking LLM: {prompt}\\n")
+
+request_body = json.dumps({
+    "model": ${JSON.stringify(p.model)},
+    "messages": [
+        {"role": "system", "content": ${JSON.stringify(p.system)}},
+        {"role": "user", "content": prompt}
+    ],
+    "temperature": ${p.temp},
+    "max_tokens": ${p.maxTok}
+}).encode("utf-8")
+
+req = urllib.request.Request(
+    url="${getChatUrl()}",
+    data=request_body,
+    headers={
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json",
+    },
+    method="POST",
+)
+
+resp = urllib.request.urlopen(req)
+data = json.loads(resp.read().decode())
+print(data["choices"][0]["message"]["content"])
+print(f"\\nTokens used: {data.get('usage', {})}")
+`;
+}
+
+function generateHTML() {
+  const p = getExportParams();
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Dog Facts</title>
+<style>
+  body { font-family: system-ui; max-width: 600px; margin: 2rem auto; padding: 0 1rem; background: #1a1a1a; color: #e0e0e0; }
+  input, button { padding: 0.5rem 1rem; border-radius: 6px; border: 1px solid #444; font-size: 0.9rem; }
+  input { background: #222; color: #fff; width: 100%; margin-bottom: 1rem; }
+  button { background: #e5a430; color: #111; font-weight: 600; cursor: pointer; border: none; }
+  button:hover { filter: brightness(1.1); }
+  pre { background: #111; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.8rem; white-space: pre-wrap; }
+  .fact { background: #1a2e1a; border-left: 3px solid #5c5; padding: 1rem; border-radius: 0 6px 6px 0; margin: 1rem 0; }
+  img { max-width: 200px; border-radius: 8px; margin: 0.5rem 0; }
+</style>
+</head>
+<body>
+<h2>Dog Facts API Demo</h2>
+<p>Enter your ${LLM_PROVIDERS[getProvider()].name} API key (it stays in this tab, never stored):</p>
+<input type="password" id="key" placeholder="${LLM_PROVIDERS[getProvider()].name} API key...">
+<button onclick="go()">Fetch a Dog Fact!</button>
+<div id="out"></div>
+
+\x3cscript>
+async function go() {
+  const key = document.getElementById('key').value.trim();
+  if (!key) return alert('Please enter your API key');
+  const out = document.getElementById('out');
+  out.innerHTML = 'Fetching breed...';
+
+  // Step 1: Dog CEO
+  const dogResp = await fetch('${p.dogUrl}');
+  const dogData = await dogResp.json();
+  let breed = 'dog', imgUrl = '';
+  if (typeof dogData.message === 'string' && dogData.message.includes('/breeds/')) {
+    imgUrl = dogData.message;
+    breed = imgUrl.split('/breeds/')[1].split('/')[0].replace(/-/g,' ');
+    breed = breed.replace(/\\b\\w/g, c => c.toUpperCase());
+  }
+  out.innerHTML = '<strong>' + breed + '</strong>' + (imgUrl ? '<br><img src="'+imgUrl+'">' : '') + '<br>Asking LLM...';
+
+  // Step 2: LLM
+  try {
+    const llmResp = await fetch(getChatUrl(), {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: ${JSON.stringify(p.model)},
+        messages: [
+          {role:'system', content:${JSON.stringify(p.system)}},
+          {role:'user', content:'Tell me a fun fact about the ' + breed + ' dog breed.'}
+        ],
+        temperature: ${p.temp},
+        max_tokens: ${p.maxTok}
+      })
+    });
+    const data = await llmResp.json();
+    if (data.error) throw new Error(data.error.message);
+    out.innerHTML += '<div class="fact">' + data.choices[0].message.content + '</div>';
+    out.innerHTML += '<pre>' + JSON.stringify(data.usage, null, 2) + '</pre>';
+  } catch(e) {
+    out.innerHTML += '<p style="color:#e55;">Error: ' + e.message + '</p>';
+  }
+}
+<\/script>
+</body>
+</html>`;
+}
+
+function generateCurl() {
+  const p = getExportParams();
+  const body = {
+    model: p.model,
+    messages: [
+      { role: 'system', content: p.system },
+      { role: 'user', content: p.user }
+    ],
+    temperature: p.temp,
+    max_tokens: p.maxTok,
+  };
+  return `# Step 1: Dog CEO (just open in browser or use curl)
+curl -s "${p.dogUrl}" | python3 -m json.tool
+
+# Step 2: ${LLM_PROVIDERS[getProvider()].name} (replace YOUR_KEY with your actual API key)
+curl -X POST "${getChatUrl()}" \\
+  -H "Authorization: Bearer YOUR_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '${JSON.stringify(body, null, 2).replace(/'/g, "'\\''")}'`;
+}
+
+const exportCache = {};
+
+function updateExports() {
+  exportCache.python = generatePython();
+  exportCache.html = generateHTML();
+  exportCache.curl = generateCurl();
+
+  const pyEl = document.getElementById('exportPython');
+  const htmlEl = document.getElementById('exportHTML');
+  const curlEl = document.getElementById('exportCurl');
+
+  if (pyEl) pyEl.innerHTML = hlPython(exportCache.python);
+  if (htmlEl) htmlEl.innerHTML = hlHTML(exportCache.html);
+  if (curlEl) curlEl.innerHTML = hlCurl(exportCache.curl);
+}
+
+function switchExportTab(name) {
+  document.querySelectorAll('.tabs .tab').forEach((t,i) => {
+    t.classList.toggle('active', ['python','html','curl'][i] === name);
+  });
+  ['python','html','curl'].forEach(n => {
+    const el = document.getElementById('export-' + n);
+    if (el) el.classList.toggle('active', n === name);
+  });
+}
+
+function copyExport(name) {
+  const text = exportCache[name];
+  if (!text) return;
+  const btn = event.target;
+  copyToClipboard(text, btn);
+}
+
+function downloadExport(name) {
+  const text = exportCache[name];
+  if (!text) return;
+  const ext = name === 'python' ? 'py' : 'html';
+  const fname = `dog_facts.${ext}`;
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fname;
+  a.click();
+}
+
+// ═══════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════
+
+document.getElementById('apiKey').addEventListener('input', updateLLMPreview);
+
+Promise.all([loadBreeds(), loadModels()]).then(() => {
+  updateDogURL();
+  updateLLMPreview();
+});
+</script>
+</body>
+</html>

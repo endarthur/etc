@@ -399,9 +399,25 @@ body { background:var(--bg); color:var(--text); font-family:var(--body); overflo
 .node-result {
   padding:0.35rem 0.65rem; border-top:1px solid var(--border);
   font-family:var(--mono); font-size:0.62rem; color:var(--text-dim);
-  max-height:60px; overflow:auto; word-break:break-all;
+  max-height:3.2em; overflow:hidden; word-break:break-all;
   background:rgba(0,0,0,0.15); flex-shrink:0;
+  cursor:pointer; transition:max-height 0.2s ease;
+  white-space:pre-wrap; line-height:1.5;
+  position:relative;
+}
+.node-result.expanded {
+  max-height:400px; overflow:auto;
   scrollbar-width:thin; scrollbar-color:var(--border) transparent;
+}
+.node-result:not(.expanded)::after {
+  content:'⋯ click to expand'; display:block;
+  font-size:0.55rem; color:var(--text-faint); opacity:0.7;
+  margin-top:0.15rem;
+}
+.node-result.expanded::after {
+  content:'click to collapse'; display:block;
+  font-size:0.55rem; color:var(--text-faint); opacity:0.7;
+  margin-top:0.15rem;
 }
 .node-result.ok { color:var(--green); }
 .node-result.err { color:var(--red); }
@@ -1166,7 +1182,7 @@ el.addEventListener('mousedown', function(e) {
   }
   // Other interactive elements — prevent Drawflow drag
   if (e.target.closest('.node-run-btn') || e.target.closest('.toggle') ||
-      e.target.tagName === 'BUTTON') {
+      e.target.closest('.node-result') || e.target.tagName === 'BUTTON') {
     e.stopPropagation();
   }
 }, true);
@@ -2361,14 +2377,21 @@ function showNodeResult(nodeId, result) {
     }
   }
 
-  // Result text strip
-  let preview = '';
-  if (result?._display === 'image') preview = `🖼 ${result.image_url.split('/').pop().slice(0,40)}`;
-  else if (result?.image_url) preview = `🖼 ${result.breed || result.name || 'image'}`;
-  else if (result?.text) preview = result.text.slice(0,60) + (result.text.length > 60 ? '...' : '');
-  else if (result?.value !== undefined) preview = String(result.value).slice(0,60);
-  else if (result?.joke) preview = result.joke.slice(0,60) + (result.joke.length > 60 ? '...' : '');
-  else preview = JSON.stringify(result).slice(0,60);
+  // Build full result text (no truncation)
+  let fullText = '';
+  if (result?._display === 'image') fullText = `🖼 ${result.image_url.split('/').pop()}`;
+  else if (result?.image_url) fullText = `🖼 ${result.breed || result.name || 'image'}`;
+  else if (result?.text) fullText = result.text;
+  else if (result?.value !== undefined) fullText = String(result.value);
+  else if (result?.joke) fullText = result.joke;
+  else {
+    // Pretty-print JSON, filtering out internal _ keys
+    const clean = {};
+    for (const [k,v] of Object.entries(result || {})) {
+      if (!k.startsWith('_')) clean[k] = v;
+    }
+    fullText = JSON.stringify(clean, null, 2);
+  }
 
   // Remove old result strip if any
   const old = domNode.querySelector('.node-result');
@@ -2376,7 +2399,12 @@ function showNodeResult(nodeId, result) {
 
   const strip = document.createElement('div');
   strip.className = 'node-result ok';
-  strip.textContent = preview;
+  strip.textContent = fullText;
+  strip.addEventListener('click', function(e) {
+    e.stopPropagation();
+    this.classList.toggle('expanded');
+    editor.updateConnectionNodes('node-' + nodeId);
+  });
   domNode.querySelector('.drawflow_content_node').appendChild(strip);
   editor.updateConnectionNodes('node-' + nodeId);
 }
@@ -2391,6 +2419,11 @@ function showNodeError(nodeId, error) {
   const strip = document.createElement('div');
   strip.className = 'node-result err';
   strip.textContent = error.message;
+  strip.addEventListener('click', function(e) {
+    e.stopPropagation();
+    this.classList.toggle('expanded');
+    editor.updateConnectionNodes('node-' + nodeId);
+  });
   domNode.querySelector('.drawflow_content_node').appendChild(strip);
   editor.updateConnectionNodes('node-' + nodeId);
 }

@@ -368,10 +368,10 @@ a:hover { text-decoration:underline; }
       </div>
       <div class="ctrl-group">
         <div class="ctrl-label">LLM Provider <span class="tag tag-llm">llm</span></div>
-        <div class="ctrl-hint">Both use the same request format. OpenRouter has free models — no credit card needed.</div>
+        <div class="ctrl-hint">All use the same request format. Groq has a free tier — no credit card needed.</div>
         <select id="llmProvider" onchange="onProviderChange()">
           <option value="nanogpt">NanoGPT (pay-per-prompt)</option>
-          <option value="openrouter">OpenRouter (free models available)</option>
+          <option value="groq">Groq (free tier available)</option>
           <option value="local">Local / Ollama (no key needed)</option>
         </select>
       </div>
@@ -980,10 +980,10 @@ const LLM_PROVIDERS = {
     hint: 'From <a href="https://nano-gpt.com/api" target="_blank">nano-gpt.com/api</a> — same key as the API Workshop.',
     needsKey: true,
   },
-  openrouter: {
-    name: 'OpenRouter',
-    baseUrl: 'https://openrouter.ai/api/v1',
-    hint: 'From <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai/keys</a> — free models available, no credit card required.',
+  groq: {
+    name: 'Groq',
+    baseUrl: 'https://api.groq.com/openai/v1',
+    hint: 'From <a href="https://console.groq.com/keys" target="_blank">console.groq.com/keys</a> — free tier, no credit card required.',
     needsKey: true,
   },
   local: {
@@ -1013,13 +1013,15 @@ async function loadModels() {
       const resp = await fetch('https://nano-gpt.com/api/v1/models?detailed=true');
       const data = await resp.json();
       allModels = data.data.filter(m => m.subscription?.included);
-    } else if (provider === 'openrouter') {
-      const resp = await fetch('https://openrouter.ai/api/v1/models');
+    } else if (provider === 'groq') {
+      const key = document.getElementById('nanoKey')?.value;
+      const headers = key ? { 'Authorization': `Bearer ${key}` } : {};
+      const resp = await fetch('https://api.groq.com/openai/v1/models', { headers });
       const data = await resp.json();
-      allModels = data.data.map(m => ({
-        ...m, name: m.name || m.id,
-        _free: m.id.includes(':free') || (m.pricing?.prompt === '0' && m.pricing?.completion === '0'),
-      }));
+      const skip = ['whisper', 'guard', 'safeguard', 'orpheus'];
+      allModels = (data.data || [])
+        .filter(m => !skip.some(s => m.id.includes(s)))
+        .map(m => ({ ...m, name: m.name || m.id, owned_by: m.owned_by || 'groq' }));
     } else {
       // Local / Ollama
       try {
@@ -1050,35 +1052,14 @@ async function loadModels() {
     for (const m of allModels) { const p = detectProvider(m); (groups[p]=groups[p]||[]).push(m); }
     for (const p of Object.keys(groups)) {
       groups[p].sort((a,b) => {
-        if (provider === 'openrouter') {
-          const af = a._free?0:1, bf = b._free?0:1;
-          if (af !== bf) return af - bf;
-        } else {
-          const af = FEATURED_MODELS.has(a.id)?0:1, bf = FEATURED_MODELS.has(b.id)?0:1;
-          if (af !== bf) return af - bf;
-        }
+        const af = FEATURED_MODELS.has(a.id)?0:1, bf = FEATURED_MODELS.has(b.id)?0:1;
+        if (af !== bf) return af - bf;
         return a.name.localeCompare(b.name);
       });
     }
 
-    if (provider === 'openrouter') {
-      const freeModels = allModels.filter(m => m._free);
-      if (freeModels.length) {
-        const og = document.createElement('optgroup');
-        og.label = `★ Free Models (${freeModels.length})`;
-        for (const m of freeModels.sort((a,b) => a.name.localeCompare(b.name))) {
-          const opt = document.createElement('option');
-          opt.value = m.id;
-          opt.textContent = '★ ' + m.name;
-          if (m.id.includes('llama-3.3-70b')) opt.selected = true;
-          og.appendChild(opt);
-        }
-        sel.appendChild(og);
-      }
-    }
-
     for (const p of ORDER) {
-      const list = (groups[p] || []).filter(m => provider !== 'openrouter' || !m._free);
+      const list = groups[p] || [];
       if (!list.length) continue;
       const og = document.createElement('optgroup');
       og.label = `${p} (${list.length})`;
@@ -1087,6 +1068,7 @@ async function loadModels() {
         opt.value = m.id;
         opt.textContent = (FEATURED_MODELS.has(m.id)?'\u2605 ':'') + m.name;
         if (provider === 'nanogpt' && m.id === 'deepseek-chat') opt.selected = true;
+        if (provider === 'groq' && m.id === 'llama-3.3-70b-versatile') opt.selected = true;
         og.appendChild(opt);
       }
       sel.appendChild(og);

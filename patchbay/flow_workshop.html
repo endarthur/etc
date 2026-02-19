@@ -1882,7 +1882,7 @@ const NODE_DEFS = {
       `<label>Provider</label>
        <select df-provider>
          <option value="nanogpt">NanoGPT</option>
-         <option value="openrouter">OpenRouter (free models)</option>
+         <option value="groq">Groq (free tier)</option>
          <option value="local">Local / Ollama</option>
        </select>
        <label>API Key</label><input type="password" df-apikey placeholder="$llm_key or paste key (not needed for local)" />
@@ -1893,7 +1893,7 @@ const NODE_DEFS = {
     async exec(data, inputs) {
       const LLM_URLS = {
         nanogpt: 'https://nano-gpt.com/api/v1/chat/completions',
-        openrouter: 'https://openrouter.ai/api/v1/chat/completions',
+        groq: 'https://api.groq.com/openai/v1/chat/completions',
         local: 'http://localhost:11434/v1/chat/completions',
       };
       const url = LLM_URLS[data.provider] || LLM_URLS.nanogpt;
@@ -3356,7 +3356,7 @@ const CHAPTERS = [
       <br>6. → <code>Display Result</code>
       <br>Also from step 2: → <code>Display Image</code></div>
       <p>When you run this, the flow fetches a random dog, extracts the breed, builds a prompt, sends it to an LLM, and displays the AI's response alongside the photo. Six nodes, one click.</p>
-      <div class="hint">No API key? Select <strong>OpenRouter</strong> in the LLM node for free cloud models (<a href="https://openrouter.ai/keys" target="_blank" style="color:var(--cyan)">openrouter.ai/keys</a>), or select <strong>Local / Ollama</strong> to use a model running on your own machine — no key needed at all. Or skip the LLM node entirely and wire Template → Display.</div>
+      <div class="hint">No API key? Select <strong>Groq</strong> in the LLM node for free cloud models (<a href="https://console.groq.com/keys" target="_blank" style="color:var(--cyan)">console.groq.com/keys</a>), or select <strong>Local / Ollama</strong> to use a model running on your own machine — no key needed at all. Or skip the LLM node entirely and wire Template → Display.</div>
       <div class="concept"><strong>What you've built is a program.</strong> Not with text, but with boxes and wires. Every professional flow tool works exactly this way — the nodes are different, but the wiring pattern is identical.</div>
     `,
     check(nodes) {
@@ -3542,7 +3542,7 @@ const CHAPTERS = [
       <br>1. Click the <strong>Config</strong> tab in the bottom panel
       <br>2. Click <strong>+ Add</strong>
       <br>3. Set key = <code>tg_token</code>, value = your Telegram bot token (or any test string)
-      <br>4. Add another: key = <code>llm_key</code>, value = your NanoGPT or OpenRouter API key
+      <br>4. Add another: key = <code>llm_key</code>, value = your NanoGPT or Groq API key
       <br>5. Now in any Telegram node's token field, just type <code>$tg_token</code>
       <br>6. In the LLM Chat node's API key field, type <code>$llm_key</code></div>
       <p>Config values are masked (shown as ••••) by default since they're usually secrets. Click the 👁 button to reveal a value temporarily.</p>

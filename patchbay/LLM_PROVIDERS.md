@@ -12,26 +12,26 @@ Tested browser CORS preflight (`OPTIONS` with `Origin` header) against candidate
 |---|---|---|---|
 | **NanoGPT** | `*` ✅ | No (pay-per-use) | OpenAI-compatible |
 | **Gemini** | ❌ No headers at all | Yes (gutted Dec 2025) | Custom |
-| **OpenRouter** | `*` ✅ | 31 free models | OpenAI-compatible |
+| **OpenRouter** | `*` ✅ | 31 free models | OpenAI-compatible | *(removed — replaced by Groq)* |
 | **Groq** | `*` ✅ | Yes (rate-limited) | OpenAI-compatible |
 | **Ollama** (localhost) | `*` ✅ (default) | N/A (local) | OpenAI-compatible |
 
 Gemini was eliminated immediately — no CORS headers means no browser `fetch()` from a different origin, full stop. Would require a proxy server, which defeats the "single HTML file" philosophy.
 
-Groq works but the free tier is rate-limited and there's no "free models" concept — just one pool of models with usage caps. Could be a future addition.
+Groq replaced OpenRouter as the free-tier provider in Feb 2026. OpenRouter's free models proved unreliable in practice (degraded quality, excess capacity). Groq's free tier runs on dedicated LPU hardware with consistent speed, generous rate limits (up to 14.4K req/day for lighter models), and no credit card required.
 
-### OpenRouter Free Models (as of Feb 2025)
+### Groq Free Tier Models (as of Feb 2026)
 
-31 models at zero cost, including heavyweights:
+All models available to free tier, rate-limited per model:
 
-- `meta-llama/llama-3.3-70b-instruct:free` (128k ctx)
-- `deepseek/deepseek-r1-0528:free` (163k ctx)
-- `google/gemma-3-27b-it:free` (131k ctx)
-- `nousresearch/hermes-3-llama-3.1-405b:free` (131k ctx)
-- `qwen/qwen3-coder:free` (262k ctx)
-- `mistralai/mistral-small-3.1-24b-instruct:free` (128k ctx)
+- `llama-3.3-70b-versatile` (131k ctx, 1K req/day, 100K tokens/day) — best quality
+- `meta-llama/llama-4-scout-17b-16e-instruct` (1K req/day, 500K tokens/day)
+- `qwen/qwen3-32b` (1K req/day, 500K tokens/day) — strong multilingual
+- `llama-3.1-8b-instant` (131k ctx, 14.4K req/day, 500K tokens/day) — most generous limits
+- `meta-llama/llama-4-maverick-17b-128e-instruct` (1K req/day, 500K tokens/day)
+- `moonshotai/kimi-k2-instruct` (1K req/day, 300K tokens/day)
 
-Free tier requires an account but no credit card.
+Free tier requires an account but no credit card. Models endpoint requires API key auth (`GET /openai/v1/models`).
 
 ### Ollama / Localhost
 
@@ -73,9 +73,9 @@ const LLM_PROVIDERS = {
     hint: '...',
     needsKey: true,
   },
-  openrouter: {
-    name: 'OpenRouter',
-    baseUrl: 'https://openrouter.ai/api/v1',
+  groq: {
+    name: 'Groq',
+    baseUrl: 'https://api.groq.com/openai/v1',
     hint: '...',
     needsKey: true,
   },
@@ -97,7 +97,7 @@ Helper functions:
 ### Model Loading Per Provider
 
 - **NanoGPT:** `GET /v1/models?detailed=true` → filter by `subscription.included`, group by detected provider family, star featured models
-- **OpenRouter:** `GET /v1/models` → detect free models by `:free` suffix or `pricing.prompt === '0'`, show free group first
+- **Groq:** `GET /openai/v1/models` (requires API key auth) → filter out non-chat models (whisper, guard, orpheus), flat list sorted alphabetically
 - **Local:** `GET /v1/models` → flat list of whatever's pulled, fallback message if Ollama isn't running
 
 ### Per-Workshop Differences
@@ -168,7 +168,7 @@ patchbay/
 ## Key URLs
 
 - **NanoGPT:** https://nano-gpt.com/api (keys), `https://nano-gpt.com/api/v1/` (base)
-- **OpenRouter:** https://openrouter.ai/keys (keys), `https://openrouter.ai/api/v1/` (base)
+- **Groq:** https://console.groq.com/keys (keys), `https://api.groq.com/openai/v1/` (base)
 - **Ollama:** https://ollama.com (install), `http://localhost:11434/v1/` (base, default port)
 - **WebLLM:** https://github.com/mlc-ai/web-llm (library), https://webllm.mlc.ai (demo)
 - **Deployed:** https://endarthur.github.io/etc/patchbay/

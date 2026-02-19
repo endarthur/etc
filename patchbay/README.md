@@ -86,7 +86,7 @@ All three workshops support three LLM backends via a shared provider abstraction
 | Provider | Key Required | Cost | Internet | Model Source |
 |---|---|---|---|---|
 | **NanoGPT** | Yes | Pay-per-prompt | Yes | 100+ models via aggregator |
-| **OpenRouter** | Yes (free account) | Free models available | Yes | 31 free models (Llama 3.3 70B, DeepSeek R1, Gemma 3 27B, etc.) |
+| **Groq** | Yes (free account) | Free (rate-limited) | Yes | 6 free models on LPU hardware (Llama 3.3 70B, Llama 4, Qwen3, etc.) |
 | **Local / Ollama** | No | Free | No | Whatever's `ollama pull`'d |
 
 Workshops 101 and 201 have a single global provider selector. Workshop 301 has per-node provider selection (each LLM Chat node can target a different backend).

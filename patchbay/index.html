@@ -22,6 +22,8 @@
   --green: #6abf69;
   --green-dim: rgba(106,191,105,0.12);
   --red: #c0392b;
+  --purple: #a78bfa;
+  --purple-dim: rgba(167,139,250,0.12);
   --mono: 'IBM Plex Mono', monospace;
   --sans: 'IBM Plex Sans', sans-serif;
 }
@@ -133,6 +135,7 @@ body::before {
 .card:nth-child(1)::before { background: var(--amber); }
 .card:nth-child(2)::before { background: var(--cyan); }
 .card:nth-child(3)::before { background: var(--green); }
+.card:nth-child(4)::before { background: var(--purple); }
 
 /* Ghost text/shapes that appear on hover */
 .card::after {
@@ -193,9 +196,38 @@ body::before {
 }
 .card:nth-child(3):hover::after { opacity: 0.08; }
 
+.card:nth-child(4)::after {
+  content: '┌─ THINK ─────────────────┐\a │ user wants their notes  │\a └───────────┬─────────────┘\a             ▼\a ┌─ ACT ──────────────────┐\a │ read_file("todo.md")   │\a └───────────┬─────────────┘\a             ▼\a ┌─ OBSERVE ──────────────┐\a │ "water plants, buy mi… │\a └───────────┬─────────────┘\a             ▼\a ┌─ REPLY ────────────────┐\a │ Your list has 2 items  │\a └────────────────────────┘';
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 0.52rem;
+  line-height: 1.4;
+  color: var(--purple);
+  opacity: 0;
+  padding: 1.2rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  text-align: left;
+}
+.card:nth-child(4):hover::after { opacity: 0.08; }
+
+.ghost-cat {
+  position: absolute;
+  bottom: 10px;
+  left: 14px;
+  font-size: 14px;
+  opacity: 0;
+  transition: opacity 0.4s;
+  z-index: 1;
+  pointer-events: none;
+}
+.card:hover .ghost-cat { opacity: 0.12; }
+
 .card:nth-child(1) { animation: fadeUp 0.6s 0.15s ease-out both; }
 .card:nth-child(2) { animation: fadeUp 0.6s 0.25s ease-out both; }
 .card:nth-child(3) { animation: fadeUp 0.6s 0.35s ease-out both; }
+.card:nth-child(4) { animation: fadeUp 0.6s 0.45s ease-out both; }
 
 .card-number {
   font-family: var(--mono);
@@ -209,6 +241,7 @@ body::before {
 .card:nth-child(1) .card-number { color: var(--amber); }
 .card:nth-child(2) .card-number { color: var(--cyan); }
 .card:nth-child(3) .card-number { color: var(--green); }
+.card:nth-child(4) .card-number { color: var(--purple); }
 
 .card-body { flex: 1; min-width: 0; }
 
@@ -266,13 +299,14 @@ body::before {
 .card:nth-child(1):hover .card-arrow { color: var(--amber); }
 .card:nth-child(2):hover .card-arrow { color: var(--cyan); }
 .card:nth-child(3):hover .card-arrow { color: var(--green); }
+.card:nth-child(4):hover .card-arrow { color: var(--purple); }
 
 /* ── Download section ── */
 .download-section {
   text-align: center;
   padding: 2rem 0;
   border-top: 1px solid var(--border);
-  animation: fadeUp 0.6s 0.45s ease-out both;
+  animation: fadeUp 0.6s 0.55s ease-out both;
 }
 .download-section p {
   font-size: 0.85rem;
@@ -312,7 +346,7 @@ body::before {
   font-size: 0.65rem;
   color: var(--text-faint);
   font-family: var(--mono);
-  animation: fadeUp 0.6s 0.55s ease-out both;
+  animation: fadeUp 0.6s 0.65s ease-out both;
 }
 .footer a {
   color: var(--text-dim);
@@ -328,7 +362,7 @@ body::before {
   margin-bottom: 2.5rem;
   font-size: 0.78rem;
   color: var(--text-faint);
-  animation: fadeUp 0.6s 0.4s ease-out both;
+  animation: fadeUp 0.6s 0.5s ease-out both;
 }
 .prereq em { font-style: normal; color: var(--text-dim); }
 
@@ -380,10 +414,11 @@ body::before {
     <div class="logo"><span class="patch">Patch</span><span class="bay">bay</span></div>
     <div class="tagline">plug things into other things until something happens</div>
     <p class="intro">
-      Three workshops about the plumbing behind every app, bot, and automation you've ever used.
+      Four workshops about the plumbing behind every app, bot, and automation you've ever used.
       Start by yelling into the void of the internet with raw HTTP. Graduate to building a
-      Telegram bot that yells back. End by wiring a visual pipeline where you can <em>see</em>
-      the data move. Each one is a single HTML file — no install, no backend, no signup wall.
+      Telegram bot that yells back. Wire a visual pipeline where you can <em>see</em>
+      the data move. Then raise an AI agent that lives in a folder on your computer.
+      Each one is a single HTML file — no install, no backend, no signup wall.
       Download, open, break stuff.
     </p>
   </header>
@@ -406,7 +441,8 @@ body::before {
           <span class="tag">JSON</span>
           <span class="tag">REST</span>
           <span class="tag">fetch()</span>
-          <span class="tag">12 chapters</span>
+          <span class="tag">6 chapters</span>
+          <span class="tag">WA-BOB</span>
         </div>
       </div>
       <div class="card-arrow">→</div>
@@ -427,7 +463,8 @@ body::before {
           <span class="tag">JavaScript</span>
           <span class="tag">polling</span>
           <span class="tag">commands</span>
-          <span class="tag">10 chapters</span>
+          <span class="tag">8 chapters</span>
+          <span class="tag">WA-BOB</span>
         </div>
       </div>
       <div class="card-arrow">→</div>
@@ -449,6 +486,31 @@ body::before {
           <span class="tag">27 nodes</span>
           <span class="tag">composition</span>
           <span class="tag">16 chapters</span>
+          <span class="tag">WA-BOB</span>
+        </div>
+      </div>
+      <div class="card-arrow">→</div>
+    </a>
+
+    <a class="card" href="./401/agent_workshop.html">
+      <span class="ghost-cat">🐱</span>
+      <div class="card-number">401</div>
+      <div class="card-body">
+        <div class="card-title">Agent Workshop</div>
+        <div class="card-sub">Raising the soul of a new machine</div>
+        <div class="card-desc">
+          Build an AI agent that lives in a folder on your computer. <strong>ReAct loops, tool use,
+          memory, dynamic skills, multi-provider routing, scheduling</strong> — the full anatomy of
+          every AI assistant, assembled one piece at a time. It reads your files, remembers what you
+          tell it, and writes its own tools.
+        </div>
+        <div class="card-tags">
+          <span class="tag">LLM agents</span>
+          <span class="tag">tool use</span>
+          <span class="tag">ReAct loop</span>
+          <span class="tag">memory</span>
+          <span class="tag">14 chapters</span>
+          <span class="tag">WA-BOB</span>
         </div>
       </div>
       <div class="card-arrow">→</div>
@@ -462,7 +524,7 @@ body::before {
 
   <!-- Download -->
   <div class="download-section">
-    <p>Four HTML files, zero dependencies, works on a plane. Take the whole thing:</p>
+    <p>Five HTML files, zero dependencies, works on a plane. Take the whole thing:</p>
     <button class="download-btn" onclick="downloadAll(this)">
       <span class="dl-icon">↓</span>
       Download Patchbay (.zip)
@@ -485,6 +547,7 @@ const FILES = [
   { name: 'patchbay/api_workshop.html', url: './api_workshop.html' },
   { name: 'patchbay/bot_workshop.html', url: './bot_workshop.html' },
   { name: 'patchbay/flow_workshop.html', url: './flow_workshop.html' },
+  { name: 'patchbay/401/agent_workshop.html', url: './401/agent_workshop.html' },
 ];
 
 async function downloadAll(btn) {

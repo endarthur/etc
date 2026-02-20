@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patchbay 401 — Raising the Soul of a New Machine</title>
+<style>
+/* __INJECT_CSS__ */
+</style>
+</head>
+<body>
+
+<!-- ═══ Splash ═══ -->
+<div id="splash">
+  <!-- Welcome state (first time) -->
+  <div class="splash-state active" id="splash-welcome">
+    <h1>PATCHBAY <span>401</span></h1>
+    <div class="splash-subtitle">RAISING THE SOUL OF A NEW MACHINE</div>
+    <div class="sub">
+      Build an AI assistant you understand and control.
+      <em>An interactive workshop on agents, tools, and trust.</em>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:12px">
+      <button class="btn btn-primary start-btn" onclick="startWorkshop()">Follow the Workshop →</button>
+      <button class="btn start-btn" onclick="startFresh()">Just Build →</button>
+    </div>
+    <div style="font-size:10px;color:var(--text-faint);margin-top:8px;text-align:center;max-width:380px;line-height:1.4">
+      <strong style="color:var(--text-dim)">Follow the Workshop</strong> opens the chapter guide and walks you through each concept.<br>
+      <strong style="color:var(--text-dim)">Just Build</strong> drops you straight into the agent — explore on your own.
+    </div>
+  </div>
+
+  <!-- Unlock state (return with passphrase) -->
+  <div class="splash-state" id="splash-unlock">
+    <h1>PATCHBAY <span>401</span></h1>
+    <div class="splash-subtitle">RAISING THE SOUL OF A NEW MACHINE</div>
+    <div class="sub">Type your passphrase to wake your agent.</div>
+    <div class="unlock-form">
+      <input type="password" id="unlock-passphrase" placeholder="passphrase" autocomplete="off"
+             onkeydown="if(event.key==='Enter')unlockWithPassphrase()">
+      <button class="btn btn-primary" onclick="unlockWithPassphrase()">Unlock</button>
+    </div>
+    <div id="unlock-error"></div>
+    <button class="splash-reset" onclick="resetVault()">Forget everything &amp; start fresh</button>
+  </div>
+
+  <!-- Loading state (return without passphrase) -->
+  <div class="splash-state" id="splash-loading">
+    <h1>PATCHBAY <span>401</span></h1>
+    <div class="splash-subtitle">RAISING THE SOUL OF A NEW MACHINE</div>
+    <div class="sub">Waking up<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span></div>
+  </div>
+</div>
+
+<!-- ═══ Status Bar ═══ -->
+<div id="status-bar">
+  <div class="left">
+    <span class="title">PATCHBAY 401</span>
+    <span class="status-pill" id="sp-agent"><span class="status-dot" id="agent-dot"></span> <span id="agent-status">no workspace</span></span>
+    <span class="status-pill" id="sp-unsafe" style="display:none;color:var(--red);font-weight:700;letter-spacing:0.5px">⚠ UNSAFE</span>
+    <span class="status-pill" id="sp-tg" style="display:none">📱 <span id="tg-status">disconnected</span></span>
+    <span class="status-pill" id="sp-sched" style="display:none">⏰ <span id="sched-status">stopped</span></span>
+  </div>
+  <div class="right">
+    <span class="status-pill" id="sp-ws" style="display:none">📁 <span id="ws-path">—</span></span>
+    <span class="status-pill" id="sp-tokens" style="display:none">tokens: <span id="token-count">0</span></span>
+    <button onclick="window.open('https://github.com/endarthur/etc/tree/main/patchbay','_blank')" title="GitHub repo">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="vertical-align:middle"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ═══ Chapter Guide ═══ -->
+<div id="guide-panel">
+  <div class="guide-header">
+    <h2>Workshop Guide</h2>
+    <div class="guide-progress" id="guide-progress"></div>
+  </div>
+  <div class="guide-body">
+
+<!-- __INJECT_GUIDE__ -->
+  </div><!-- /guide-body -->
+  <div class="guide-footer">
+    <button class="guide-btn" id="guide-prev" onclick="guideNav(-1)">← Back</button>
+    <span class="guide-pos" id="guide-pos">0 / 10</span>
+    <div class="guide-nav">
+      <button class="guide-btn guide-btn-idx" onclick="showGuideIndex()">☰</button>
+      <button class="guide-btn" id="guide-next" onclick="guideNav(1)">Next →</button>
+    </div>
+  </div>
+  <div class="guide-resize" id="guide-resize"></div>
+</div>
+
+<!-- ═══ Desktop ═══ -->
+<div id="desktop" onclick="desktopClick(event)">
+  <!-- Static desktop icon — always visible -->
+  <div class="desktop-icon" style="position:absolute;right:20px;top:12px" onclick="toggleGuide()">
+    <span class="icon-glyph">📖</span>
+    <span class="icon-label">Workshop Guide</span>
+  </div>
+  <!-- Workspace icons populated dynamically -->
+  <div id="desktop-icons"></div>
+  <!-- Trash icon — shown when workspace is selected -->
+  <div class="desktop-icon" id="trash-icon" style="position:absolute;right:20px;bottom:68px;display:none" onclick="toggleWin('win-trash')">
+    <span class="icon-glyph" id="trash-glyph">🗑</span>
+    <span class="icon-label">Trash</span>
+  </div>
+
+  <!-- ═══ Terminal Window ═══ -->
+  <div class="window focused" id="win-terminal" style="left:330px;top:20px;width:580px;height:440px">
+    <div class="window-titlebar" onmousedown="startDrag(event,'win-terminal')">
+      <div class="dots"><button class="dot dot-close" onclick="closeWin('win-terminal')"></button><button class="dot dot-min" onclick="minimizeWin('win-terminal')"></button><button class="dot dot-max"></button></div>
+      <span class="wt">Terminal</span>
+      <button class="pip-btn" onclick="toggleTerminalPip()" title="Pop out terminal">⧉ PiP</button>
+    </div>
+    <div class="window-body">
+      <div class="terminal-content" id="term-out">
+        <div class="tl tl-sys">Patchbay 401 — Raising the Soul of a New Machine</div>
+        <div class="tl tl-sys">Open ⚙ Settings to configure your LLM provider and workspace.</div>
+      </div>
+      <div class="term-input" id="term-input-bar">
+        <span class="pfx">you›</span>
+        <input type="text" id="term-input" placeholder="configure in Settings first..." disabled spellcheck="false" autocomplete="off">
+      </div>
+    </div>
+    <div class="resize-handle" onmousedown="startResize(event,'win-terminal')"></div>
+  </div>
+
+  <!-- ═══ Settings Window ═══ -->
+  <div class="window" id="win-settings" style="left:480px;top:60px;width:460px;height:480px">
+    <div class="window-titlebar" onmousedown="startDrag(event,'win-settings')">
+      <div class="dots"><button class="dot dot-close" onclick="closeWin('win-settings')"></button><button class="dot dot-min" onclick="minimizeWin('win-settings')"></button><button class="dot dot-max"></button></div>
+      <span class="wt">⚙ Settings</span>
+    </div>
+    <div class="window-body" style="display:flex;flex-direction:column">
+      <div class="settings-body">
+        <div class="settings-tabs">
+          <div class="settings-tab active" onclick="settingsTab('workspace')">Workspace</div>
+          <div class="settings-tab" onclick="settingsTab('provider')">Provider</div>
+          <div class="settings-tab" onclick="settingsTab('comms')">Comms</div>
+          <div class="settings-tab" onclick="settingsTab('security')">Security</div>
+          <div class="settings-tab" onclick="settingsTab('appearance')">Appearance</div>
+          <div class="settings-tab" onclick="settingsTab('safety')" style="color:var(--red)">Safety</div>
+        </div>
+        <div style="flex:1;overflow:auto">
+          <div class="settings-pane active" id="stab-workspace">
+            <h3>Workspace Folder</h3>
+            <div class="sf-row">
+              <div class="sf" style="flex:2">
+                <input type="text" id="ws-display" readonly placeholder="No folder selected" style="cursor:pointer;opacity:0.6">
+              </div>
+              <button class="btn" onclick="pickWorkspace()" id="ws-pick-btn">Choose Folder</button>
+            </div>
+            <div class="hint" style="font-size:10px;color:var(--text-faint);margin-top:6px">Your agent lives in this folder. Pick or create an empty one.</div>
+          </div>
+          <div class="settings-pane" id="stab-provider">
+            <h3>LLM Provider</h3>
+            <div class="provider-cards" id="provider-cards">
+              <div class="provider-card" onclick="selectProvider('nanogpt')" data-p="nanogpt">
+                <div class="pc-name">NanoGPT</div>
+                <div class="pc-desc">Cheap, frontier OSS models</div>
+              </div>
+              <div class="provider-card" onclick="selectProvider('groq')" data-p="groq">
+                <div class="pc-name">Groq</div>
+                <div class="pc-desc">Fast, free tier available</div>
+              </div>
+              <div class="provider-card" onclick="selectProvider('ollama')" data-p="ollama">
+                <div class="pc-name">Ollama</div>
+                <div class="pc-desc">Local, private, free</div>
+              </div>
+              <div class="provider-card" onclick="selectProvider('custom')" data-p="custom">
+                <div class="pc-name">Custom</div>
+                <div class="pc-desc">OpenAI-compatible API</div>
+              </div>
+              <div class="provider-card" onclick="selectProvider('demo')" data-p="demo">
+                <div class="pc-name">Demo</div>
+                <div class="pc-desc">Mock agent, no API needed</div>
+              </div>
+            </div>
+            <div id="provider-config"></div>
+          </div>
+          <div class="settings-pane" id="stab-comms">
+            <h3>Telegram Bot <span style="font-weight:400;color:var(--text-faint)">(optional)</span></h3>
+            <div class="sf">
+              <label>Bot Token</label>
+              <input type="password" id="tg-token" placeholder="123456:ABC-DEF..." oninput="saveSetting('tg_token',this.value);updateTgControls()">
+              <div class="hint">From @BotFather. Not required — you can use the terminal directly.</div>
+            </div>
+            <div class="sf-row" id="tg-controls" style="display:none;margin-top:8px;align-items:center">
+              <label class="toggle"><input type="checkbox" id="tg-toggle" onchange="toggleTelegram(this.checked)"><span class="slider"></span></label>
+              <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);margin-left:8px" id="tg-toggle-status">stopped</span>
+            </div>
+            <h3 style="margin-top:16px">Desktop Notifications</h3>
+            <div class="sf-row" style="align-items:center">
+              <label class="toggle"><input type="checkbox" id="notif-toggle" checked onchange="STATE.notificationsEnabled=this.checked;document.getElementById('notif-toggle-status').textContent=this.checked?'enabled':'disabled';scheduleVaultSave()"><span class="slider"></span></label>
+              <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);margin-left:8px" id="notif-toggle-status">enabled</span>
+            </div>
+            <div class="hint" style="margin-top:4px">When enabled, the agent can send desktop notifications (e.g. reminders, scheduled task alerts). Browser permission is requested on first use.</div>
+          </div>
+          <div class="settings-pane" id="stab-security">
+            <div class="security-section">
+              <h3>Security</h3>
+              <div id="security-content">
+                <div class="security-row">
+                  <span class="sec-label">Secrets stored in</span>
+                  <span class="sec-value" id="sec-storage-type">browser vault (OPFS)</span>
+                </div>
+                <div class="security-row">
+                  <span class="sec-label">Passphrase protection</span>
+                  <span class="sec-value" id="sec-passphrase-status">off</span>
+                </div>
+                <div id="passphrase-actions">
+                  <button class="btn" onclick="showSetPassphrase()" id="btn-set-passphrase">Set passphrase (recommended)</button>
+                </div>
+                <div id="passphrase-set-form" style="display:none">
+                  <div class="passphrase-form">
+                    <input type="password" id="new-passphrase" placeholder="new passphrase" autocomplete="off">
+                    <button class="btn btn-primary" onclick="applyPassphrase()" style="padding:7px 12px;font-size:11px">Set</button>
+                    <button class="btn" onclick="cancelSetPassphrase()" style="padding:7px 12px;font-size:11px">Cancel</button>
+                  </div>
+                  <div class="hint" style="margin-top:4px">You'll need this passphrase every time you open the workshop.</div>
+                </div>
+                <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
+                  <button class="btn btn-danger" onclick="resetVault()">Clear All Secrets &amp; Reset</button>
+                  <div class="hint" style="margin-top:4px">Deletes all saved keys, tokens, and passphrase. Your workspace files are not affected.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="settings-pane" id="stab-appearance">
+            <!-- Chrome -->
+            <div>
+              <div class="appearance-section-label">Chrome</div>
+              <div class="chrome-cards" id="chrome-cards"></div>
+            </div>
+            <!-- Theme -->
+            <div>
+              <div class="appearance-section-label">Theme</div>
+              <div class="theme-cards" id="theme-cards"></div>
+              <div style="margin-top:8px">
+                <button class="btn" onclick="toggleCustomThemeEditor()" id="custom-theme-toggle" style="font-size:10px">Customize...</button>
+                <div id="custom-theme-editor" style="display:none;margin-top:10px"></div>
+              </div>
+            </div>
+            <!-- Wallpaper -->
+            <div>
+              <div class="appearance-section-label">Wallpaper</div>
+              <div class="wallpaper-cards" id="wallpaper-cards"></div>
+              <input type="file" id="wp-file-input" accept="image/*" style="display:none" onchange="handleWallpaperFileInput(this)">
+            </div>
+          </div>
+          <div class="settings-pane" id="stab-safety">
+            <div style="padding:8px 0;font-size:11px;color:var(--text-dim);line-height:1.6;border-bottom:1px solid var(--border);margin-bottom:12px">
+              These settings relax safety boundaries. Enabling any option adds an <strong style="color:var(--red)">UNSAFE</strong> badge to the status bar. You are responsible for what your agent does when guardrails are lowered.
+            </div>
+            <h3 style="color:var(--red)">Sandbox Permissions</h3>
+            <div class="sf-row" style="align-items:flex-start;margin-bottom:12px">
+              <label class="toggle" style="margin-top:2px"><input type="checkbox" id="safety-sandbox-network" onchange="updateSafety('sandboxNetwork',this.checked)"><span class="slider"></span></label>
+              <div style="margin-left:8px;flex:1;min-width:0">
+                <div style="font-size:11px;color:var(--text)">Allow network access in dynamic skills</div>
+                <div class="hint">Dynamic skills (Chapter 7) can call <code>api.fetchUrl()</code>. A malicious or prompt-injected skill could exfiltrate workspace data to an external server. The per-request confirmation gate still applies unless also disabled below.</div>
+              </div>
+            </div>
+            <h3 style="color:var(--red)">Confirmation Gates</h3>
+            <div class="hint" style="margin-bottom:8px">Skip the Allow/Deny prompt for these actions. The agent acts without asking you first.</div>
+            <div class="sf-row" style="align-items:center;margin-bottom:8px">
+              <label class="toggle"><input type="checkbox" id="safety-auto-network" onchange="updateSafety('autoApproveNetwork',this.checked)"><span class="slider"></span></label>
+              <span style="font-size:11px;color:var(--text);margin-left:8px">Auto-approve network requests</span>
+            </div>
+            <div class="sf-row" style="align-items:center;margin-bottom:8px">
+              <label class="toggle"><input type="checkbox" id="safety-auto-delete" onchange="updateSafety('autoApproveDelete',this.checked)"><span class="slider"></span></label>
+              <span style="font-size:11px;color:var(--text);margin-left:8px">Auto-approve file deletions</span>
+            </div>
+            <div class="sf-row" style="align-items:center;margin-bottom:8px">
+              <label class="toggle"><input type="checkbox" id="safety-auto-mic" onchange="updateSafety('autoApproveMic',this.checked)"><span class="slider"></span></label>
+              <span style="font-size:11px;color:var(--text);margin-left:8px">Auto-approve microphone access</span>
+            </div>
+            <div class="sf-row" style="align-items:center;margin-bottom:12px">
+              <label class="toggle"><input type="checkbox" id="safety-auto-location" onchange="updateSafety('autoApproveLocation',this.checked)"><span class="slider"></span></label>
+              <span style="font-size:11px;color:var(--text);margin-left:8px">Auto-approve location access</span>
+            </div>
+            <h3 style="color:var(--amber)">Display</h3>
+            <div class="safety-hazard">
+              <div class="sf-row" style="align-items:center">
+                <label class="toggle"><input type="checkbox" id="safety-hide-badge" onchange="updateSafety('hideBadge',this.checked)"><span class="slider"></span></label>
+                <span style="font-size:11px;color:var(--text);margin-left:8px">Hide the UNSAFE badge from the status bar</span>
+              </div>
+            </div>
+            <div class="sf-row" style="align-items:center;margin-top:12px">
+              <label class="toggle"><input type="checkbox" id="safety-pet" onchange="updateSafety('petEnabled',this.checked);this.checked?spawnPet():despawnPet()"><span class="slider"></span></label>
+              <span style="font-size:11px;color:var(--text-dim);margin-left:8px">Enable ambient desktop entity</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="resize-handle" onmousedown="startResize(event,'win-settings')"></div>
+  </div>
+
+  <!-- ═══ Inspector Window ═══ -->
+  <div class="window minimized" id="win-inspector" style="left:740px;top:20px;width:380px;height:400px">
+    <div class="window-titlebar" onmousedown="startDrag(event,'win-inspector')">
+      <div class="dots"><button class="dot dot-close" onclick="closeWin('win-inspector')"></button><button class="dot dot-min" onclick="minimizeWin('win-inspector')"></button><button class="dot dot-max"></button></div>
+      <span class="wt">🔬 Inspector</span>
+    </div>
+    <div class="window-body" style="display:flex;flex-direction:column">
+      <div class="inspector-tabs">
+        <div class="inspector-tab active" onclick="inspectorTab('soul')">Soul</div>
+        <div class="inspector-tab" onclick="inspectorTab('tools')">Tools</div>
+        <div class="inspector-tab" onclick="inspectorTab('history')">History</div>
+        <div class="inspector-tab" onclick="inspectorTab('raw')">Raw</div>
+      </div>
+      <div class="inspector-pane active" id="insp-soul" style="flex:1">
+        <div class="save-bar">
+          <span class="lbl">soul.md — edit to change your agent's persona</span>
+          <button class="btn" onclick="saveSoul()" style="padding:4px 10px;font-size:10px">Save</button>
+        </div>
+        <textarea id="soul-editor" spellcheck="false">You are a helpful personal assistant that lives in a folder on the user's computer.
+
+You are friendly, concise, and practical. When the user asks you to remember something, acknowledge it warmly.
+
+You respond in the same language the user writes to you.</textarea>
+      </div>
+      <div class="inspector-pane" id="insp-tools" style="flex:1">
+        <div class="save-bar"><span class="lbl">Tool definitions sent to the LLM</span></div>
+        <pre id="tools-json">// No tools available yet.
+// Tools will appear in Chapter 2.</pre>
+      </div>
+      <div class="inspector-pane" id="insp-history" style="flex:1">
+        <div class="save-bar"><span class="lbl">Conversation messages array</span></div>
+        <pre id="history-json">[]</pre>
+      </div>
+      <div class="inspector-pane" id="insp-raw" style="flex:1">
+        <div class="save-bar"><span class="lbl">Last API request / response</span></div>
+        <pre id="raw-json">// Send a message to see the raw API call.</pre>
+      </div>
+    </div>
+    <div class="resize-handle" onmousedown="startResize(event,'win-inspector')"></div>
+  </div>
+
+  <!-- ═══ Log Window ═══ -->
+  <div class="window minimized" id="win-log" style="left:200px;top:300px;width:520px;height:240px">
+    <div class="window-titlebar" onmousedown="startDrag(event,'win-log')">
+      <div class="dots"><button class="dot dot-close" onclick="closeWin('win-log')"></button><button class="dot dot-min" onclick="minimizeWin('win-log')"></button><button class="dot dot-max"></button></div>
+      <span class="wt">📋 Log</span>
+    </div>
+    <div class="window-body">
+      <div class="log-panel" id="log-panel">
+        <div style="color:var(--text-faint);padding:20px;text-align:center;font-size:11px">No log entries yet. Send a message to see activity.</div>
+      </div>
+    </div>
+    <div class="resize-handle" onmousedown="startResize(event,'win-log')"></div>
+  </div>
+
+  <!-- ═══ Files Window ═══ -->
+  <div class="window minimized" id="win-files" style="left:160px;top:80px;width:360px;height:380px">
+    <div class="window-titlebar" onmousedown="startDrag(event,'win-files')">
+      <div class="dots"><button class="dot dot-close" onclick="closeWin('win-files')"></button><button class="dot dot-min" onclick="minimizeWin('win-files')"></button><button class="dot dot-max"></button></div>
+      <span class="wt">📁 Files</span>
+    </div>
+    <div class="window-body" style="display:flex;flex-direction:column">
+      <div class="fb-breadcrumb" id="fb-breadcrumb"></div>
+      <div id="file-browser" style="flex:1;overflow:auto;padding:4px 0">
+        <div style="color:var(--text-faint);padding:20px;text-align:center;font-size:11px">No workspace selected.</div>
+      </div>
+    </div>
+    <div class="resize-handle" onmousedown="startResize(event,'win-files')"></div>
+  </div>
+
+  <!-- ═══ Memory Window ═══ -->
+  <div class="window minimized" id="win-memory" style="left:540px;top:100px;width:380px;height:340px">
+    <div class="window-titlebar" onmousedown="startDrag(event,'win-memory')">
+      <div class="dots"><button class="dot dot-close" onclick="closeWin('win-memory')"></button><button class="dot dot-min" onclick="minimizeWin('win-memory')"></button><button class="dot dot-max"></button></div>
+      <span class="wt">🧠 Memory</span>
+    </div>
+    <div class="window-body">
+      <div class="memory-entries" id="memory-panel">
+        <div style="color:var(--text-faint);padding:20px;text-align:center;font-size:11px">No memories yet. Ask the agent to remember something.</div>
+      </div>
+    </div>
+    <div class="resize-handle" onmousedown="startResize(event,'win-memory')"></div>
+  </div>
+
+  <!-- ═══ Skills Window ═══ -->
+  <div class="window minimized" id="win-skills" style="left:200px;top:140px;width:400px;height:360px">
+    <div class="window-titlebar" onmousedown="startDrag(event,'win-skills')">
+      <div class="dots"><button class="dot dot-close" onclick="closeWin('win-skills')"></button><button class="dot dot-min" onclick="minimizeWin('win-skills')"></button><button class="dot dot-max"></button></div>
+      <span class="wt">⚡ Skills</span>
+    </div>
+    <div class="window-body">
+      <div class="skill-cards" id="skills-panel">
+        <div style="color:var(--text-faint);padding:20px;text-align:center;font-size:11px">Loading skills...</div>
+      </div>
+    </div>
+    <div class="resize-handle" onmousedown="startResize(event,'win-skills')"></div>
+  </div>
+
+  <!-- ═══ Routing Window ═══ -->
+  <div class="window minimized" id="win-routing" style="left:600px;top:60px;width:380px;height:360px">
+    <div class="window-titlebar" onmousedown="startDrag(event,'win-routing')">
+      <div class="dots"><button class="dot dot-close" onclick="closeWin('win-routing')"></button><button class="dot dot-min" onclick="minimizeWin('win-routing')"></button><button class="dot dot-max"></button></div>
+      <span class="wt">🔀 Routing</span>
+    </div>
+    <div class="window-body">
+      <div class="routing-section" id="routing-panel">
+        <div style="color:var(--text-faint);padding:20px;text-align:center;font-size:11px">Routing disabled. Enable in Settings.</div>
+      </div>
+    </div>
+    <div class="resize-handle" onmousedown="startResize(event,'win-routing')"></div>
+  </div>
+
+  <!-- ═══ Editor Window ═══ -->
+  <div class="window minimized" id="win-editor" style="left:380px;top:50px;width:520px;height:420px">
+    <div class="window-titlebar" onmousedown="startDrag(event,'win-editor')">
+      <div class="dots"><button class="dot dot-close" onclick="closeWin('win-editor')"></button><button class="dot dot-min" onclick="minimizeWin('win-editor')"></button><button class="dot dot-max"></button></div>
+      <span class="wt" id="editor-title">📝 Editor</span>
+    </div>
+    <div class="window-body" style="display:flex;flex-direction:column">
+      <div class="editor-toolbar">
+        <span class="editor-filename" id="editor-filename">No file open</span>
+        <span class="editor-dirty" id="editor-dirty" style="display:none">modified</span>
+        <button class="btn" onclick="saveOpenFile()" id="editor-save-btn">Save</button>
+      </div>
+      <textarea id="editor-content" spellcheck="false"></textarea>
+    </div>
+    <div class="resize-handle" onmousedown="startResize(event,'win-editor')"></div>
+  </div>
+
+  <!-- ═══ Trash Window ═══ -->
+  <div class="window minimized" id="win-trash" style="left:500px;top:80px;width:380px;height:340px">
+    <div class="window-titlebar" onmousedown="startDrag(event,'win-trash')">
+      <div class="dots"><button class="dot dot-close" onclick="closeWin('win-trash')"></button><button class="dot dot-min" onclick="minimizeWin('win-trash')"></button><button class="dot dot-max"></button></div>
+      <span class="wt" id="trash-title">🗑 Trash</span>
+    </div>
+    <div class="window-body" style="display:flex;flex-direction:column">
+      <div id="trash-list" style="flex:1;overflow:auto"></div>
+      <div class="trash-footer">
+        <button class="btn btn-danger" onclick="emptyTrash()">Empty Trash</button>
+      </div>
+    </div>
+    <div class="resize-handle" onmousedown="startResize(event,'win-trash')"></div>
+  </div>
+
+  <!-- ═══ About Window ═══ -->
+  <div class="window minimized" id="win-about" style="left:360px;top:80px;width:340px;height:380px">
+    <div class="window-titlebar" onmousedown="startDrag(event,'win-about')">
+      <div class="dots"><button class="dot dot-close" onclick="closeWin('win-about')"></button><button class="dot dot-min" onclick="minimizeWin('win-about')"></button><button class="dot dot-max"></button></div>
+      <span class="wt">About This Machine</span>
+    </div>
+    <div class="window-body" id="about-body" style="padding:16px;font-size:11px;overflow:auto"></div>
+    <div class="resize-handle" onmousedown="startResize(event,'win-about')"></div>
+  </div>
+
+  <!-- ═══ Crash Overlay ═══ -->
+  <div id="crash-overlay" class="crash-overlay" onclick="dismissCrashScreen()"></div>
+
+  <!-- ═══ Scheduler Window ═══ -->
+  <div class="window minimized" id="win-scheduler" style="left:420px;top:120px;width:380px;height:340px">
+    <div class="window-titlebar" onmousedown="startDrag(event,'win-scheduler')">
+      <div class="dots"><button class="dot dot-close" onclick="closeWin('win-scheduler')"></button><button class="dot dot-min" onclick="minimizeWin('win-scheduler')"></button><button class="dot dot-max"></button></div>
+      <span class="wt">⏰ Scheduler</span>
+    </div>
+    <div class="window-body">
+      <div class="scheduler-header">
+        <label class="toggle"><input type="checkbox" id="sched-toggle" onchange="toggleSchedulerGlobal(this.checked)"><span class="slider"></span></label>
+        <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim)" id="sched-header-status">stopped</span>
+      </div>
+      <div class="scheduler-list" id="scheduler-panel">
+        <div style="color:var(--text-faint);padding:20px;text-align:center;font-size:11px">No scheduled tasks. Ask your agent to schedule something.</div>
+      </div>
+    </div>
+    <div class="resize-handle" onmousedown="startResize(event,'win-scheduler')"></div>
+  </div>
+</div>
+
+<!-- ═══ Context Menu ═══ -->
+<div id="ctx-menu" class="ctx-menu" style="display:none"></div>
+
+<!-- ═══ Dock ═══ -->
+<div id="dock">
+  <div class="dock-item active" onclick="toggleWin('win-terminal')">🖥<span class="dock-tooltip">Terminal</span></div>
+  <div class="dock-item" onclick="toggleWin('win-inspector')">🔬<span class="dock-tooltip">Inspector</span></div>
+  <div class="dock-item" onclick="toggleWin('win-editor')">✏<span class="dock-tooltip">Editor</span></div>
+  <div class="dock-sep"></div>
+  <div class="dock-item" onclick="toggleWin('win-files')">📁<span class="dock-tooltip">Files</span></div>
+  <div class="dock-item" onclick="toggleWin('win-memory')">🧠<span class="dock-tooltip">Memory</span></div>
+  <div class="dock-item" onclick="toggleWin('win-skills')">⚡<span class="dock-tooltip">Skills</span></div>
+  <div class="dock-item" onclick="toggleWin('win-routing')">🔀<span class="dock-tooltip">Routing</span></div>
+  <div class="dock-item" onclick="toggleWin('win-scheduler')">⏰<span class="dock-tooltip">Scheduler</span></div>
+  <div class="dock-item" onclick="toggleWin('win-about')">💻<span class="dock-tooltip">About</span></div>
+  <div class="dock-sep"></div>
+  <div class="dock-item" onclick="toggleWin('win-log')">📋<span class="dock-tooltip">Log</span></div>
+  <div class="dock-item active" onclick="toggleWin('win-settings')">⚙<span class="dock-tooltip">Settings</span></div>
+</div>
+
+<!-- ═══ Editor Unsaved Changes Overlay ═══ -->
+<div class="overlay" id="editor-dirty-overlay">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header"><h2>📝 Unsaved Changes</h2></div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--text-dim);line-height:1.5">You have unsaved changes to <strong id="editor-dirty-filename" style="color:var(--text)"></strong>.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="editor-dirty-cancel">Cancel</button>
+      <button class="btn btn-danger" id="editor-dirty-discard">Discard</button>
+      <button class="btn btn-primary" id="editor-dirty-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Folder Warning Overlay ═══ -->
+<div class="overlay" id="folder-warn-overlay">
+  <div class="modal">
+    <div class="modal-header"><h2>⚠️ Folder Contains Files</h2></div>
+    <div class="modal-body">
+      <div class="warn-box">
+        <strong>This folder is not empty.</strong>
+        The agent will be able to READ, WRITE, and DELETE any file in this folder. Make sure you're okay with this.
+      </div>
+      <div id="folder-warn-files" style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);margin-top:12px"></div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:16px;cursor:pointer;font-size:12px">
+        <input type="checkbox" id="folder-warn-check"> I understand the risks and want to use this folder
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="cancelFolderPick()">Cancel</button>
+      <button class="btn btn-danger" id="folder-warn-confirm" onclick="confirmFolder()" disabled>Use This Folder</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Skill Approval Overlay ═══ -->
+<div class="overlay" id="skill-approve-overlay">
+  <div class="modal">
+    <div class="modal-header"><h2>⚡ Skill Proposal</h2></div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px">Your agent wants to create a new skill. Review the code before approving.</p>
+      <div class="skill-preview" id="skill-preview-content"></div>
+      <div class="warn-box">
+        <strong>Review carefully.</strong>
+        Dynamic skills run JavaScript in your browser. Only approve if you understand the code.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="denySkill()">Deny</button>
+      <button class="btn btn-primary" onclick="approveSkill()">Approve &amp; Install</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// __INJECT_APP__
+</script>
+</body>
+</html>

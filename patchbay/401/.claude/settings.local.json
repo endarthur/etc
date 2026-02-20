@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:console.groq.com)",
+      "Bash(sort:*)",
+      "Bash(node extract.js:*)",
+      "Bash(node build.js:*)",
+      "Bash(wc:*)",
+      "Bash(ls:*)"
+    ]
+  }
+}

@@ -1,0 +1,815 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,600;1,400&family=DM+Sans:wght@400;500;600&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#111114;--surface:#1c1c21;--window-bg:#18181d;--title-bg:#222228;
+  --border:#2a2a32;--border-focus:#3a3a48;--text:#d8d8dc;--text-dim:#78787f;
+  --text-faint:#48484f;--green:#4ade80;--cyan:#22d3ee;--amber:#fbbf24;
+  --red:#f87171;--purple:#a78bfa;--blue:#60a5fa;--pink:#f472b6;
+  --dock-bg:rgba(25,25,30,0.92);--dot-color:rgba(255,255,255,0.04);
+  --overlay-subtle:rgba(255,255,255,0.04);--overlay-hover:rgba(255,255,255,0.06);
+  --overlay-strong:rgba(255,255,255,0.08);--overlay-faint:rgba(255,255,255,0.02);
+  --overlay-faintest:rgba(255,255,255,0.03);
+  --shadow-color:rgba(0,0,0,0.5);--shadow-heavy:rgba(0,0,0,0.6);
+  --statusbar-bg:rgba(17,17,20,0.95);
+  --font-mono:'JetBrains Mono',monospace;--font-body:'DM Sans',sans-serif;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font-body);user-select:none}
+
+/* ═══ Scrollbars ═══ */
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--border-focus)}
+::-webkit-scrollbar-corner{background:transparent}
+*{scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+
+/* ═══ Status Bar ═══ */
+#status-bar{position:fixed;top:0;left:0;right:0;height:28px;background:var(--statusbar-bg);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;font-family:var(--font-mono);font-size:11px;z-index:9999;gap:16px}
+#status-bar .left{display:flex;gap:12px;align-items:center}
+#status-bar .right{margin-left:auto;display:flex;gap:12px;align-items:center}
+#status-bar .title{font-weight:600;color:var(--text-dim);letter-spacing:0.5px}
+.status-pill{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:3px;background:var(--overlay-subtle);color:var(--text-dim)}
+.status-dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.status-dot.green{background:var(--green);box-shadow:0 0 4px var(--green)}
+.status-dot.amber{background:var(--amber)}
+.status-dot.red{background:var(--red)}
+#status-bar button{background:none;border:none;color:var(--text-dim);font-family:var(--font-mono);font-size:11px;cursor:pointer;padding:2px 6px;border-radius:3px}
+#status-bar button:hover{background:var(--overlay-strong);color:var(--text)}
+
+/* ═══ Desktop ═══ */
+#desktop{position:fixed;top:28px;left:0;right:0;bottom:48px;background:radial-gradient(circle,var(--dot-color) 1px,transparent 1px);background-size:24px 24px;background-position:12px 12px;overflow:hidden}
+
+/* ═══ Desktop Icons ═══ */
+.desktop-icon{position:absolute;width:72px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:8px 4px;border-radius:6px;transition:background 0.15s}
+.desktop-icon:hover{background:var(--overlay-hover)}
+.desktop-icon .icon-glyph{font-size:32px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.4))}
+.desktop-icon .icon-label{font-family:var(--font-mono);font-size:9px;color:var(--text-dim);text-align:center;line-height:1.2;max-width:68px;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(0,0,0,0.8)}
+.desktop-icon.glow .icon-glyph{animation:icon-glow 0.6s ease-out}
+@keyframes icon-glow{0%{filter:drop-shadow(0 0 8px var(--amber)) drop-shadow(0 2px 4px rgba(0,0,0,0.4))}100%{filter:drop-shadow(0 2px 4px rgba(0,0,0,0.4))}}
+
+/* ═══ Windows ═══ */
+.window{position:absolute;background:var(--window-bg);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 32px var(--shadow-color),0 2px 8px rgba(0,0,0,0.3);display:flex;flex-direction:column;min-width:280px;min-height:180px;overflow:hidden;transition:box-shadow 0.15s}
+.window.focused{border-color:var(--border-focus);box-shadow:0 12px 48px var(--shadow-heavy),0 4px 12px rgba(0,0,0,0.4)}
+.window.minimized{display:none}
+.window-titlebar{height:32px;background:var(--title-bg);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 10px;cursor:grab;flex-shrink:0}
+.window-titlebar:active{cursor:grabbing}
+.window-titlebar .dots{display:flex;gap:6px;margin-right:10px}
+.window-titlebar .dot{width:10px;height:10px;border-radius:50%;border:none;cursor:pointer;transition:filter 0.15s}
+.window-titlebar .dot:hover{filter:brightness(1.3)}
+.dot-close{background:var(--red)}.dot-min{background:var(--amber)}.dot-max{background:var(--green)}
+.window-titlebar .wt{font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--text-dim);flex:1}
+.window-body{flex:1;overflow:auto;position:relative}
+.window .resize-handle{position:absolute;bottom:0;right:0;width:16px;height:16px;cursor:nwse-resize}
+.window .resize-handle::after{content:'';position:absolute;bottom:4px;right:4px;width:8px;height:8px;border-right:2px solid var(--text-faint);border-bottom:2px solid var(--text-faint);opacity:0.5}
+
+/* ═══ Terminal ═══ */
+.terminal-content{padding:0;font-family:var(--font-mono);font-size:12.5px;line-height:1.7;color:var(--text)}
+.tl{padding:2px 14px;white-space:pre-wrap;word-break:break-word;border-left:3px solid transparent}
+.tl-sys{color:var(--text-dim);font-style:italic;padding:2px 14px;border-left-color:transparent;opacity:0.7}
+.tl-think{color:var(--purple);border-left-color:var(--purple);background:rgba(167,139,250,0.04)}
+.tl-tool{color:var(--cyan);border-left-color:var(--cyan);background:rgba(34,211,238,0.04);font-size:11.5px}
+.tl-obs{color:var(--green);border-left-color:var(--green);background:rgba(74,222,128,0.04);font-size:11.5px}
+.tl-reply{color:var(--text);border-left-color:var(--green);background:rgba(74,222,128,0.03);padding:6px 14px}
+.tl-user{padding:6px 14px;background:var(--overlay-faintest);border-left-color:var(--green)}
+.tl-user .pfx{color:var(--green);font-weight:600;margin-right:4px}
+.tl-tg{padding:6px 14px;background:rgba(96,165,250,0.04);border-left-color:var(--blue)}
+.tl-tg .pfx{color:var(--blue);font-weight:600;margin-right:4px}
+.tl-warn{color:var(--amber);font-weight:600;border-left-color:var(--amber);background:rgba(251,191,36,0.04)}
+.tl-err{color:var(--red);border-left-color:var(--red);background:rgba(248,113,113,0.05)}
+.tl-expand{color:var(--cyan);cursor:pointer;font-size:10px;user-select:none;padding:1px 4px;border-radius:3px;background:rgba(34,211,238,0.08)}
+.tl-expand:hover{text-decoration:underline;background:rgba(34,211,238,0.15)}
+.tl-hr{border:none;border-top:1px solid var(--border);margin:4px 14px}
+.term-input{display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--overlay-faint);border-top:1px solid var(--border);position:sticky;bottom:0}
+.term-input .pfx{color:var(--green);font-weight:600}
+.term-input input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-family:var(--font-mono);font-size:12.5px;caret-color:var(--green)}
+.term-input input::placeholder{color:var(--text-faint)}
+.term-input input:disabled{opacity:0.4}
+/* Terminal window special: no padding on body, input sticks to bottom */
+#win-terminal .window-body{display:flex;flex-direction:column}
+#win-terminal .terminal-content{flex:1;overflow-y:auto;padding-top:10px;padding-bottom:4px;-webkit-user-select:text;-moz-user-select:text;-ms-user-select:text;user-select:text;cursor:text}
+#win-terminal .terminal-content,#win-terminal .terminal-content *{-webkit-user-select:text;-moz-user-select:text;-ms-user-select:text;user-select:text}
+#win-terminal .terminal-content::selection,#win-terminal .terminal-content *::selection{background:rgba(34,211,238,0.25)}
+#win-terminal .term-input{flex-shrink:0}
+
+/* ═══ Settings ═══ */
+.settings-body{display:flex;flex-direction:column;overflow:hidden}
+.settings-body h3{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:8px}
+.settings-tabs{display:flex;border-bottom:1px solid var(--border);padding:0 8px;flex-shrink:0}
+.settings-tab{padding:8px 12px;font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;white-space:nowrap}
+.settings-tab:hover{color:var(--text)}
+.settings-tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
+.settings-pane{display:none;padding:16px;flex-direction:column;gap:16px}
+.settings-pane.active{display:flex}
+.sf{display:flex;flex-direction:column;gap:4px}
+.sf label{font-family:var(--font-mono);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px}
+.sf select,.sf input[type=text],.sf input[type=password]{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:7px 10px;color:var(--text);font-family:var(--font-mono);font-size:12px;width:100%}
+.sf select option{background:var(--bg);color:var(--text)}
+.sf select:focus,.sf input:focus{outline:none;border-color:var(--cyan)}
+.sf .hint{font-size:10px;color:var(--text-faint);margin-top:2px}
+.sf-row{display:flex;gap:8px;align-items:end}
+.sf-row .sf{flex:1}
+.btn{font-family:var(--font-mono);font-size:11px;font-weight:600;padding:7px 16px;border-radius:5px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;transition:all 0.15s}
+.btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn-primary{background:var(--green);color:#111;border-color:var(--green)}
+.btn-primary:hover{filter:brightness(1.1);border-color:var(--green)}
+.btn-danger{border-color:var(--red);color:var(--red)}
+.btn-danger:hover{background:rgba(248,113,113,0.1)}
+.provider-cards{display:flex;gap:8px}
+.provider-card{flex:1;padding:10px;border:1px solid var(--border);border-radius:6px;cursor:pointer;text-align:center;transition:all 0.15s}
+.provider-card:hover{border-color:var(--text-dim)}
+.provider-card.selected{border-color:var(--cyan);background:rgba(34,211,238,0.05)}
+.provider-card .pc-name{font-family:var(--font-mono);font-size:11px;font-weight:600;margin-bottom:4px}
+.provider-card .pc-desc{font-size:10px;color:var(--text-faint)}
+
+/* ═══ Inspector ═══ */
+.inspector-tabs{display:flex;border-bottom:1px solid var(--border);padding:0 8px}
+.inspector-tab{padding:8px 14px;font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s}
+.inspector-tab:hover{color:var(--text)}
+.inspector-tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
+.inspector-pane{display:none;padding:12px;height:100%}
+.inspector-pane.active{display:block}
+.inspector-pane textarea{width:100%;height:calc(100% - 40px);background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:10px;color:var(--text);font-family:var(--font-mono);font-size:11px;line-height:1.5;resize:none}
+.inspector-pane textarea:focus{outline:none;border-color:var(--cyan)}
+.inspector-pane pre{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:10px;font-family:var(--font-mono);font-size:10px;line-height:1.4;color:var(--text-dim);overflow:auto;max-height:calc(100% - 40px);white-space:pre-wrap;word-break:break-all}
+.inspector-pane .save-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.inspector-pane .save-bar .lbl{font-family:var(--font-mono);font-size:10px;color:var(--text-faint)}
+
+/* ═══ Log ═══ */
+.log-panel{padding:12px;font-family:var(--font-mono);font-size:10px;line-height:1.5;color:var(--text-dim)}
+.log-entry{padding:4px 0;border-bottom:1px solid var(--overlay-faintest);cursor:pointer;transition:background 0.1s}
+.log-entry:hover{background:var(--overlay-faint)}
+.log-ts{color:var(--text-faint)}.log-action{color:var(--cyan)}.log-result{color:var(--green)}
+.log-toggle{color:var(--cyan);font-size:9px;cursor:pointer;margin-left:4px;user-select:none;padding:1px 4px;border-radius:3px;background:rgba(34,211,238,0.08)}
+.log-toggle:hover{text-decoration:underline;background:rgba(34,211,238,0.15)}
+.log-detail{display:none;padding:8px;margin:4px 0;background:var(--bg);border:1px solid var(--border);border-radius:4px;font-size:9px;white-space:pre-wrap;word-break:break-all;max-height:200px;overflow:auto}
+.log-entry.expanded .log-detail{display:block}
+
+/* ═══ Folder Picker Overlay ═══ */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:10000;align-items:center;justify-content:center}
+.overlay.visible{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border-focus);border-radius:12px;max-width:520px;width:90%;max-height:80vh;overflow:auto;box-shadow:0 24px 64px rgba(0,0,0,0.6)}
+.modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.modal-header h2{font-family:var(--font-mono);font-size:14px;font-weight:600;color:var(--amber)}
+.modal-body{padding:16px 20px}
+.modal-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+.warn-box{background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);border-radius:6px;padding:12px;margin:12px 0;font-size:12px;color:var(--amber);line-height:1.5}
+.warn-box strong{display:block;margin-bottom:4px;font-size:13px}
+
+/* ═══ Dock ═══ */
+#dock{position:fixed;bottom:0;left:0;right:0;height:48px;background:var(--dock-bg);backdrop-filter:blur(12px);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:4px;z-index:9999;padding:0 16px}
+.dock-item{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;font-size:18px;transition:all 0.15s;position:relative}
+.dock-item:hover{background:var(--overlay-strong);transform:translateY(-2px)}
+.dock-item:active{transform:translateY(0)}
+.dock-item.active::after{content:'';position:absolute;bottom:-2px;width:4px;height:4px;border-radius:50%;background:var(--green)}
+.dock-item.locked{opacity:0.25;cursor:not-allowed}
+.dock-item.locked:hover{background:none;transform:none}
+.dock-sep{width:1px;height:24px;background:var(--border);margin:0 4px}
+.dock-tooltip{position:absolute;bottom:44px;background:var(--surface);border:1px solid var(--border);padding:3px 8px;border-radius:4px;font-family:var(--font-mono);font-size:10px;color:var(--text);white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.15s}
+.dock-item:hover .dock-tooltip{opacity:1}
+
+/* ═══ Chapter Guide ═══ */
+#guide-panel{display:none;position:fixed;top:28px;left:0;bottom:48px;width:300px;background:var(--surface);border-right:1px solid var(--border);z-index:500;overflow:hidden;flex-direction:column}
+#guide-panel.visible{display:flex}
+#guide-panel .guide-header{padding:14px 16px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
+#guide-panel .guide-header h2{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-faint);margin-bottom:10px}
+.guide-progress{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.guide-pip{width:8px;height:8px;border-radius:50%;background:var(--border);cursor:pointer;transition:all 0.15s;flex-shrink:0}
+.guide-pip:hover{background:var(--text-dim)}
+.guide-pip.done{background:var(--green)}
+.guide-pip.current{background:var(--cyan);box-shadow:0 0 6px var(--cyan)}
+.guide-body{flex:1;overflow-y:auto;padding:16px}
+.ch-content{display:none;font-size:12.5px;line-height:1.7;color:var(--text-dim)}
+.ch-content.active{display:block}
+.ch-content h3{font-family:var(--font-mono);font-size:13px;font-weight:600;color:var(--text);margin:0 0 12px 0}
+.ch-content p{margin-bottom:12px}
+.ch-content code{background:var(--bg);padding:1px 5px;border-radius:3px;font-family:var(--font-mono);font-size:11px;color:var(--cyan)}
+.ch-content .concept{background:rgba(34,211,238,0.06);border:1px solid rgba(34,211,238,0.15);border-radius:6px;padding:10px 12px;margin:12px 0;font-size:12px;line-height:1.6}
+.ch-content .concept strong{color:var(--cyan);display:block;margin-bottom:4px;font-size:11px;text-transform:uppercase;letter-spacing:0.3px}
+.ch-content .task{background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.15);border-radius:6px;padding:10px 12px;margin:12px 0;font-size:12px;line-height:1.6}
+.ch-content .task strong{color:var(--green);display:block;margin-bottom:4px;font-size:11px;text-transform:uppercase;letter-spacing:0.3px}
+.ch-content .task ol,.ch-content .task ul{margin:6px 0 0 16px}
+.ch-content .task li{margin-bottom:4px}
+.ch-content .hint{background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.15);border-radius:6px;padding:10px 12px;margin:12px 0;font-size:11px;line-height:1.5;color:var(--text-dim)}
+.ch-content .hint strong{color:var(--amber);display:block;margin-bottom:4px;font-size:10px;text-transform:uppercase;letter-spacing:0.3px}
+.guide-footer{padding:10px 16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:relative}
+.guide-nav{display:flex;gap:6px;align-items:center}
+.guide-btn{font-family:var(--font-mono);font-size:10px;padding:5px 12px;border-radius:4px;border:1px solid var(--border);background:var(--surface);color:var(--text-dim);cursor:pointer;transition:all 0.15s}
+.guide-btn:hover{border-color:var(--cyan);color:var(--text)}
+.guide-btn:disabled{opacity:0.3;cursor:not-allowed}
+.guide-btn:disabled:hover{border-color:var(--border);color:var(--text-dim)}
+.guide-btn-idx{font-size:9px;padding:5px 8px}
+.guide-pos{font-family:var(--font-mono);font-size:10px;color:var(--text-faint)}
+.guide-resize{position:absolute;top:0;right:0;width:5px;height:100%;cursor:ew-resize;z-index:2}
+.guide-resize:hover,.guide-resize.dragging{background:var(--cyan);opacity:0.3}
+
+/* ═══ Splash ═══ */
+#splash{position:fixed;inset:0;background:var(--bg);z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px}
+#splash.hidden{display:none}
+#splash h1{font-family:var(--font-mono);font-size:20px;font-weight:600;color:var(--text);letter-spacing:-0.5px}
+#splash h1 span{color:var(--text-faint);font-weight:300}
+#splash .sub{font-size:13px;color:var(--text-dim);text-align:center;line-height:1.5;max-width:420px}
+#splash .sub em{color:var(--text-faint);font-style:italic;display:block;margin-top:8px;font-size:11px}
+#splash .start-btn{margin-top:12px}
+.splash-subtitle{font-family:var(--font-mono);font-size:12px;color:var(--amber);letter-spacing:1px}
+.splash-state{display:none;flex-direction:column;align-items:center;gap:16px}
+.splash-state.active{display:flex}
+.unlock-form{display:flex;gap:8px;align-items:center}
+.unlock-form input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:9px 14px;color:var(--text);font-family:var(--font-mono);font-size:13px;width:240px;text-align:center;letter-spacing:1px}
+.unlock-form input:focus{outline:none;border-color:var(--cyan)}
+.unlock-form input::placeholder{color:var(--text-faint);letter-spacing:0}
+#unlock-error{color:var(--red);font-family:var(--font-mono);font-size:11px;height:16px}
+.splash-reset{font-family:var(--font-mono);font-size:10px;color:var(--text-faint);background:none;border:none;cursor:pointer;margin-top:4px;text-decoration:underline;text-underline-offset:2px}
+.splash-reset:hover{color:var(--text-dim)}
+@keyframes pulse-dot{0%,100%{opacity:0.3}50%{opacity:1}}
+.loading-dots span{animation:pulse-dot 1.2s ease-in-out infinite;display:inline-block}
+.loading-dots span:nth-child(2){animation-delay:0.2s}
+.loading-dots span:nth-child(3){animation-delay:0.4s}
+
+/* ═══ Security section ═══ */
+.security-section{}
+.security-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0}
+.security-row .sec-label{font-size:12px;color:var(--text-dim)}
+.security-row .sec-value{font-family:var(--font-mono);font-size:11px;color:var(--green)}
+.passphrase-form{display:flex;gap:8px;margin-top:8px}
+.passphrase-form input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:7px 10px;color:var(--text);font-family:var(--font-mono);font-size:12px}
+.passphrase-form input:focus{outline:none;border-color:var(--cyan)}
+
+/* ═══ Terminal Confirm Buttons ═══ */
+.term-confirm{display:inline-flex;gap:6px;margin-left:8px}
+.term-confirm button{font-family:var(--font-mono);font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid var(--border);cursor:pointer;transition:all 0.15s}
+.term-confirm .tc-allow{background:rgba(74,222,128,0.15);color:var(--green);border-color:var(--green)}
+.term-confirm .tc-allow:hover{background:rgba(74,222,128,0.3)}
+.term-confirm .tc-deny{background:rgba(248,113,113,0.1);color:var(--red);border-color:var(--red)}
+.term-confirm .tc-deny:hover{background:rgba(248,113,113,0.25)}
+
+/* ═══ File Browser ═══ */
+.fb-breadcrumb{display:flex;align-items:center;gap:2px;padding:6px 10px;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:10px;color:var(--text-faint);flex-shrink:0;flex-wrap:wrap;min-height:28px}
+.fb-crumb{color:var(--text-dim);cursor:pointer;padding:1px 4px;border-radius:3px;transition:background 0.1s}
+.fb-crumb:hover{background:var(--overlay-hover);color:var(--text)}
+.fb-crumb.current{color:var(--text);cursor:default}
+.fb-crumb.current:hover{background:none}
+.fb-sep{color:var(--text-faint);font-size:9px;margin:0 1px}
+.file-entry{display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-family:var(--font-mono);font-size:11px;color:var(--text-dim);transition:background 0.1s}
+.file-entry:hover{background:var(--overlay-subtle)}
+.file-entry .fe-icon{font-size:14px;width:20px;text-align:center}
+.file-entry .fe-name{flex:1}
+.file-entry .fe-size{font-size:9px;color:var(--text-faint)}
+.file-tree-dir{padding-left:16px}
+
+/* ═══ Memory Viewer ═══ */
+.memory-entries{padding:12px}
+.memory-entry{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 10px;border:1px solid var(--border);border-radius:6px;margin-bottom:6px;font-family:var(--font-mono);font-size:11px;transition:border-color 0.3s}
+.memory-entry .me-key{color:var(--cyan);font-weight:600;min-width:80px}
+.memory-entry .me-val{color:var(--text-dim);flex:1;margin-left:12px;word-break:break-word}
+.memory-entry.pulse{border-color:var(--amber);animation:mem-pulse 0.6s ease-out}
+@keyframes mem-pulse{0%{border-color:var(--amber);box-shadow:0 0 8px rgba(251,191,36,0.3)}100%{border-color:var(--border);box-shadow:none}}
+
+/* ═══ Skill Cards ═══ */
+.skill-cards{padding:12px;display:flex;flex-direction:column;gap:8px}
+.skill-card{padding:10px 12px;border:1px solid var(--border);border-radius:6px;transition:border-color 0.15s}
+.skill-card:hover{border-color:var(--border-focus)}
+.skill-card.dynamic{border-color:rgba(251,191,36,0.3)}
+.skill-card .sc-header{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.skill-card .sc-name{font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--text)}
+.skill-card .sc-badge{font-family:var(--font-mono);font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(34,211,238,0.1);color:var(--cyan)}
+.skill-card .sc-desc{font-size:11px;color:var(--text-dim);line-height:1.4}
+.skill-card .sc-tools{margin-top:6px;font-family:var(--font-mono);font-size:9px;color:var(--text-faint)}
+
+/* ═══ Routing Panel ═══ */
+.routing-section{padding:12px;display:flex;flex-direction:column;gap:12px}
+.route-row{display:flex;align-items:center;gap:10px;padding:6px 0}
+.route-row .rr-label{font-family:var(--font-mono);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;width:90px}
+.route-row select{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:5px 8px;color:var(--text);font-family:var(--font-mono);font-size:11px;flex:1}
+.route-row select:focus{outline:none;border-color:var(--cyan)}
+.model-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:3px;font-family:var(--font-mono);font-size:9px;background:var(--overlay-subtle);color:var(--text-dim)}
+.model-badge .mb-dot{width:5px;height:5px;border-radius:50%}
+.routing-stats{display:flex;flex-direction:column;gap:4px;padding:8px;background:var(--bg);border-radius:6px;border:1px solid var(--border)}
+.routing-stats .rs-row{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:9px;color:var(--text-faint)}
+.routing-stats .rs-val{color:var(--text-dim)}
+
+/* ═══ Skill Approval Overlay ═══ */
+.skill-preview{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px;margin:12px 0;font-family:var(--font-mono);font-size:11px;max-height:200px;overflow:auto}
+.skill-preview .sp-name{color:var(--amber);font-weight:600;font-size:13px;margin-bottom:6px}
+.skill-preview .sp-desc{color:var(--text-dim);margin-bottom:8px}
+.skill-preview .sp-code{color:var(--cyan);white-space:pre-wrap;font-size:10px;line-height:1.4}
+
+/* ═══ Toggle Switch ═══ */
+.toggle{position:relative;width:36px;height:20px;cursor:pointer}
+.toggle input{opacity:0;width:0;height:0}
+.toggle .slider{position:absolute;inset:0;background:var(--border);border-radius:10px;transition:background 0.2s}
+.toggle .slider::before{content:'';position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:var(--text-dim);border-radius:50%;transition:transform 0.2s}
+.toggle input:checked+.slider{background:var(--green)}
+.toggle input:checked+.slider::before{transform:translateX(16px);background:var(--bg)}
+
+/* Safety tab: red toggles (enabled = dangerous) */
+#stab-safety .toggle input:checked+.slider{background:var(--red)}
+
+/* Hazard stripes around hide-badge row */
+.safety-hazard{position:relative;padding:10px 12px;border-radius:6px;border:1px solid rgba(248,113,113,0.3);background:repeating-linear-gradient(-45deg,rgba(248,113,113,0.04),rgba(248,113,113,0.04) 8px,transparent 8px,transparent 16px)}
+.safety-hazard::before{content:'';position:absolute;inset:0;border-radius:6px;border:1px dashed rgba(248,113,113,0.25);pointer-events:none}
+
+/* ═══ Scheduler ═══ */
+.scheduler-header{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border)}
+.scheduler-list{padding:12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+.sched-card{padding:10px 12px;border:1px solid var(--border);border-radius:6px;transition:border-color 0.15s}
+.sched-card:hover{border-color:var(--border-focus)}
+.sched-card.disabled{opacity:0.45}
+.sched-card .sc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.sched-card .sc-name{font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--text)}
+.sched-card .sc-interval{font-family:var(--font-mono);font-size:10px;color:var(--amber);padding:1px 6px;border-radius:3px;background:rgba(251,191,36,0.1)}
+.sched-card .sc-prompt{font-family:var(--font-mono);font-size:11px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
+.sched-card .sc-meta{font-family:var(--font-mono);font-size:9px;color:var(--text-faint);margin-bottom:6px}
+.sched-card .sc-actions{display:flex;align-items:center;justify-content:space-between}
+.sched-card .sc-delete{background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:3px;transition:background 0.15s}
+.sched-card .sc-delete:hover{background:rgba(248,113,113,0.15)}
+.toggle-sm{width:28px;height:16px}
+.toggle-sm .slider::before{height:10px;width:10px;left:3px;bottom:3px}
+.toggle-sm input:checked+.slider::before{transform:translateX(12px)}
+
+/* ═══ Editor ═══ */
+.editor-toolbar{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:11px}
+.editor-filename{flex:1;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.editor-dirty{color:var(--amber);font-size:9px}
+#editor-content{flex:1;width:100%;background:var(--bg);border:none;border-radius:0;padding:10px;color:var(--text);font-family:var(--font-mono);font-size:11px;line-height:1.5;resize:none;outline:none}
+
+/* ═══ Trash ═══ */
+.trash-footer{padding:8px 10px;border-top:1px solid var(--border);display:flex;justify-content:flex-end}
+.trash-entry{display:flex;align-items:center;gap:8px;padding:5px 12px;font-family:var(--font-mono);font-size:11px;color:var(--text-dim)}
+.trash-entry .te-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trash-entry .btn{padding:2px 8px;font-size:10px}
+
+/* ═══ Context Menu ═══ */
+.ctx-menu{position:fixed;z-index:9999;background:var(--surface);border:1px solid var(--border-focus);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,0.5);min-width:160px;padding:4px 0;font-family:var(--font-mono);font-size:11px}
+.ctx-item{display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;color:var(--text-dim);transition:background 0.1s}
+.ctx-item:hover{background:var(--overlay-hover);color:var(--text)}
+.ctx-item.danger{color:var(--red)}
+.ctx-item.danger:hover{background:rgba(248,113,113,0.1)}
+.ctx-divider{height:1px;background:var(--border);margin:4px 0}
+
+/* Submenu arrow */
+.ctx-has-sub{justify-content:space-between}
+.ctx-has-sub::after{content:'▸';color:var(--text-faint);font-size:10px}
+.ctx-has-sub:hover::after{color:var(--text)}
+
+/* Submenu container */
+.ctx-submenu{display:none;position:absolute;background:var(--surface);border:1px solid var(--border-focus);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,0.5);min-width:160px;padding:4px 0;font-family:var(--font-mono);font-size:11px;z-index:10000}
+.ctx-submenu.visible{display:block}
+
+/* ═══ Terminal: Scheduler ═══ */
+.tl-sched{padding:6px 14px;background:rgba(251,191,36,0.04);border-left-color:var(--amber)}
+.tl-sched .pfx{color:var(--amber);font-weight:600;margin-right:4px}
+
+/* ═══ Appearance Section Label ═══ */
+.appearance-section-label{font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-faint);margin:12px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+
+/* ═══ Theme / Wallpaper Cards ═══ */
+.theme-cards,.wallpaper-cards{display:flex;gap:8px;flex-wrap:wrap}
+.theme-card,.wallpaper-card{width:72px;cursor:pointer;text-align:center;border:1px solid var(--border);border-radius:6px;padding:6px;transition:all 0.15s}
+.theme-card:hover,.wallpaper-card:hover{border-color:var(--text-dim)}
+.theme-card.selected,.wallpaper-card.selected{border-color:var(--cyan);background:var(--overlay-subtle)}
+.tc-swatch{width:60px;height:40px;border-radius:4px;margin:0 auto 4px;border:1px solid var(--border);position:relative;overflow:hidden}
+.tc-accents{position:absolute;bottom:3px;left:0;right:0;display:flex;justify-content:center;gap:4px}
+.tc-accents span{width:6px;height:6px;border-radius:50%;border:1px solid rgba(0,0,0,0.25)}
+.wc-swatch{width:60px;height:40px;border-radius:4px;margin:0 auto 4px;border:1px solid var(--border)}
+.tc-name,.wc-name{font-family:var(--font-mono);font-size:9px;color:var(--text-dim);line-height:1.2}
+.wp-action-card{border-style:dashed !important;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.wp-action-card .wc-swatch{border-style:dashed;display:flex;align-items:center;justify-content:center;font-size:18px;background:var(--overlay-faint)}
+.wp-action-card input[type=color]{position:absolute;opacity:0;width:0;height:0;pointer-events:none}
+.custom-theme-row{display:flex;align-items:center;gap:10px;padding:4px 0}
+.custom-theme-row label{font-family:var(--font-mono);font-size:10px;color:var(--text-dim);width:80px}
+.custom-theme-row input[type=color]{width:32px;height:24px;border:1px solid var(--border);border-radius:4px;background:var(--bg);cursor:pointer;padding:0}
+
+/* ═══ Chrome Style Cards ═══ */
+.chrome-cards{display:flex;gap:8px;flex-wrap:wrap}
+.chrome-card{width:72px;cursor:pointer;text-align:center;border:1px solid var(--border);border-radius:6px;padding:6px;transition:all 0.15s}
+.chrome-card:hover{border-color:var(--text-dim)}
+.chrome-card.selected{border-color:var(--cyan);background:var(--overlay-subtle)}
+.cc-preview{width:60px;height:40px;border-radius:4px;margin:0 auto 4px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--overlay-faint)}
+.cc-name{font-family:var(--font-mono);font-size:9px;color:var(--text-dim);line-height:1.2}
+
+/* ═══════════════════════════════════════════
+   GCU95 Chrome — all structural overrides
+   ═══════════════════════════════════════════ */
+
+/* Windows */
+body.chrome-gcu95 .window{border-radius:0;border:2px outset var(--border-focus);box-shadow:1px 1px 0 var(--shadow-color)}
+body.chrome-gcu95 .window.focused{border-color:var(--border-focus);box-shadow:2px 2px 0 var(--shadow-color)}
+
+/* Titlebar */
+body.chrome-gcu95 .window-titlebar{border-radius:0}
+body.chrome-gcu95 .window.focused .window-titlebar{background:linear-gradient(90deg,var(--cyan),var(--title-bg))}
+body.chrome-gcu95 .window.focused .wt{color:var(--bg);font-weight:700}
+
+/* Dots → Win95 buttons (move right, square, with glyphs) */
+body.chrome-gcu95 .window-titlebar .dots{order:1;margin-left:auto;margin-right:0;gap:2px}
+body.chrome-gcu95 .window-titlebar .wt{order:0}
+body.chrome-gcu95 .dot{width:16px;height:14px;border-radius:0;background:var(--surface);border:2px outset var(--border-focus);display:flex;align-items:center;justify-content:center;font-size:0}
+body.chrome-gcu95 .dot-close{background:var(--surface)}
+body.chrome-gcu95 .dot-min{background:var(--surface)}
+body.chrome-gcu95 .dot-max{background:var(--surface)}
+body.chrome-gcu95 .dot:hover{filter:brightness(1.1)}
+body.chrome-gcu95 .dot-close::after{content:'\00d7';font-size:12px;font-weight:700;color:var(--text);line-height:1}
+body.chrome-gcu95 .dot-min::after{content:'_';font-size:11px;font-weight:700;color:var(--text);line-height:1;margin-top:-4px}
+body.chrome-gcu95 .dot-max::after{content:'\25a1';font-size:10px;color:var(--text);line-height:1}
+
+/* Dock → Taskbar */
+body.chrome-gcu95 #dock{justify-content:flex-start;backdrop-filter:none;border-top:2px outset var(--border-focus);border-radius:0}
+body.chrome-gcu95 .dock-item{width:auto;height:32px;border-radius:0;border:2px outset var(--border-focus);padding:0 8px;gap:4px;font-size:14px}
+body.chrome-gcu95 .dock-item:hover{transform:none;background:var(--overlay-hover)}
+body.chrome-gcu95 .dock-item:active{transform:none}
+body.chrome-gcu95 .dock-item.active{border-style:inset;background:var(--overlay-strong)}
+body.chrome-gcu95 .dock-item.active::after{display:none}
+body.chrome-gcu95 .dock-tooltip{position:static;opacity:1;background:none;border:none;padding:0;font-family:var(--font-mono);font-size:10px;color:var(--text-dim);pointer-events:auto}
+body.chrome-gcu95 .dock-sep{height:28px;margin:0 2px}
+
+/* Status bar */
+body.chrome-gcu95 #status-bar{backdrop-filter:none;border-bottom:2px outset var(--border-focus)}
+body.chrome-gcu95 .status-pill{border-radius:0;border:1px inset var(--border)}
+
+/* Resize handle */
+body.chrome-gcu95 .window .resize-handle::after{border:none;width:10px;height:10px;bottom:2px;right:2px;background:radial-gradient(circle,var(--text-faint) 1px,transparent 1px);background-size:4px 4px}
+
+/* Scrollbars */
+body.chrome-gcu95 ::-webkit-scrollbar{width:16px;height:16px}
+body.chrome-gcu95 ::-webkit-scrollbar-track{background:var(--surface);border:1px inset var(--border)}
+body.chrome-gcu95 ::-webkit-scrollbar-thumb{background:var(--surface);border:2px outset var(--border-focus);border-radius:0}
+body.chrome-gcu95 ::-webkit-scrollbar-thumb:hover{background:var(--overlay-hover)}
+body.chrome-gcu95 ::-webkit-scrollbar-corner{background:var(--surface)}
+
+/* Buttons */
+body.chrome-gcu95 .btn{border-radius:0;border:2px outset var(--border-focus)}
+body.chrome-gcu95 .btn:active{border-style:inset}
+body.chrome-gcu95 .btn-primary{border:2px outset var(--green)}
+body.chrome-gcu95 .btn-primary:active{border-style:inset}
+body.chrome-gcu95 .btn-danger{border:2px outset var(--red)}
+body.chrome-gcu95 .btn-danger:active{border-style:inset}
+
+/* Modals & context menu */
+body.chrome-gcu95 .modal{border-radius:0;border:2px outset var(--border-focus)}
+body.chrome-gcu95 .ctx-menu,body.chrome-gcu95 .ctx-submenu{border-radius:0;border:2px outset var(--border-focus)}
+
+/* Provider cards */
+body.chrome-gcu95 .provider-card{border-radius:0;border:2px outset var(--border-focus)}
+body.chrome-gcu95 .provider-card.selected{border-style:inset;border-color:var(--cyan)}
+
+/* Theme/wallpaper/chrome cards */
+body.chrome-gcu95 .theme-card,body.chrome-gcu95 .wallpaper-card,body.chrome-gcu95 .chrome-card{border-radius:0;border:2px outset var(--border-focus)}
+body.chrome-gcu95 .theme-card.selected,body.chrome-gcu95 .wallpaper-card.selected,body.chrome-gcu95 .chrome-card.selected{border-style:inset;border-color:var(--cyan)}
+body.chrome-gcu95 .tc-swatch,body.chrome-gcu95 .wc-swatch,body.chrome-gcu95 .cc-preview{border-radius:0}
+
+/* Inputs & toggles */
+body.chrome-gcu95 .sf select,body.chrome-gcu95 .sf input[type=text],body.chrome-gcu95 .sf input[type=password]{border-radius:0;border:2px inset var(--border)}
+body.chrome-gcu95 .toggle .slider{border-radius:0}
+body.chrome-gcu95 .toggle .slider::before{border-radius:0}
+body.chrome-gcu95 .inspector-pane textarea{border-radius:0}
+body.chrome-gcu95 .inspector-pane pre{border-radius:0}
+
+/* Desktop icon */
+body.chrome-gcu95 .desktop-icon{border-radius:0}
+
+/* Skill/sched cards */
+body.chrome-gcu95 .skill-card,body.chrome-gcu95 .sched-card,body.chrome-gcu95 .memory-entry{border-radius:0}
+
+/* Settings tabs & inspector tabs */
+body.chrome-gcu95 .settings-tab{border-bottom-width:2px}
+body.chrome-gcu95 .inspector-tab{border-bottom-width:2px}
+
+/* Splash */
+body.chrome-gcu95 .unlock-form input{border-radius:0}
+
+/* Guide panel */
+body.chrome-gcu95 .guide-pip{border-radius:0}
+body.chrome-gcu95 .guide-btn{border-radius:0}
+body.chrome-gcu95 .ch-content .concept,body.chrome-gcu95 .ch-content .task,body.chrome-gcu95 .ch-content .hint{border-radius:0}
+
+/* Warn box */
+body.chrome-gcu95 .warn-box{border-radius:0}
+
+/* ═══════════════════════════════════════════
+   Luna Chrome — XP / Redmond style
+   ═══════════════════════════════════════════ */
+
+/* Windows */
+body.chrome-luna .window{border-radius:4px;border:1px solid var(--border);box-shadow:2px 2px 8px var(--shadow-color)}
+body.chrome-luna .window.focused{box-shadow:2px 2px 12px var(--shadow-heavy)}
+
+/* Titlebar */
+body.chrome-luna .window-titlebar{height:36px;border-radius:4px 4px 0 0}
+body.chrome-luna .window.focused .window-titlebar{background:linear-gradient(180deg,#0A246A 0%,#0054E3 10%,#0A6AFF 50%,#0054E3 90%,#0A246A 100%)}
+body.chrome-luna .window.focused .wt{color:#FFFFFF;font-weight:700}
+
+/* Dots → XP buttons (right side, colored squares) */
+body.chrome-luna .window-titlebar .dots{order:1;margin-left:auto;margin-right:0;gap:2px}
+body.chrome-luna .window-titlebar .wt{order:0}
+body.chrome-luna .dot{width:20px;height:18px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:0;border:1px solid rgba(0,0,0,0.3);background:linear-gradient(180deg,rgba(255,255,255,0.3),rgba(0,0,0,0.1))}
+body.chrome-luna .dot-close{background:linear-gradient(180deg,#E5815A,#C53A1D);border-color:#8C2E16}
+body.chrome-luna .dot-min{background:linear-gradient(180deg,#468FD7,#2066B0);border-color:#1A4D80}
+body.chrome-luna .dot-max{background:linear-gradient(180deg,#468FD7,#2066B0);border-color:#1A4D80}
+body.chrome-luna .dot:hover{filter:brightness(1.2)}
+body.chrome-luna .dot-close::after{content:'\00d7';font-size:13px;font-weight:700;color:#FFFFFF;line-height:1}
+body.chrome-luna .dot-min::after{content:'_';font-size:11px;font-weight:700;color:#FFFFFF;line-height:1;margin-top:-4px}
+body.chrome-luna .dot-max::after{content:'\25a1';font-size:10px;color:#FFFFFF;line-height:1}
+
+/* Dock → XP Taskbar */
+body.chrome-luna #dock{justify-content:flex-start;backdrop-filter:none;border-top:none;background:linear-gradient(180deg,#245EDC 0%,#3C8CF4 10%,#245EDC 90%,#1941A5 100%)}
+body.chrome-luna .dock-item{width:auto;height:32px;border-radius:4px;padding:0 8px;gap:4px;font-size:14px;border:1px solid rgba(255,255,255,0.15)}
+body.chrome-luna .dock-item:hover{transform:none;background:rgba(255,255,255,0.15)}
+body.chrome-luna .dock-item:active{transform:none}
+body.chrome-luna .dock-item.active{background:rgba(0,0,0,0.2);border-color:rgba(0,0,0,0.3)}
+body.chrome-luna .dock-item.active::after{display:none}
+body.chrome-luna .dock-tooltip{position:static;opacity:1;background:none;border:none;padding:0;font-family:var(--font-mono);font-size:10px;color:#FFFFFF;pointer-events:auto}
+body.chrome-luna .dock-sep{height:28px;margin:0 4px;background:rgba(255,255,255,0.2)}
+
+/* Status bar */
+body.chrome-luna #status-bar{backdrop-filter:none;background:linear-gradient(180deg,#245EDC,#1941A5);border-bottom:1px solid #0A246A}
+body.chrome-luna #status-bar .title,body.chrome-luna #status-bar button{color:rgba(255,255,255,0.8)}
+body.chrome-luna .status-pill{border-radius:2px;border:1px solid rgba(255,255,255,0.15);background:rgba(0,0,0,0.15);color:rgba(255,255,255,0.8)}
+
+/* Scrollbars */
+body.chrome-luna ::-webkit-scrollbar{width:17px;height:17px}
+body.chrome-luna ::-webkit-scrollbar-track{background:var(--surface)}
+body.chrome-luna ::-webkit-scrollbar-thumb{background:var(--surface);border:1px solid var(--border);border-radius:2px}
+body.chrome-luna ::-webkit-scrollbar-thumb:hover{background:var(--overlay-hover)}
+
+/* Buttons */
+body.chrome-luna .btn{border-radius:3px}
+body.chrome-luna .btn-primary{border-radius:3px}
+
+/* Resize handle */
+body.chrome-luna .window .resize-handle::after{border-radius:0}
+
+/* Cards */
+body.chrome-luna .provider-card{border-radius:4px}
+body.chrome-luna .theme-card,body.chrome-luna .wallpaper-card,body.chrome-luna .chrome-card{border-radius:4px}
+body.chrome-luna .tc-swatch,body.chrome-luna .wc-swatch,body.chrome-luna .cc-preview{border-radius:3px}
+
+/* ═══════════════════════════════════════════
+   Guru Chrome — Amiga style
+   ═══════════════════════════════════════════ */
+
+/* Windows */
+body.chrome-guru .window{border-radius:0;border:2px solid var(--border);box-shadow:none}
+body.chrome-guru .window.focused{border-color:var(--border-focus);box-shadow:none}
+
+/* Titlebar — Amiga stripe pattern on unfocused, solid block behind title text */
+body.chrome-guru .window-titlebar{height:28px;border-radius:0;border-bottom:2px solid var(--border);background:repeating-linear-gradient(90deg,var(--title-bg) 0px,var(--title-bg) 3px,var(--window-bg) 3px,var(--window-bg) 6px)}
+body.chrome-guru .window-titlebar .wt{background:var(--window-bg);padding:0 6px;color:var(--text)}
+body.chrome-guru .window.focused .window-titlebar{background:var(--title-bg)}
+body.chrome-guru .window.focused .wt{background:var(--title-bg);color:#FFFFFF;font-weight:700}
+
+/* Dots → Amiga gadgets */
+body.chrome-guru .window-titlebar .dots{gap:0}
+body.chrome-guru .dot{width:20px;height:18px;border-radius:0;border:2px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:0}
+body.chrome-guru .dot-close{background:var(--surface)}
+body.chrome-guru .dot-min{background:var(--surface)}
+body.chrome-guru .dot-max{background:var(--surface)}
+body.chrome-guru .dot:hover{filter:brightness(1.2)}
+body.chrome-guru .dot-close::after{content:'\25CF';font-size:8px;color:var(--text);line-height:1}
+body.chrome-guru .dot-min::after{content:'\25BC';font-size:7px;color:var(--text);line-height:1}
+body.chrome-guru .dot-max::after{content:'\25B2';font-size:7px;color:var(--text);line-height:1}
+
+/* Dock → Amiga taskbar */
+body.chrome-guru #dock{justify-content:flex-start;backdrop-filter:none;border-top:2px solid var(--border);border-radius:0}
+body.chrome-guru .dock-item{width:auto;height:30px;border-radius:0;padding:0 8px;gap:4px;font-size:14px;border:2px solid var(--border)}
+body.chrome-guru .dock-item:hover{transform:none;background:var(--overlay-hover)}
+body.chrome-guru .dock-item:active{transform:none}
+body.chrome-guru .dock-item.active{background:var(--overlay-strong)}
+body.chrome-guru .dock-item.active::after{display:none}
+body.chrome-guru .dock-tooltip{position:static;opacity:1;background:none;border:none;padding:0;font-family:var(--font-mono);font-size:10px;color:var(--text);pointer-events:auto}
+body.chrome-guru .dock-sep{height:24px;margin:0 2px}
+
+/* Status bar */
+body.chrome-guru #status-bar{backdrop-filter:none;border-bottom:2px solid var(--border)}
+body.chrome-guru .status-pill{border-radius:0;border:1px solid var(--border)}
+
+/* Resize handle */
+body.chrome-guru .window .resize-handle::after{border:none;width:10px;height:10px;bottom:2px;right:2px;background:repeating-linear-gradient(45deg,var(--text-faint),var(--text-faint) 1px,transparent 1px,transparent 3px)}
+
+/* Scrollbars — wide & flat */
+body.chrome-guru ::-webkit-scrollbar{width:18px;height:18px}
+body.chrome-guru ::-webkit-scrollbar-track{background:var(--window-bg);border:1px solid var(--border)}
+body.chrome-guru ::-webkit-scrollbar-thumb{background:var(--surface);border:2px solid var(--border);border-radius:0}
+body.chrome-guru ::-webkit-scrollbar-thumb:hover{background:var(--overlay-hover)}
+body.chrome-guru ::-webkit-scrollbar-corner{background:var(--window-bg)}
+
+/* Buttons */
+body.chrome-guru .btn{border-radius:0;border:2px solid var(--border)}
+body.chrome-guru .btn:active{background:var(--overlay-strong)}
+body.chrome-guru .btn-primary{border:2px solid var(--green)}
+body.chrome-guru .btn-danger{border:2px solid var(--red)}
+
+/* Modals & context menu */
+body.chrome-guru .modal{border-radius:0;border:2px solid var(--border)}
+body.chrome-guru .ctx-menu,body.chrome-guru .ctx-submenu{border-radius:0;border:2px solid var(--border)}
+
+/* Cards */
+body.chrome-guru .provider-card{border-radius:0;border:2px solid var(--border)}
+body.chrome-guru .provider-card.selected{border-color:var(--cyan)}
+body.chrome-guru .theme-card,body.chrome-guru .wallpaper-card,body.chrome-guru .chrome-card{border-radius:0;border:2px solid var(--border)}
+body.chrome-guru .theme-card.selected,body.chrome-guru .wallpaper-card.selected,body.chrome-guru .chrome-card.selected{border-color:var(--cyan)}
+body.chrome-guru .tc-swatch,body.chrome-guru .wc-swatch,body.chrome-guru .cc-preview{border-radius:0}
+
+/* Inputs & toggles */
+body.chrome-guru .sf select,body.chrome-guru .sf input[type=text],body.chrome-guru .sf input[type=password]{border-radius:0;border:2px solid var(--border)}
+body.chrome-guru .toggle .slider{border-radius:0}
+body.chrome-guru .toggle .slider::before{border-radius:0}
+body.chrome-guru .inspector-pane textarea{border-radius:0}
+body.chrome-guru .inspector-pane pre{border-radius:0}
+
+/* Desktop icon */
+body.chrome-guru .desktop-icon{border-radius:0}
+
+/* Misc */
+body.chrome-guru .skill-card,body.chrome-guru .sched-card,body.chrome-guru .memory-entry{border-radius:0}
+body.chrome-guru .guide-pip{border-radius:0}
+body.chrome-guru .guide-btn{border-radius:0}
+body.chrome-guru .ch-content .concept,body.chrome-guru .ch-content .task,body.chrome-guru .ch-content .hint{border-radius:0}
+body.chrome-guru .warn-box{border-radius:0}
+body.chrome-guru .unlock-form input{border-radius:0}
+
+/* ═══════════════════════════════════════════
+   Slab Chrome — clean, minimal, geometric
+   ═══════════════════════════════════════════ */
+
+/* Windows */
+body.chrome-slab .window{border-radius:0;border:2px solid var(--border);box-shadow:3px 3px 0 var(--shadow-color)}
+body.chrome-slab .window.focused{border-color:var(--border-focus);box-shadow:4px 4px 0 var(--shadow-heavy)}
+
+/* Titlebar — taller, centered title, clean */
+body.chrome-slab .window-titlebar{height:36px;border-radius:0;border-bottom:2px solid var(--border);background:var(--title-bg)}
+body.chrome-slab .window-titlebar .wt{text-align:center}
+body.chrome-slab .window.focused .wt{color:#000000;font-weight:700}
+
+/* Dots → only close visible (square), hide min/max */
+body.chrome-slab .dot{width:14px;height:14px;border-radius:0;border:2px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:0}
+body.chrome-slab .dot-close{background:var(--surface)}
+body.chrome-slab .dot-min{width:10px;height:10px;opacity:0.4;background:var(--surface)}
+body.chrome-slab .dot-max{width:10px;height:10px;opacity:0.4;background:var(--surface)}
+body.chrome-slab .dot:hover{filter:brightness(1.2)}
+body.chrome-slab .dot-close::after{content:'\00d7';font-size:11px;font-weight:700;color:var(--text);line-height:1}
+body.chrome-slab .dot-min::after{content:'';font-size:0}
+body.chrome-slab .dot-max::after{content:'';font-size:0}
+
+/* Dock — bottom centered, no labels, more icon-focused */
+body.chrome-slab #dock{backdrop-filter:none;border-top:2px solid var(--border);border-radius:0}
+body.chrome-slab .dock-item{width:36px;height:36px;border-radius:0;border:1px solid var(--border);font-size:18px}
+body.chrome-slab .dock-item:hover{transform:none;background:var(--overlay-hover)}
+body.chrome-slab .dock-item:active{transform:none}
+body.chrome-slab .dock-item.active{background:var(--overlay-strong)}
+body.chrome-slab .dock-item.active::after{display:none;border-radius:0}
+body.chrome-slab .dock-sep{height:28px;margin:0 4px}
+
+/* Status bar */
+body.chrome-slab #status-bar{backdrop-filter:none;border-bottom:2px solid var(--border)}
+body.chrome-slab .status-pill{border-radius:0;border:1px solid var(--border)}
+
+/* Resize handle */
+body.chrome-slab .window .resize-handle::after{border:none;width:8px;height:8px;bottom:3px;right:3px;border-right:2px solid var(--text-faint);border-bottom:2px solid var(--text-faint)}
+
+/* Scrollbars — clean, flat, medium */
+body.chrome-slab ::-webkit-scrollbar{width:14px;height:14px}
+body.chrome-slab ::-webkit-scrollbar-track{background:var(--surface)}
+body.chrome-slab ::-webkit-scrollbar-thumb{background:var(--title-bg);border:1px solid var(--border);border-radius:0}
+body.chrome-slab ::-webkit-scrollbar-thumb:hover{background:var(--overlay-hover)}
+body.chrome-slab ::-webkit-scrollbar-corner{background:var(--surface)}
+
+/* Buttons — square, flat, solid border */
+body.chrome-slab .btn{border-radius:0;border:1px solid var(--border)}
+body.chrome-slab .btn-primary{border:1px solid var(--green)}
+body.chrome-slab .btn-danger{border:1px solid var(--red)}
+
+/* Modals & context menu */
+body.chrome-slab .modal{border-radius:0;border:2px solid var(--border)}
+body.chrome-slab .ctx-menu,body.chrome-slab .ctx-submenu{border-radius:0;border:2px solid var(--border)}
+
+/* Cards */
+body.chrome-slab .provider-card{border-radius:0;border:1px solid var(--border)}
+body.chrome-slab .provider-card.selected{border-color:var(--cyan)}
+body.chrome-slab .theme-card,body.chrome-slab .wallpaper-card,body.chrome-slab .chrome-card{border-radius:0;border:1px solid var(--border)}
+body.chrome-slab .theme-card.selected,body.chrome-slab .wallpaper-card.selected,body.chrome-slab .chrome-card.selected{border-color:var(--cyan)}
+body.chrome-slab .tc-swatch,body.chrome-slab .wc-swatch,body.chrome-slab .cc-preview{border-radius:0}
+
+/* Inputs & toggles */
+body.chrome-slab .sf select,body.chrome-slab .sf input[type=text],body.chrome-slab .sf input[type=password]{border-radius:0;border:1px solid var(--border)}
+body.chrome-slab .toggle .slider{border-radius:0}
+body.chrome-slab .toggle .slider::before{border-radius:0}
+body.chrome-slab .inspector-pane textarea{border-radius:0}
+body.chrome-slab .inspector-pane pre{border-radius:0}
+
+/* Desktop icon */
+body.chrome-slab .desktop-icon{border-radius:0}
+
+/* Misc */
+body.chrome-slab .skill-card,body.chrome-slab .sched-card,body.chrome-slab .memory-entry{border-radius:0}
+body.chrome-slab .guide-pip{border-radius:0}
+body.chrome-slab .guide-btn{border-radius:0}
+body.chrome-slab .ch-content .concept,body.chrome-slab .ch-content .task,body.chrome-slab .ch-content .hint{border-radius:0}
+body.chrome-slab .warn-box{border-radius:0}
+body.chrome-slab .unlock-form input{border-radius:0}
+
+/* ═══════════════════════════════════════════
+   Motif Chrome — CDE / thick beveled
+   ═══════════════════════════════════════════ */
+
+/* Windows */
+body.chrome-motif .window{border-radius:0;border:3px outset var(--border-focus);box-shadow:1px 1px 0 var(--shadow-color)}
+body.chrome-motif .window.focused{border-color:var(--border-focus);box-shadow:2px 2px 0 var(--shadow-color)}
+
+/* Titlebar — window menu button far left, min/max far right */
+body.chrome-motif .window-titlebar{border-radius:0;height:30px}
+body.chrome-motif .window.focused .window-titlebar{background:linear-gradient(90deg,var(--title-bg),var(--surface))}
+body.chrome-motif .window.focused .wt{color:var(--text);font-weight:700}
+
+/* Dots → Motif-style: close on left as small square, min/max on right */
+body.chrome-motif .window-titlebar .dots{order:1;margin-left:auto;margin-right:0;gap:2px}
+body.chrome-motif .window-titlebar .wt{order:0}
+body.chrome-motif .dot{width:18px;height:16px;border-radius:0;background:var(--surface);border:3px outset var(--border-focus);display:flex;align-items:center;justify-content:center;font-size:0}
+body.chrome-motif .dot-close{background:var(--surface)}
+body.chrome-motif .dot-min{background:var(--surface)}
+body.chrome-motif .dot-max{background:var(--surface)}
+body.chrome-motif .dot:hover{filter:brightness(1.1)}
+body.chrome-motif .dot:active{border-style:inset}
+body.chrome-motif .dot-close::after{content:'\00d7';font-size:12px;font-weight:700;color:var(--text);line-height:1}
+body.chrome-motif .dot-min::after{content:'_';font-size:10px;font-weight:700;color:var(--text);line-height:1;margin-top:-4px}
+body.chrome-motif .dot-max::after{content:'\25a1';font-size:9px;color:var(--text);line-height:1}
+
+/* Dock → CDE Taskbar */
+body.chrome-motif #dock{justify-content:flex-start;backdrop-filter:none;border-top:3px outset var(--border-focus);border-radius:0}
+body.chrome-motif .dock-item{width:auto;height:32px;border-radius:0;border:3px outset var(--border-focus);padding:0 8px;gap:4px;font-size:14px}
+body.chrome-motif .dock-item:hover{transform:none;background:var(--overlay-hover)}
+body.chrome-motif .dock-item:active{transform:none}
+body.chrome-motif .dock-item.active{border-style:inset;background:var(--overlay-strong)}
+body.chrome-motif .dock-item.active::after{display:none}
+body.chrome-motif .dock-tooltip{position:static;opacity:1;background:none;border:none;padding:0;font-family:var(--font-mono);font-size:10px;color:var(--text-dim);pointer-events:auto}
+body.chrome-motif .dock-sep{height:28px;margin:0 2px}
+
+/* Status bar */
+body.chrome-motif #status-bar{backdrop-filter:none;border-bottom:3px outset var(--border-focus)}
+body.chrome-motif .status-pill{border-radius:0;border:2px inset var(--border)}
+
+/* Resize handle */
+body.chrome-motif .window .resize-handle::after{border:none;width:10px;height:10px;bottom:2px;right:2px;background:radial-gradient(circle,var(--text-faint) 1px,transparent 1px);background-size:4px 4px}
+
+/* Scrollbars — thick, heavily beveled */
+body.chrome-motif ::-webkit-scrollbar{width:18px;height:18px}
+body.chrome-motif ::-webkit-scrollbar-track{background:var(--surface);border:2px inset var(--border)}
+body.chrome-motif ::-webkit-scrollbar-thumb{background:var(--surface);border:3px outset var(--border-focus);border-radius:0}
+body.chrome-motif ::-webkit-scrollbar-thumb:hover{background:var(--overlay-hover)}
+body.chrome-motif ::-webkit-scrollbar-corner{background:var(--surface)}
+
+/* Buttons — heavily beveled */
+body.chrome-motif .btn{border-radius:0;border:3px outset var(--border-focus)}
+body.chrome-motif .btn:active{border-style:inset}
+body.chrome-motif .btn-primary{border:3px outset var(--green)}
+body.chrome-motif .btn-primary:active{border-style:inset}
+body.chrome-motif .btn-danger{border:3px outset var(--red)}
+body.chrome-motif .btn-danger:active{border-style:inset}
+
+/* Modals & context menu */
+body.chrome-motif .modal{border-radius:0;border:3px outset var(--border-focus)}
+body.chrome-motif .ctx-menu,body.chrome-motif .ctx-submenu{border-radius:0;border:3px outset var(--border-focus)}
+
+/* Cards */
+body.chrome-motif .provider-card{border-radius:0;border:3px outset var(--border-focus)}
+body.chrome-motif .provider-card.selected{border-style:inset;border-color:var(--cyan)}
+body.chrome-motif .theme-card,body.chrome-motif .wallpaper-card,body.chrome-motif .chrome-card{border-radius:0;border:3px outset var(--border-focus)}
+body.chrome-motif .theme-card.selected,body.chrome-motif .wallpaper-card.selected,body.chrome-motif .chrome-card.selected{border-style:inset;border-color:var(--cyan)}
+body.chrome-motif .tc-swatch,body.chrome-motif .wc-swatch,body.chrome-motif .cc-preview{border-radius:0}
+
+/* Inputs & toggles */
+body.chrome-motif .sf select,body.chrome-motif .sf input[type=text],body.chrome-motif .sf input[type=password]{border-radius:0;border:2px inset var(--border)}
+body.chrome-motif .toggle .slider{border-radius:0}
+body.chrome-motif .toggle .slider::before{border-radius:0}
+body.chrome-motif .inspector-pane textarea{border-radius:0}
+body.chrome-motif .inspector-pane pre{border-radius:0}
+
+/* Desktop icon */
+body.chrome-motif .desktop-icon{border-radius:0}
+
+/* Misc */
+body.chrome-motif .skill-card,body.chrome-motif .sched-card,body.chrome-motif .memory-entry{border-radius:0}
+body.chrome-motif .settings-tab{border-bottom-width:2px}
+body.chrome-motif .inspector-tab{border-bottom-width:2px}
+body.chrome-motif .guide-pip{border-radius:0}
+body.chrome-motif .guide-btn{border-radius:0}
+body.chrome-motif .ch-content .concept,body.chrome-motif .ch-content .task,body.chrome-motif .ch-content .hint{border-radius:0}
+body.chrome-motif .warn-box{border-radius:0}
+body.chrome-motif .unlock-form input{border-radius:0}
+
+/* ═══ Crash Overlay ═══ */
+.crash-overlay{display:none;position:fixed;inset:0;z-index:99999;cursor:pointer}
+.crash-overlay.visible{display:flex;align-items:center;justify-content:center}
+/* Chrome-specific crash backgrounds */
+.crash-overlay.visible{background:rgba(0,0,0,0.85)}
+
+/* ═══ Desktop Pet ═══ */
+#desktop-pet{position:absolute;font-size:24px;cursor:default;user-select:none;transition:left 2s ease-in-out,opacity 0.5s;z-index:50;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3))}
+#desktop-pet.sleeping{opacity:0.6}
+.pet-thought{position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-size:12px;opacity:0;transition:opacity 0.3s}
+.pet-thought.visible{opacity:1}
+#desktop-pet.purring{animation:purr 0.15s ease-in-out 6}
+@keyframes purr{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+
+/* ═══ PiP Button ═══ */
+.pip-btn{background:var(--overlay-subtle);border:1px solid var(--border);border-radius:4px;color:var(--text-dim);font-family:var(--font-mono);font-size:9px;cursor:pointer;padding:2px 6px;margin-left:auto;transition:all 0.15s;letter-spacing:0.3px}
+.pip-btn:hover{color:var(--text);border-color:var(--cyan);background:var(--overlay-hover)}

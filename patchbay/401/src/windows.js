@@ -67,6 +67,15 @@ function toggleWin(id) {
   } else win.classList.add('minimized');
   updateDock(); saveLayout();
 }
+function resetWinPos(id) {
+  const win = document.getElementById(id);
+  if (!win) return;
+  win.classList.remove('minimized');
+  win.style.left = '80px'; win.style.top = '40px';
+  win.style.width = ''; win.style.height = '';
+  focusWin(id);
+  updateDock(); saveLayout();
+}
 
 const DOCK_MAP = { 'win-terminal':0, 'win-inspector':1, 'win-editor':2, 'win-files':3, 'win-memory':4, 'win-skills':5, 'win-routing':6, 'win-scheduler':7, 'win-about':8, 'win-log':9, 'win-settings':10 };
 function updateDock() {
@@ -92,7 +101,7 @@ document.addEventListener('mousemove', e => {
   if (dragState) {
     const w = document.getElementById(dragState.id);
     w.style.left = (e.clientX - dragState.ox) + 'px';
-    w.style.top = (e.clientY - dragState.oy - 28) + 'px';
+    w.style.top = Math.max(0, e.clientY - dragState.oy - 28) + 'px';
   }
   if (resizeState) {
     const w = document.getElementById(resizeState.id);
@@ -104,3 +113,12 @@ document.addEventListener('mouseup', () => { if (dragState || resizeState) saveL
 document.addEventListener('mousedown', e => { const w = e.target.closest('.window'); if (w) focusWin(w.id); });
 
 function desktopClick(e) { if (e.target === document.getElementById('desktop')) { document.querySelectorAll('.window').forEach(w => w.classList.remove('focused')); } }
+
+// Double-click dock icon → reset window position (recovery from off-screen)
+document.addEventListener('dblclick', e => {
+  const item = e.target.closest('.dock-item');
+  if (!item) return;
+  const idx = [...item.parentElement.querySelectorAll('.dock-item')].indexOf(item);
+  const wid = Object.keys(DOCK_MAP).find(k => DOCK_MAP[k] === idx);
+  if (wid) resetWinPos(wid);
+});

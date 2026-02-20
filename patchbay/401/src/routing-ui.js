@@ -40,9 +40,9 @@ function renderRoutingSettings() {
         </div>
       </div>
     </div>`;
-  // Insert before security section
-  const secSection = settingsBody.querySelector('.security-section');
-  if (secSection) settingsBody.insertBefore(section, secSection);
+  // Insert into comms pane (after Telegram section)
+  const commsPane = document.getElementById('stab-comms');
+  if (commsPane) commsPane.appendChild(section);
   else settingsBody.appendChild(section);
 
   populateRouteSelects();

@@ -1,0 +1,183 @@
+name: Emit Certificate
+on:
+  issues:
+    types: [opened]
+
+concurrency:
+  group: cert-emission
+  cancel-in-progress: false
+
+jobs:
+  emit:
+    if: contains(github.event.issue.labels.*.name, 'cert-request')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse and validate
+        id: parse
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const crypto = require('crypto');
+            const fs = require('fs');
+            const body = context.payload.issue.body;
+
+            // Parse GitHub Issue Form fields (### Label\n\nvalue\n\n)
+            function parseField(label) {
+              const re = new RegExp(`### ${label}\\s*\\n\\n([^\\n]+)`, 'i');
+              const m = body.match(re);
+              return m ? m[1].trim() : '';
+            }
+
+            const name = parseField('Full Name');
+            const workshop = parseField('Workshop').toUpperCase();
+            const date = parseField('Completion Date');
+            const hash = parseField('Completion Hash').toLowerCase();
+
+            // Validate fields
+            const errors = [];
+            if (!name || name.length < 2 || name.length > 100) errors.push('Invalid name.');
+            if (!/^PB-[1-4]01$/.test(workshop)) errors.push(`Invalid workshop: ${workshop}`);
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) errors.push(`Invalid date format: ${date}`);
+            if (!/^[0-9a-f]{16}$/.test(hash)) errors.push(`Invalid hash: ${hash}`);
+
+            // Validate date is real
+            if (!errors.length) {
+              const d = new Date(date + 'T00:00:00Z');
+              if (isNaN(d.getTime())) errors.push(`Invalid date: ${date}`);
+            }
+
+            // Validate completion hash
+            if (!errors.length) {
+              const SALT = 'patchbay-gcu-2026';
+              const expected = crypto.createHash('sha256')
+                .update(workshop + ':' + date + ':' + SALT)
+                .digest('hex')
+                .slice(0, 16);
+              if (hash !== expected) errors.push('Hash does not match. Please use the claim form in the workshop.');
+            }
+
+            // Check for duplicates
+            let existingCode = '';
+            if (!errors.length) {
+              const certs = JSON.parse(fs.readFileSync('cert/certs.json', 'utf-8'));
+              const normName = name.toLowerCase().replace(/\s+/g, ' ').trim();
+              const dup = certs.find(c =>
+                c.course === workshop &&
+                c.name.toLowerCase().replace(/\s+/g, ' ').trim() === normName
+              );
+              if (dup) existingCode = dup.code;
+            }
+
+            core.setOutput('name', name);
+            core.setOutput('workshop', workshop);
+            core.setOutput('date', date);
+            core.setOutput('errors', errors.join(' '));
+            core.setOutput('duplicate', existingCode);
+
+      - name: Handle failure
+        if: steps.parse.outputs.errors != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `❌ **Certificate request failed**\n\n${`${{ steps.parse.outputs.errors }}`}\n\nPlease open a new request using the claim form in the workshop.`
+            });
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: context.issue.number, labels: ['cert-failed']
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: context.issue.number, state: 'closed'
+            });
+
+      - name: Handle duplicate
+        if: steps.parse.outputs.errors == '' && steps.parse.outputs.duplicate != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const code = '${{ steps.parse.outputs.duplicate }}';
+            const name = `${{ steps.parse.outputs.name }}`;
+            const encoded = encodeURIComponent(name);
+            const url = `https://endarthur.github.io/etc/cert/#v=${code}&n=${encoded}`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `ℹ️ **Certificate already issued**\n\nA certificate for this name and workshop already exists.\n\n🔗 [View your certificate](${url})`
+            });
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: context.issue.number, labels: ['cert-duplicate']
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: context.issue.number, state: 'closed'
+            });
+
+      - name: Generate and commit certificate
+        if: steps.parse.outputs.errors == '' && steps.parse.outputs.duplicate == ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const crypto = require('crypto');
+
+            const name = `${{ steps.parse.outputs.name }}`;
+            const workshop = '${{ steps.parse.outputs.workshop }}';
+            const date = '${{ steps.parse.outputs.date }}';
+
+            // Generate unique code: WORKSHOP-XXXX
+            const hex = crypto.randomBytes(2).toString('hex').toUpperCase();
+            const code = `${workshop}-${hex}`;
+
+            // Read, append, write
+            const certs = JSON.parse(fs.readFileSync('cert/certs.json', 'utf-8'));
+            certs.push({ name, course: workshop, date, code });
+            fs.writeFileSync('cert/certs.json', JSON.stringify(certs, null, 2) + '\n');
+
+            core.setOutput('code', code);
+
+      - name: Commit and push
+        if: steps.parse.outputs.errors == '' && steps.parse.outputs.duplicate == ''
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add cert/certs.json
+          git commit -m "cert: issue ${{ steps.parse.outputs.workshop }} for ${{ steps.parse.outputs.name }}"
+          git push
+
+      - name: Reply with certificate link
+        if: steps.parse.outputs.errors == '' && steps.parse.outputs.duplicate == ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const name = `${{ steps.parse.outputs.name }}`;
+            const encoded = encodeURIComponent(name);
+
+            // Read the code from the last commit's certs.json
+            const fs = require('fs');
+            const certs = JSON.parse(fs.readFileSync('cert/certs.json', 'utf-8'));
+            const entry = certs[certs.length - 1];
+            const url = `https://endarthur.github.io/etc/cert/#v=${entry.code}&n=${encoded}`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `✅ **Certificate issued!**\n\n🎓 **${entry.code}**\n\n🔗 [View and download your certificate](${url})`
+            });
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: context.issue.number, labels: ['cert-issued']
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: context.issue.number, state: 'closed'
+            });

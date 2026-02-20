@@ -1494,6 +1494,39 @@ body.chrome-motif .unlock-form input{border-radius:0}
     <div class="hint"><strong>Cost awareness</strong>
     Every scheduled tick that fires makes at least one LLM API call &mdash; often two or more if tools are involved. A task running every 5 minutes makes 288 calls per day. At cloud API prices, that adds up. Do the math before you set aggressive intervals. For frequent scheduled tasks, this is where Ollama from Chapter 12 really shines &mdash; local models cost nothing per call, making scheduled autonomy essentially free.</div>
   </div>
+
+  <div class="ch-content" id="ch-text-14">
+    <h3>14 &mdash; Certificate</h3>
+    <p>You made it. Thirteen chapters of building, wiring, breaking, and fixing an AI agent from scratch. That deserves recognition.</p>
+
+    <div class="concept"><strong>How it works</strong>
+    The certificate system is automated end-to-end. You enter your name below, click Claim, and a pre-filled GitHub Issue opens. When you submit it, a GitHub Action validates your request, generates a unique certificate code, and replies with a link to view and download your certificate as a PDF &mdash; complete with your name, the workshop title, and a QR code for verification.</div>
+
+    <div class="concept"><strong>The completion hash</strong>
+    The claim form computes a SHA-256 hash from the workshop ID and today's date. This hash is checked by the Action to confirm you actually opened the workshop &mdash; it's not a security wall, just a simple proof-of-presence. If someone reads the source to find the salt, well, they've earned it.</div>
+
+    <div class="task"><strong>Claim your certificate</strong>
+    <ol>
+      <li>Enter your full name below (as you want it on the certificate)</li>
+      <li>Click <strong>Claim Certificate</strong> &mdash; a GitHub issue form opens in a new tab</li>
+      <li>Review the pre-filled fields, then click <strong>Submit new issue</strong></li>
+      <li>Within a minute, the bot replies with a link to your certificate</li>
+      <li>Follow the link to view, download as PDF, or share</li>
+    </ol>
+    </div>
+
+    <div style="margin:20px 0;">
+      <label for="cert-name" style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:6px;">Full name / Nome completo</label>
+      <input type="text" id="cert-name" placeholder="Ana Costa" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:13px;box-sizing:border-box;">
+      <button onclick="claimCertificate()" style="margin-top:10px;padding:8px 20px;background:var(--cyan);color:#111;border:none;border-radius:6px;font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;">Claim Certificate</button>
+      <div id="cert-status" style="margin-top:8px;font-size:12px;min-height:18px;"></div>
+    </div>
+
+    <div class="hint"><strong>Requires a GitHub account</strong>
+    The certificate is issued via a GitHub Issue. You'll need a free GitHub account to submit the request. If you don't have one, ask your instructor to issue the certificate on your behalf.</div>
+
+    <p>Congratulations &mdash; and thank you for building with us. Now go make something wild.</p>
+  </div>
   </div><!-- /guide-body -->
   <div class="guide-footer">
     <button class="guide-btn" id="guide-prev" onclick="guideNav(-1)">← Back</button>
@@ -4249,7 +4282,7 @@ document.addEventListener('dblclick', e => {
 // ═══════════════════════════════════════════
 // CHAPTER GUIDE
 // ═══════════════════════════════════════════
-const TOTAL_CHAPTERS = 14; // 0-13
+const TOTAL_CHAPTERS = 15; // 0-14
 let currentChapter = 0;
 
 function toggleGuide() { document.getElementById('guide-panel').classList.toggle('visible'); saveLayout(); }
@@ -4301,7 +4334,7 @@ function showGuideIndex() {
   idx = document.createElement('div');
   idx.id = 'guide-index';
   idx.style.cssText = 'position:absolute;bottom:44px;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:8px;max-height:220px;overflow-y:auto;z-index:10';
-  const titles = ['0 — Setup','1 — First Words','2 — Giving It Hands','3 — Home Turf','4 — The Persistent Self','5 — The Context Budget','6 — Skills & Superpowers','7 — Self-Modification','8 — The Switchboard','9 — Beyond the Terminal','10 — The Senses','11 — The Landscape','12 — Going Local','13 — Autonomy'];
+  const titles = ['0 — Setup','1 — First Words','2 — Giving It Hands','3 — Home Turf','4 — The Persistent Self','5 — The Context Budget','6 — Skills & Superpowers','7 — Self-Modification','8 — The Switchboard','9 — Beyond the Terminal','10 — The Senses','11 — The Landscape','12 — Going Local','13 — Autonomy','14 — Certificate'];
   titles.forEach((t, i) => {
     const row = document.createElement('div');
     row.textContent = t;
@@ -6432,6 +6465,47 @@ registerTool('remove_schedule', 'Remove a scheduled task or reminder by name.', 
   if (schedules.length === 0) stopScheduler();
   return `Removed schedule "${sched.name}".`;
 });
+
+// ═══════════════════════════════════════════
+// CERTIFICATE CLAIM
+// ═══════════════════════════════════════════
+const CERT_SALT = 'patchbay-gcu-2026';
+const CERT_WORKSHOP_ID = 'PB-401';
+const CERT_REPO = 'endarthur/etc';
+
+async function computeCompletionHash(workshopId, date) {
+  const data = new TextEncoder().encode(workshopId + ':' + date + ':' + CERT_SALT);
+  const buf = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+}
+
+async function claimCertificate() {
+  const input = document.getElementById('cert-name');
+  const status = document.getElementById('cert-status');
+  const name = (input.value || '').trim();
+  if (!name || name.length < 2) {
+    status.textContent = 'Please enter your full name (at least 2 characters).';
+    status.style.color = 'var(--amber)';
+    return;
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const hash = await computeCompletionHash(CERT_WORKSHOP_ID, today);
+
+  const params = new URLSearchParams({
+    template: 'cert-request.yml',
+    title: `cert: ${CERT_WORKSHOP_ID}`,
+    fullname: name,
+    workshop: CERT_WORKSHOP_ID,
+    date: today,
+    hash: hash,
+  });
+  const url = `https://github.com/${CERT_REPO}/issues/new?${params}`;
+
+  status.textContent = 'Opening GitHub — submit the issue to receive your certificate.';
+  status.style.color = 'var(--cyan)';
+  window.open(url, '_blank');
+}
 
 // ═══════════════════════════════════════════
 // ENTER DESKTOP — enhanced

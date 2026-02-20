@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════
 // CHAPTER GUIDE
 // ═══════════════════════════════════════════
-const TOTAL_CHAPTERS = 14; // 0-13
+const TOTAL_CHAPTERS = 15; // 0-14
 let currentChapter = 0;
 
 function toggleGuide() { document.getElementById('guide-panel').classList.toggle('visible'); saveLayout(); }
@@ -53,7 +53,7 @@ function showGuideIndex() {
   idx = document.createElement('div');
   idx.id = 'guide-index';
   idx.style.cssText = 'position:absolute;bottom:44px;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:8px;max-height:220px;overflow-y:auto;z-index:10';
-  const titles = ['0 — Setup','1 — First Words','2 — Giving It Hands','3 — Home Turf','4 — The Persistent Self','5 — The Context Budget','6 — Skills & Superpowers','7 — Self-Modification','8 — The Switchboard','9 — Beyond the Terminal','10 — The Senses','11 — The Landscape','12 — Going Local','13 — Autonomy'];
+  const titles = ['0 — Setup','1 — First Words','2 — Giving It Hands','3 — Home Turf','4 — The Persistent Self','5 — The Context Budget','6 — Skills & Superpowers','7 — Self-Modification','8 — The Switchboard','9 — Beyond the Terminal','10 — The Senses','11 — The Landscape','12 — Going Local','13 — Autonomy','14 — Certificate'];
   titles.forEach((t, i) => {
     const row = document.createElement('div');
     row.textContent = t;

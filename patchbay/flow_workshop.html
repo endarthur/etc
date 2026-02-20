@@ -3709,6 +3709,25 @@ const CHAPTERS = [
     `,
     check() { return true; }
   },
+
+  // ── CHAPTER 17 ────────────────────────
+  {
+    title: 'Certificate',
+    body: `
+      <p>You made it through seventeen chapters of visual dataflow programming. That deserves recognition.</p>
+      <div class="concept"><strong>How it works</strong>
+      <br>Enter your name below, click Claim, and a pre-filled GitHub Issue opens. When you submit it, a GitHub Action validates your request, generates a unique certificate code, and replies with a link to view and download your certificate as a PDF.</div>
+      <p>Enter your full name below (as you want it on the certificate), then click <strong>Claim Certificate</strong>.</p>
+      <div style="margin:16px 0;">
+        <label for="cert-name" style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:6px;">Full name / Nome completo</label>
+        <input type="text" id="cert-name" placeholder="Ana Costa" style="width:100%;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:inherit;font-size:13px;box-sizing:border-box;">
+        <button onclick="claimCertificate()" style="margin-top:10px;padding:8px 20px;background:var(--green);color:#111;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">Claim Certificate</button>
+        <div id="cert-status" style="margin-top:8px;font-size:12px;min-height:18px;"></div>
+      </div>
+      <div class="hint"><strong>Requires a GitHub account.</strong> If you don't have one, ask your instructor to issue the certificate on your behalf.</div>
+    `,
+    check() { return true; }
+  },
 ];
 
 
@@ -3801,6 +3820,40 @@ function guideCheckTask() {
     btn.style.color = '#111';
     setTimeout(() => { btn.textContent = orig; btn.style.background = ''; btn.style.color = ''; }, 2500);
   }
+}
+
+// ═══════════════════════════════════════
+//  CERTIFICATE CLAIM
+// ═══════════════════════════════════════
+const CERT_SALT = 'patchbay-gcu-2026';
+const CERT_WORKSHOP_ID = 'PB-301';
+const CERT_REPO = 'endarthur/etc';
+
+async function computeCompletionHash(workshopId, date) {
+  const data = new TextEncoder().encode(workshopId + ':' + date + ':' + CERT_SALT);
+  const buf = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+}
+
+async function claimCertificate() {
+  const input = document.getElementById('cert-name');
+  const status = document.getElementById('cert-status');
+  const name = (input.value || '').trim();
+  if (!name || name.length < 2) {
+    status.textContent = 'Please enter your full name (at least 2 characters).';
+    status.style.color = 'var(--amber)';
+    return;
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  const hash = await computeCompletionHash(CERT_WORKSHOP_ID, today);
+  const params = new URLSearchParams({
+    template: 'cert-request.yml',
+    title: 'cert: ' + CERT_WORKSHOP_ID,
+    fullname: name, workshop: CERT_WORKSHOP_ID, date: today, hash: hash,
+  });
+  status.textContent = 'Opening GitHub — submit the issue to receive your certificate.';
+  status.style.color = 'var(--cyan)';
+  window.open('https://github.com/' + CERT_REPO + '/issues/new?' + params, '_blank');
 }
 
 // Init guide + splash

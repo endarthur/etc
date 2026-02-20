@@ -685,6 +685,32 @@ a:hover { text-decoration:underline; }
   </div>
 </div>
 
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">CERTIFICATE</span>
+    <span class="section-title">Claim Your Certificate</span>
+  </div>
+  <p class="section-desc">
+    Completed the workshop? Enter your name below and click Claim to open a certificate request on GitHub. A bot will validate your submission and reply with a link to view and download your certificate as a PDF.
+  </p>
+  <p class="section-desc">
+    Completou o workshop? Digite seu nome abaixo e clique em Claim para abrir uma solicitação de certificado no GitHub. Um bot vai validar sua submissão e responder com um link para visualizar e baixar seu certificado em PDF.
+  </p>
+  <div class="panel">
+    <div class="panel-body">
+      <label for="cert-name" style="display:block;font-size:13px;color:var(--text-dim);margin-bottom:6px;">Full name / Nome completo</label>
+      <input type="text" id="cert-name" placeholder="Ana Costa" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;box-sizing:border-box;">
+      <div style="margin-top:10px;display:flex;align-items:center;gap:12px;">
+        <button class="btn btn-sm" onclick="claimCertificate()" style="background:var(--cyan);color:#111;font-weight:600;">Claim Certificate</button>
+        <span id="cert-status" style="font-size:12px;"></span>
+      </div>
+    </div>
+  </div>
+  <p class="section-desc" style="margin-top:12px;font-size:12px;">
+    Requires a GitHub account. If you don't have one, ask your instructor to issue the certificate on your behalf.
+  </p>
+</div>
+
 </div><!-- /wrap -->
 
 <script>
@@ -1457,6 +1483,40 @@ async function toggleBot() {
   document.getElementById('startBtn').className = 'btn btn-sm btn-red';
   addLog('sys', 'Polling started. Send a message to your bot in Telegram!');
   poll();
+}
+
+// ═══════════════════════════════════════
+//  CERTIFICATE CLAIM
+// ═══════════════════════════════════════
+const CERT_SALT = 'patchbay-gcu-2026';
+const CERT_WORKSHOP_ID = 'PB-201';
+const CERT_REPO = 'endarthur/etc';
+
+async function computeCompletionHash(workshopId, date) {
+  const data = new TextEncoder().encode(workshopId + ':' + date + ':' + CERT_SALT);
+  const buf = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+}
+
+async function claimCertificate() {
+  const input = document.getElementById('cert-name');
+  const status = document.getElementById('cert-status');
+  const name = (input.value || '').trim();
+  if (!name || name.length < 2) {
+    status.textContent = 'Please enter your full name (at least 2 characters).';
+    status.style.color = 'var(--amber)';
+    return;
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  const hash = await computeCompletionHash(CERT_WORKSHOP_ID, today);
+  const params = new URLSearchParams({
+    template: 'cert-request.yml',
+    title: 'cert: ' + CERT_WORKSHOP_ID,
+    fullname: name, workshop: CERT_WORKSHOP_ID, date: today, hash: hash,
+  });
+  status.textContent = 'Opening GitHub — submit the issue to receive your certificate.';
+  status.style.color = 'var(--cyan)';
+  window.open('https://github.com/' + CERT_REPO + '/issues/new?' + params, '_blank');
 }
 
 </script>

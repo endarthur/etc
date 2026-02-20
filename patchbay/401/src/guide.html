@@ -600,3 +600,36 @@
     <div class="hint"><strong>Cost awareness</strong>
     Every scheduled tick that fires makes at least one LLM API call &mdash; often two or more if tools are involved. A task running every 5 minutes makes 288 calls per day. At cloud API prices, that adds up. Do the math before you set aggressive intervals. For frequent scheduled tasks, this is where Ollama from Chapter 12 really shines &mdash; local models cost nothing per call, making scheduled autonomy essentially free.</div>
   </div>
+
+  <div class="ch-content" id="ch-text-14">
+    <h3>14 &mdash; Certificate</h3>
+    <p>You made it. Thirteen chapters of building, wiring, breaking, and fixing an AI agent from scratch. That deserves recognition.</p>
+
+    <div class="concept"><strong>How it works</strong>
+    The certificate system is automated end-to-end. You enter your name below, click Claim, and a pre-filled GitHub Issue opens. When you submit it, a GitHub Action validates your request, generates a unique certificate code, and replies with a link to view and download your certificate as a PDF &mdash; complete with your name, the workshop title, and a QR code for verification.</div>
+
+    <div class="concept"><strong>The completion hash</strong>
+    The claim form computes a SHA-256 hash from the workshop ID and today's date. This hash is checked by the Action to confirm you actually opened the workshop &mdash; it's not a security wall, just a simple proof-of-presence. If someone reads the source to find the salt, well, they've earned it.</div>
+
+    <div class="task"><strong>Claim your certificate</strong>
+    <ol>
+      <li>Enter your full name below (as you want it on the certificate)</li>
+      <li>Click <strong>Claim Certificate</strong> &mdash; a GitHub issue form opens in a new tab</li>
+      <li>Review the pre-filled fields, then click <strong>Submit new issue</strong></li>
+      <li>Within a minute, the bot replies with a link to your certificate</li>
+      <li>Follow the link to view, download as PDF, or share</li>
+    </ol>
+    </div>
+
+    <div style="margin:20px 0;">
+      <label for="cert-name" style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:6px;">Full name / Nome completo</label>
+      <input type="text" id="cert-name" placeholder="Ana Costa" style="width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:13px;box-sizing:border-box;">
+      <button onclick="claimCertificate()" style="margin-top:10px;padding:8px 20px;background:var(--cyan);color:#111;border:none;border-radius:6px;font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;">Claim Certificate</button>
+      <div id="cert-status" style="margin-top:8px;font-size:12px;min-height:18px;"></div>
+    </div>
+
+    <div class="hint"><strong>Requires a GitHub account</strong>
+    The certificate is issued via a GitHub Issue. You'll need a free GitHub account to submit the request. If you don't have one, ask your instructor to issue the certificate on your behalf.</div>
+
+    <p>Congratulations &mdash; and thank you for building with us. Now go make something wild.</p>
+  </div>

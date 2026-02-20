@@ -15,7 +15,7 @@ const APP_MODULES = [
   'terminal.js', 'inspector.js', 'log.js',
   'windows.js', 'guide.js',
   'tools.js', 'desktop.js', 'memory.js', 'skills.js',
-  'routing-ui.js', 'telegram.js', 'scheduler.js', 'init.js',
+  'routing-ui.js', 'telegram.js', 'scheduler.js', 'cert.js', 'init.js',
 ];
 const app = APP_MODULES.map(f => read(src(f)).trimEnd()).join('\n\n');
 

@@ -455,8 +455,9 @@ const STRINGS = {
   },
 };
 
-const LAYOUTS = {
-  topo: renderTopoLayout,
+const BACKGROUNDS = {
+  topo: renderTopoContours,
+  blocks: renderBlockGrid,
 };
 
 /* ══════════════════════════════════════════════════
@@ -485,16 +486,23 @@ async function init() {
     }
   } catch (_) { /* data not available */ }
 
-  // Check URL fragment for auto-validation
+  // Check URL fragment for auto-validation or preview mode
   const hash = window.location.hash.slice(1);
   if (hash) {
     const params = new URLSearchParams(hash);
-    const code = params.get('v');
-    const name = params.get('n');
-    if (code && name) {
-      document.getElementById('nameInput').value = name;
-      document.getElementById('codeInput').value = code;
-      validate();
+    const preview = params.get('preview');
+    if (preview) {
+      const previewName = params.get('n') ||
+        (Math.random() < 0.5 ? 'Mitsuha Miyamizu' : 'Taki Tachibana');
+      enterPreviewMode(preview, previewName);
+    } else {
+      const code = params.get('v');
+      const name = params.get('n');
+      if (code && name) {
+        document.getElementById('nameInput').value = name;
+        document.getElementById('codeInput').value = code;
+        validate();
+      }
     }
   }
 }
@@ -547,6 +555,23 @@ function showError(el, msg) {
   el.classList.add('visible');
 }
 
+let isPreview = false;
+
+function enterPreviewMode(courseKey, name) {
+  const course = COURSES[courseKey];
+  if (!course) return;
+  isPreview = true;
+  // Synthesize a fake cert entry — never touches certs.json
+  currentCert = {
+    name: name,
+    course: courseKey,
+    courseKey: courseKey,
+    date: new Date().toISOString().slice(0, 10),
+    code: courseKey + '-SAMPLE',
+  };
+  showPreview();
+}
+
 /* ══════════════════════════════════════════════════
    UI State
    ══════════════════════════════════════════════════ */
@@ -576,17 +601,23 @@ function showPreview() {
   tag.textContent = series.name + ' series';
   tag.classList.add('visible');
 
-  const base = window.location.href.split('#')[0];
-  const url = base + '#v=' + encodeURIComponent(currentCert.code) +
-              '&n=' + encodeURIComponent(currentCert.name);
-  document.getElementById('shareURL').value = url;
-  document.getElementById('shareBtn').style.display =
-    navigator.share ? 'block' : 'none';
+  if (isPreview) {
+    document.getElementById('shareURL').value = 'Preview mode \u2014 not a real certificate';
+    document.getElementById('shareBtn').style.display = 'none';
+  } else {
+    const base = window.location.href.split('#')[0];
+    const url = base + '#v=' + encodeURIComponent(currentCert.code) +
+                '&n=' + encodeURIComponent(currentCert.name);
+    document.getElementById('shareURL').value = url;
+    document.getElementById('shareBtn').style.display =
+      navigator.share ? 'block' : 'none';
+  }
 
   renderCertificate();
 }
 
 function showForm() {
+  isPreview = false;
   document.getElementById('formSection').style.display = 'block';
   document.getElementById('certPreview').classList.remove('visible');
   document.getElementById('seriesTag').classList.remove('visible');
@@ -790,6 +821,69 @@ function renderTopoContours(ctx, code, color, W, H) {
 }
 
 /* ══════════════════════════════════════════════════
+   Block Grid Rendering (BM series — "LEGO" layout)
+   ══════════════════════════════════════════════════ */
+
+function renderBlockGrid(ctx, code, color, W, H) {
+  const seed = hashCode(code);
+  const rng = mulberry32(seed);
+
+  const nCols = 30, nRows = 42;
+  const field = generateNoiseField(rng, nCols, nRows, 3);
+
+  // Bilinear sample from noise field
+  function sampleNoise(nx, ny) {
+    const fx = Math.min(nx, 1) * (nCols - 1);
+    const fy = Math.min(ny, 1) * (nRows - 1);
+    const ix = Math.floor(fx), iy = Math.floor(fy);
+    const dx = fx - ix, dy = fy - iy;
+    const ix1 = Math.min(ix + 1, nCols - 1);
+    const iy1 = Math.min(iy + 1, nRows - 1);
+    return field[iy][ix] * (1 - dx) * (1 - dy) +
+           field[iy][ix1] * dx * (1 - dy) +
+           field[iy1][ix] * (1 - dx) * dy +
+           field[iy1][ix1] * dx * dy;
+  }
+
+  const rowH = 54;
+  const rows = Math.ceil(H / rowH);
+  const baseUnit = 50;
+  // Weighted toward 2-3 unit bricks (like real LEGO builds)
+  const unitChoices = [1, 1, 2, 2, 2, 3, 3, 4];
+
+  ctx.save();
+
+  for (let r = 0; r < rows; r++) {
+    const y = r * rowH;
+    let x = 0;
+
+    while (x < W) {
+      const units = unitChoices[Math.floor(rng() * unitChoices.length)];
+      let bw = baseUnit * units;
+      if (W - x - bw < baseUnit) bw = W - x;
+      if (bw <= 0) break;
+
+      const value = sampleNoise((x + bw / 2) / W, (y + rowH / 2) / H);
+
+      // Fill block
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 0.03 + value * 0.17;
+      ctx.fillRect(x, y, bw, rowH);
+
+      // Block border
+      ctx.globalAlpha = 0.06;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x + 0.5, y + 0.5, bw - 1, rowH - 1);
+
+      x += bw;
+    }
+  }
+
+  ctx.restore();
+}
+
+/* ══════════════════════════════════════════════════
    Text Wrapping Helper
    ══════════════════════════════════════════════════ */
 
@@ -818,10 +912,11 @@ function renderCertificate() {
   if (!currentCert) return;
   const course = COURSES[currentCert.courseKey];
   const series = SERIES[course.series];
-  LAYOUTS[series.layout](currentCert, course, series);
+  const bgFn = BACKGROUNDS[series.layout] || renderTopoContours;
+  renderCertLayout(currentCert, course, series, bgFn);
 }
 
-function renderTopoLayout(cert, course, series) {
+function renderCertLayout(cert, course, series, bgFn) {
   const canvas = document.getElementById('certCanvas');
   const ctx = canvas.getContext('2d');
   const W = 2100, H = 2970;
@@ -869,8 +964,8 @@ function renderTopoLayout(cert, course, series) {
     bx += w + barGap;
   }
 
-  // ── Topographic contours (over everything including bars) ──
-  renderTopoContours(ctx, cert.code, color, W, H);
+  // ── Background pattern (layout-specific) ──
+  bgFn(ctx, cert.code, color, W, H);
 
   // ── Text rendering (top to bottom, off-center) ──
   ctx.textAlign = 'center';
@@ -981,10 +1076,12 @@ function renderTopoLayout(cert, course, series) {
   // ── Bottom section (positioned from bottom edge) ──
   let by = H - margin - 80;
 
-  // QR code
+  // QR code (preview → points to the preview URL itself, not a valid cert)
   const baseURL = window.location.href.split('#')[0];
-  const shareURL = baseURL + '#v=' + encodeURIComponent(cert.code) +
-                   '&n=' + encodeURIComponent(cert.name);
+  const shareURL = isPreview
+    ? baseURL + '#preview=' + encodeURIComponent(cert.courseKey)
+    : baseURL + '#v=' + encodeURIComponent(cert.code) +
+                '&n=' + encodeURIComponent(cert.name);
   drawQR(ctx, shareURL, cx, by, 180, textDark);
   by -= 120;
 
@@ -1024,6 +1121,26 @@ function renderTopoLayout(cert, course, series) {
   ctx.moveTo(cx - 160, by);
   ctx.lineTo(cx + 160, by);
   ctx.stroke();
+
+  if (isPreview) {
+    // "SAMPLE" label under issuer
+    by -= 10;
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.font = '700 32px "IBM Plex Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('SAMPLE \u2014 NOT A VALID CERTIFICATE', cx, by);
+
+    // Diagonal watermark across the whole page
+    ctx.save();
+    ctx.translate(W / 2, H / 2);
+    ctx.rotate(-Math.PI / 4);
+    ctx.font = '700 220px "IBM Plex Mono", monospace';
+    ctx.fillStyle = 'rgba(0,0,0,0.07)';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('SAMPLE', 0, -140);
+    ctx.fillText('SAMPLE', 0, 140);
+    ctx.restore();
+  }
 }
 
 /* ══════════════════════════════════════════════════

@@ -11,6 +11,18 @@
       "layout": "topo",
       "pageAccent": "#d4a017",
       "pageBg": "cables"
+    },
+    "bm": {
+      "name": "Blocks for Modelling",
+      "org": "Geoscientific Chaos Union",
+      "issuer": "Arthur Endlein",
+      "issuerTitle": {
+        "en": "Instructor \u2014 BM Series",
+        "pt": "Instrutor \u2014 S\u00e9rie BM"
+      },
+      "layout": "blocks",
+      "pageAccent": "#4caf50",
+      "pageBg": "blocks"
     }
   },
   "courses": {
@@ -90,6 +102,33 @@
       },
       "hours": 8,
       "color": "#6abf69"
+    },
+    "BM-301": {
+      "series": "bm",
+      "title": {
+        "en": "BM-301 \u2014 Decision Trees for Mining and Modelling",
+        "pt": "BM-301 \u2014 \u00c1rvores de Decis\u00e3o para Minera\u00e7\u00e3o e Modelagem"
+      },
+      "desc": {
+        "en": [
+          "CART decision tree fundamentals: splits, leaves, and impurity measures",
+          "Interactive tree visualization and node inspection",
+          "Bonsai tools: manual pruning, force splitting, and tree reshaping",
+          "Export to Python, SQL, Excel, CSV, and Leapfrog .lfcalc",
+          "Importing and auditing existing SQL classification rules",
+          "Gini impurity, variance, and R\u00b2 for model evaluation"
+        ],
+        "pt": [
+          "Fundamentos de \u00e1rvores de decis\u00e3o CART: divis\u00f5es, folhas e medidas de impureza",
+          "Visualiza\u00e7\u00e3o interativa de \u00e1rvores e inspe\u00e7\u00e3o de n\u00f3s",
+          "Ferramentas bonsai: poda manual, divis\u00e3o for\u00e7ada e remodelagem de \u00e1rvores",
+          "Exporta\u00e7\u00e3o para Python, SQL, Excel, CSV e Leapfrog .lfcalc",
+          "Importa\u00e7\u00e3o e auditoria de regras de classifica\u00e7\u00e3o SQL existentes",
+          "Impureza de Gini, vari\u00e2ncia e R\u00b2 para avalia\u00e7\u00e3o de modelos"
+        ]
+      },
+      "hours": 3,
+      "color": "#4caf50"
     },
     "PB-401": {
       "series": "patchbay",

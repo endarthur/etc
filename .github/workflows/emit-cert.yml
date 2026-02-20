@@ -41,7 +41,7 @@ jobs:
             // Validate fields
             const errors = [];
             if (!name || name.length < 2 || name.length > 100) errors.push('Invalid name.');
-            if (!/^PB-[1-4]01$/.test(workshop)) errors.push(`Invalid workshop: ${workshop}`);
+            if (!/^(PB-[1-4]01|BM-[1-5]01)$/.test(workshop)) errors.push(`Invalid workshop: ${workshop}`);
             if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) errors.push(`Invalid date format: ${date}`);
             if (!/^[0-9a-f]{16}$/.test(hash)) errors.push(`Invalid hash: ${hash}`);
 

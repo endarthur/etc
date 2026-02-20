@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GCU — Certificate Validation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #111110;
+  --surface: #1a1a18;
+  --border: #2a2a26;
+  --border-hi: #3a3a34;
+  --text: #d4d0c8;
+  --text-dim: #8a8780;
+  --text-faint: #5a5850;
+  --amber: #d4a017;
+  --amber-dim: rgba(212,160,23,0.12);
+  --cyan: #3ec9d1;
+  --cyan-dim: rgba(62,201,209,0.12);
+  --green: #6abf69;
+  --green-dim: rgba(106,191,105,0.12);
+  --red: #c0392b;
+  --purple: #a78bfa;
+  --purple-dim: rgba(167,139,250,0.12);
+  --accent: #d4a017;
+  --accent-dim: rgba(212,160,23,0.12);
+  --accent-glow: rgba(212,160,23,0.2);
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'IBM Plex Sans', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Grain overlay ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 999;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+}
+
+/* ── Cable pattern background ── */
+.bg-cables {
+  position: fixed; inset: 0; z-index: 0; overflow: hidden;
+  opacity: 0.06;
+  display: none;
+}
+.bg-cables svg { width: 100%; height: 100%; }
+
+/* ── Layout ── */
+.container {
+  position: relative; z-index: 1;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 4rem 2rem 3rem;
+}
+
+/* ── Header ── */
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+  animation: fadeUp 0.6s ease-out both;
+}
+.logo {
+  font-family: var(--mono);
+  font-size: 3.2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+.series-tag {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--accent);
+  margin-top: 0.6rem;
+  opacity: 0;
+  transition: opacity 0.3s, color 0.3s;
+}
+.series-tag.visible { opacity: 1; }
+.tagline {
+  font-size: 0.95rem;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+/* ── Form card ── */
+.form-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 2.5rem 2rem;
+  max-width: 480px;
+  margin: 0 auto 2rem;
+  animation: fadeUp 0.6s 0.15s ease-out both;
+}
+.form-card h2 {
+  font-family: var(--mono);
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: var(--text);
+}
+.form-group {
+  margin-bottom: 1.2rem;
+}
+.form-group label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-bottom: 0.4rem;
+}
+.form-group input {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.form-group input:focus {
+  border-color: var(--accent);
+}
+.form-group input::placeholder {
+  color: var(--text-faint);
+}
+
+.validate-btn {
+  display: block;
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.75rem;
+  border: 1.5px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 0.5rem;
+}
+.validate-btn:hover {
+  background: var(--accent);
+  color: var(--bg);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.error-msg {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--red);
+  margin-top: 1rem;
+  display: none;
+}
+.error-msg.visible { display: block; }
+
+/* ── Certificate preview ── */
+.cert-preview {
+  display: none;
+  animation: fadeUp 0.6s ease-out both;
+}
+.cert-preview.visible { display: block; }
+
+.cert-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.lang-toggle {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.lang-toggle:hover {
+  border-color: var(--border-hi);
+  color: var(--text);
+}
+.lang-toggle.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.5rem 1.2rem;
+  border: 1.5px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.download-btn:hover {
+  background: var(--accent);
+  color: var(--bg);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.back-btn {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.back-btn:hover {
+  border-color: var(--border-hi);
+  color: var(--text);
+}
+
+.canvas-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+.canvas-wrap canvas {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+/* ── Share URL ── */
+.share-section {
+  max-width: 600px;
+  margin: 0 auto 2rem;
+}
+.share-section label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  margin-bottom: 0.4rem;
+}
+.share-row {
+  display: flex;
+  gap: 0.5rem;
+}
+.share-row input {
+  flex: 1;
+  padding: 0.5rem 0.8rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  outline: none;
+}
+.copy-btn {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.copy-btn:hover {
+  border-color: var(--border-hi);
+  color: var(--text);
+}
+
+/* ── Footer ── */
+.footer {
+  text-align: center;
+  padding: 2rem 0 1rem;
+  font-size: 0.65rem;
+  color: var(--text-faint);
+  font-family: var(--mono);
+  animation: fadeUp 0.6s 0.25s ease-out both;
+}
+.footer a {
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.footer a:hover { color: var(--cyan); }
+
+/* ── Animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .container { padding: 2.5rem 1.2rem 2rem; }
+  .logo { font-size: 2.2rem; }
+  .form-card { padding: 1.8rem 1.2rem; }
+  .cert-controls { flex-direction: column; gap: 0.8rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- Background cable pattern -->
+<div class="bg-cables">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <style>
+      .cable { fill:none; stroke:#d4a017; stroke-width:1.5; }
+      .cable2 { fill:none; stroke:#3ec9d1; stroke-width:1; }
+      .cable3 { fill:none; stroke:#6abf69; stroke-width:1; }
+    </style>
+  </defs>
+  <path class="cable" d="M0,80 C200,80 200,200 400,200 S600,320 800,320"/>
+  <path class="cable2" d="M0,200 C150,200 250,100 400,100 S650,300 800,180"/>
+  <path class="cable3" d="M0,400 C200,400 300,280 500,300 S700,450 800,400"/>
+  <path class="cable" d="M0,520 C300,520 200,400 500,450 S700,550 800,500"/>
+  <path class="cable2" d="M0,350 C100,350 300,500 500,480 S600,350 800,280"/>
+  <circle cx="400" cy="200" r="3" fill="#d4a017" opacity="0.5"/>
+  <circle cx="400" cy="100" r="3" fill="#3ec9d1" opacity="0.5"/>
+  <circle cx="500" cy="300" r="3" fill="#6abf69" opacity="0.5"/>
+  <circle cx="500" cy="450" r="3" fill="#d4a017" opacity="0.5"/>
+  <circle cx="500" cy="480" r="3" fill="#3ec9d1" opacity="0.5"/>
+</svg>
+</div>
+
+<div class="container">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">GCU</div>
+    <div class="tagline">certificate validation</div>
+    <div id="seriesTag" class="series-tag"></div>
+  </header>
+
+  <!-- Form -->
+  <div id="formSection" class="form-card">
+    <h2>Validate your certificate</h2>
+    <div class="form-group">
+      <label for="nameInput">Full name</label>
+      <input type="text" id="nameInput" placeholder="as registered">
+    </div>
+    <div class="form-group">
+      <label for="codeInput">Validation code</label>
+      <input type="text" id="codeInput" placeholder="PB-101-XXXX">
+    </div>
+    <button class="validate-btn" onclick="validate()">Validate</button>
+    <div id="errorMsg" class="error-msg"></div>
+  </div>
+
+  <!-- Certificate preview -->
+  <div id="certPreview" class="cert-preview">
+    <div class="cert-controls">
+      <button class="back-btn" onclick="showForm()">&#8592; New validation</button>
+      <button class="lang-toggle active" id="btnEN" onclick="setLang('en')">EN</button>
+      <button class="lang-toggle" id="btnPT" onclick="setLang('pt')">PT</button>
+      <button class="download-btn" onclick="downloadPDF()">&#8595; Download PDF</button>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="certCanvas" width="2100" height="2970"></canvas>
+    </div>
+    <div class="share-section">
+      <label>Share / validation URL</label>
+      <div class="share-row">
+        <input type="text" id="shareURL" readonly>
+        <button class="copy-btn" onclick="copyShare()">Copy</button>
+        <button class="copy-btn" id="shareBtn" onclick="shareCert()" style="display:none">Share</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <a href="../patchbay/" target="_blank">Patchbay</a>
+    &nbsp;&middot;&nbsp; <a href="https://endarthur.github.io" target="_blank">endarthur</a>
+    &nbsp;&middot;&nbsp; <a href="https://gentropic.org" target="_blank">Geoscientific Chaos Union</a>
+    <br><span style="opacity:0.6">QR codes by <a href="https://www.nayuki.io/page/qr-code-generator-library" target="_blank">Nayuki</a>
+    &nbsp;&middot;&nbsp; PDF by <a href="https://github.com/parallax/jsPDF" target="_blank">jsPDF</a></span>
+  </div>
+
+</div>
+
+<!-- QR Code generator library v1.8.0 by Project Nayuki (MIT License)
+     https://github.com/nayuki/QR-Code-generator
+     https://www.nayuki.io/page/qr-code-generator-library -->
+<script src="./qrcodegen-v1.8.0-es6.js"></script>
+<!-- jsPDF 2.5.2 by parallax (MIT License)
+     https://github.com/parallax/jsPDF -->
+<script src="./jspdf-2.5.2.umd.min.js"></script>
+<script>
+/* ══════════════════════════════════════════════════
+   Configuration
+   ══════════════════════════════════════════════════ */
+
+let SERIES = {};
+let COURSES = {};
+
+const STRINGS = {
+  en: {
+    certOf: 'CERTIFICATE OF COMPLETION',
+    certifies: 'This certifies that',
+    completed: 'has successfully completed',
+    topics: 'Topics covered',
+    workload: 'Workload',
+    hours: 'hours',
+    dateLabel: 'Date of completion',
+    validCode: 'Validation code',
+    validURL: 'Verify at',
+  },
+  pt: {
+    certOf: 'CERTIFICADO DE CONCLUS\u00c3O',
+    certifies: 'Certificamos que',
+    completed: 'concluiu com \u00eaxito',
+    topics: 'T\u00f3picos abordados',
+    workload: 'Carga hor\u00e1ria',
+    hours: 'horas',
+    dateLabel: 'Data de conclus\u00e3o',
+    validCode: 'C\u00f3digo de valida\u00e7\u00e3o',
+    validURL: 'Verifique em',
+  },
+};
+
+const LAYOUTS = {
+  topo: renderTopoLayout,
+};
+
+/* ══════════════════════════════════════════════════
+   State
+   ══════════════════════════════════════════════════ */
+
+let currentLang = 'en';
+let currentCert = null;
+let certsManifest = [];
+
+/* ══════════════════════════════════════════════════
+   Initialization
+   ══════════════════════════════════════════════════ */
+
+async function init() {
+  try {
+    const [certsResp, coursesResp] = await Promise.all([
+      fetch('./certs.json'),
+      fetch('./courses.json'),
+    ]);
+    if (certsResp.ok) certsManifest = await certsResp.json();
+    if (coursesResp.ok) {
+      const cfg = await coursesResp.json();
+      SERIES = cfg.series || {};
+      COURSES = cfg.courses || {};
+    }
+  } catch (_) { /* data not available */ }
+
+  // Check URL fragment for auto-validation
+  const hash = window.location.hash.slice(1);
+  if (hash) {
+    const params = new URLSearchParams(hash);
+    const code = params.get('v');
+    const name = params.get('n');
+    if (code && name) {
+      document.getElementById('nameInput').value = name;
+      document.getElementById('codeInput').value = code;
+      validate();
+    }
+  }
+}
+
+// Wait for fonts then init
+document.fonts.ready.then(init);
+
+/* ══════════════════════════════════════════════════
+   Validation
+   ══════════════════════════════════════════════════ */
+
+function normalize(s) {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+function validate() {
+  const name = document.getElementById('nameInput').value.trim();
+  const code = document.getElementById('codeInput').value.trim();
+  const errEl = document.getElementById('errorMsg');
+
+  if (!name || !code) {
+    showError(errEl, 'Please enter both name and validation code.');
+    return;
+  }
+
+  const entry = certsManifest.find(e =>
+    normalize(e.name) === normalize(name) &&
+    e.code.toLowerCase() === code.toLowerCase()
+  );
+
+  if (!entry) {
+    showError(errEl, 'No matching certificate found. Check your name and code.');
+    return;
+  }
+
+  const courseKey = entry.course || code.replace(/-[^-]+$/, '');
+  const course = COURSES[courseKey];
+  if (!course) {
+    showError(errEl, 'Unknown course: ' + courseKey);
+    return;
+  }
+
+  errEl.classList.remove('visible');
+  currentCert = { ...entry, courseKey };
+  showPreview();
+}
+
+function showError(el, msg) {
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+
+/* ══════════════════════════════════════════════════
+   UI State
+   ══════════════════════════════════════════════════ */
+
+function applyTheme(hex) {
+  const el = document.documentElement;
+  el.style.setProperty('--accent', hex);
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  el.style.setProperty('--accent-dim', 'rgba(' + r + ',' + g + ',' + b + ',0.12)');
+  el.style.setProperty('--accent-glow', 'rgba(' + r + ',' + g + ',' + b + ',0.2)');
+}
+
+function showPreview() {
+  document.getElementById('formSection').style.display = 'none';
+  document.getElementById('certPreview').classList.add('visible');
+
+  const course = COURSES[currentCert.courseKey];
+  const series = SERIES[course.series];
+  applyTheme(series.pageAccent);
+
+  document.querySelector('.bg-cables').style.display =
+    series.pageBg === 'cables' ? 'block' : 'none';
+
+  const tag = document.getElementById('seriesTag');
+  tag.textContent = series.name + ' series';
+  tag.classList.add('visible');
+
+  const base = window.location.href.split('#')[0];
+  const url = base + '#v=' + encodeURIComponent(currentCert.code) +
+              '&n=' + encodeURIComponent(currentCert.name);
+  document.getElementById('shareURL').value = url;
+  document.getElementById('shareBtn').style.display =
+    navigator.share ? 'block' : 'none';
+
+  renderCertificate();
+}
+
+function showForm() {
+  document.getElementById('formSection').style.display = 'block';
+  document.getElementById('certPreview').classList.remove('visible');
+  document.getElementById('seriesTag').classList.remove('visible');
+  document.querySelector('.bg-cables').style.display = 'none';
+  applyTheme('#d4a017'); // reset to default
+  currentCert = null;
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  document.getElementById('btnEN').classList.toggle('active', lang === 'en');
+  document.getElementById('btnPT').classList.toggle('active', lang === 'pt');
+  renderCertificate();
+}
+
+function copyShare() {
+  const input = document.getElementById('shareURL');
+  navigator.clipboard.writeText(input.value).then(() => {
+    const btn = input.nextElementSibling;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+  });
+}
+
+function shareCert() {
+  const course = COURSES[currentCert.courseKey];
+  const url = document.getElementById('shareURL').value;
+  navigator.share({
+    title: course.title[currentLang],
+    text: currentCert.name + ' \u2014 ' + course.title[currentLang],
+    url: url,
+  }).catch(() => {});
+}
+
+/* ══════════════════════════════════════════════════
+   Seeded PRNG — mulberry32
+   ══════════════════════════════════════════════════ */
+
+function hashCode(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+  }
+  return h >>> 0;
+}
+
+function mulberry32(seed) {
+  return function() {
+    seed |= 0;
+    seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/* ══════════════════════════════════════════════════
+   2D Value Noise
+   ══════════════════════════════════════════════════ */
+
+function generateNoiseField(rng, cols, rows, octaves) {
+  function makeGrid(c, r) {
+    const g = [];
+    for (let i = 0; i < r; i++) {
+      g[i] = [];
+      for (let j = 0; j < c; j++) g[i][j] = rng();
+    }
+    return g;
+  }
+
+  function sample(grid, x, y, gc, gr) {
+    const fx = x * (gc - 1), fy = y * (gr - 1);
+    const ix = Math.floor(fx), iy = Math.floor(fy);
+    const dx = fx - ix, dy = fy - iy;
+    const ix1 = Math.min(ix + 1, gc - 1);
+    const iy1 = Math.min(iy + 1, gr - 1);
+    return (
+      grid[iy][ix]   * (1 - dx) * (1 - dy) +
+      grid[iy][ix1]  * dx       * (1 - dy) +
+      grid[iy1][ix]  * (1 - dx) * dy +
+      grid[iy1][ix1] * dx       * dy
+    );
+  }
+
+  const field = [];
+  for (let y = 0; y < rows; y++) {
+    field[y] = new Array(cols).fill(0);
+  }
+
+  let amp = 1, totalAmp = 0;
+  for (let o = 0; o < octaves; o++) {
+    const gc = Math.max(3, Math.floor(cols / Math.pow(2, octaves - 1 - o)));
+    const gr = Math.max(3, Math.floor(rows / Math.pow(2, octaves - 1 - o)));
+    const grid = makeGrid(gc, gr);
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        field[y][x] += sample(grid, x / (cols - 1), y / (rows - 1), gc, gr) * amp;
+      }
+    }
+    totalAmp += amp;
+    amp *= 0.5;
+  }
+
+  for (let y = 0; y < rows; y++)
+    for (let x = 0; x < cols; x++)
+      field[y][x] /= totalAmp;
+
+  return field;
+}
+
+/* ══════════════════════════════════════════════════
+   Marching Squares
+   ══════════════════════════════════════════════════ */
+
+function marchingSquares(field, threshold, cols, rows) {
+  const segments = [];
+
+  for (let y = 0; y < rows - 1; y++) {
+    for (let x = 0; x < cols - 1; x++) {
+      const tl = field[y][x],     tr = field[y][x + 1];
+      const bl = field[y + 1][x], br = field[y + 1][x + 1];
+
+      let idx = 0;
+      if (tl >= threshold) idx |= 8;
+      if (tr >= threshold) idx |= 4;
+      if (br >= threshold) idx |= 2;
+      if (bl >= threshold) idx |= 1;
+
+      if (idx === 0 || idx === 15) continue;
+
+      const lerp = (a, b) => (threshold - a) / (b - a);
+      const top    = { x: x + lerp(tl, tr), y: y };
+      const right  = { x: x + 1,            y: y + lerp(tr, br) };
+      const bottom = { x: x + lerp(bl, br), y: y + 1 };
+      const left   = { x: x,                y: y + lerp(tl, bl) };
+
+      const add = (a, b) => segments.push([a, b]);
+
+      switch (idx) {
+        case 1:  add(left, bottom); break;
+        case 2:  add(bottom, right); break;
+        case 3:  add(left, right); break;
+        case 4:  add(top, right); break;
+        case 5:  add(left, top); add(bottom, right); break;
+        case 6:  add(top, bottom); break;
+        case 7:  add(left, top); break;
+        case 8:  add(top, left); break;
+        case 9:  add(top, bottom); break;
+        case 10: add(top, right); add(left, bottom); break;
+        case 11: add(top, right); break;
+        case 12: add(left, right); break;
+        case 13: add(bottom, right); break;
+        case 14: add(left, bottom); break;
+      }
+    }
+  }
+
+  return segments;
+}
+
+/* ══════════════════════════════════════════════════
+   Topographic Contour Rendering
+   ══════════════════════════════════════════════════ */
+
+function renderTopoContours(ctx, code, color, W, H) {
+  // ── Layout version 1 ──
+  // These params are baked into issued certificates. If you change them,
+  // old certs will render differently. Bump the version in certs.json
+  // and branch on cert.v here so existing certs keep their original look.
+  const nCols = 40, nRows = 56;    // noise grid resolution
+  const octaves = 3;                // noise detail layers
+  const numContours = 10;           // contour threshold count
+  const lineWidth = 2;              // contour stroke width
+  const opacityMin = 0.15;          // lowest contour opacity
+  const opacityRange = 0.20;        // added to min for highest contour
+
+  const seed = hashCode(code);
+  const rng = mulberry32(seed);
+  const field = generateNoiseField(rng, nCols, nRows, octaves);
+
+  const scaleX = W / (nCols - 1);
+  const scaleY = H / (nRows - 1);
+
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lineWidth;
+
+  for (let i = 1; i <= numContours; i++) {
+    const t = i / (numContours + 1);
+    ctx.globalAlpha = opacityMin + (i / numContours) * opacityRange;
+    const segs = marchingSquares(field, t, nCols, nRows);
+    ctx.beginPath();
+    for (const [a, b] of segs) {
+      ctx.moveTo(a.x * scaleX, a.y * scaleY);
+      ctx.lineTo(b.x * scaleX, b.y * scaleY);
+    }
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+/* ══════════════════════════════════════════════════
+   Text Wrapping Helper
+   ══════════════════════════════════════════════════ */
+
+function wrapText(ctx, text, maxWidth) {
+  const words = text.split(' ');
+  const lines = [];
+  let line = '';
+  for (const word of words) {
+    const test = line ? line + ' ' + word : word;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+/* ══════════════════════════════════════════════════
+   Certificate Rendering
+   ══════════════════════════════════════════════════ */
+
+function renderCertificate() {
+  if (!currentCert) return;
+  const course = COURSES[currentCert.courseKey];
+  const series = SERIES[course.series];
+  LAYOUTS[series.layout](currentCert, course, series);
+}
+
+function renderTopoLayout(cert, course, series) {
+  const canvas = document.getElementById('certCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = 2100, H = 2970;
+  const margin = 150;
+  const str = STRINGS[currentLang];
+  const color = course.color;
+
+  // ── Light print-friendly palette ──
+  const textDark = '#1a1a18';
+  const textMid = '#4a4a46';
+  const textLight = '#8a8a84';
+
+  // ── Colored bars layout ──
+  // All courses in this series, sorted by key
+  const seriesCourses = Object.entries(COURSES)
+    .filter(([_, c]) => c.series === course.series)
+    .sort(([a], [b]) => a.localeCompare(b));
+
+  const barWidthCurrent = 140;
+  const barWidthOther = 35;
+  const barGap = 10;
+  const totalBarW = seriesCourses.reduce((sum, [k]) =>
+    sum + (k === cert.courseKey ? barWidthCurrent : barWidthOther) + barGap, -barGap);
+  const barStart = W - totalBarW - 30; // 30px breathing room from right edge
+
+  // Text area: centered in the space left of bars
+  const textRight = barStart - 50;
+  const textLeft = margin;
+  const cx = (textLeft + textRight) / 2;
+  const cw = textRight - textLeft;
+
+  // ── Background ──
+  ctx.fillStyle = '#fafaf8';
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Colored bars ──
+  let bx = barStart;
+  for (const [key, c] of seriesCourses) {
+    const isCurrent = key === cert.courseKey;
+    const w = isCurrent ? barWidthCurrent : barWidthOther;
+    ctx.fillStyle = c.color;
+    ctx.globalAlpha = isCurrent ? 0.45 : 0.22;
+    ctx.fillRect(bx, 0, w, H);
+    ctx.globalAlpha = 1;
+    bx += w + barGap;
+  }
+
+  // ── Topographic contours (over everything including bars) ──
+  renderTopoContours(ctx, cert.code, color, W, H);
+
+  // ── Text rendering (top to bottom, off-center) ──
+  ctx.textAlign = 'center';
+  let y = margin + 200;
+
+  // Organization name
+  ctx.fillStyle = textLight;
+  ctx.font = '400 28px "IBM Plex Mono", monospace';
+  ctx.fillText(series.org, cx, y);
+  y += 110;
+
+  // Series name (PATCHBAY)
+  ctx.fillStyle = textDark;
+  ctx.font = '700 110px "IBM Plex Mono", monospace';
+  ctx.fillText(series.name.toUpperCase(), cx, y);
+  y += 60;
+
+  // Accent rule
+  ctx.fillStyle = color;
+  ctx.fillRect(cx - 200, y, 400, 3);
+  y += 100;
+
+  // CERTIFICATE OF COMPLETION
+  ctx.fillStyle = textMid;
+  ctx.font = '500 44px "IBM Plex Sans", sans-serif';
+  ctx.fillText(str.certOf, cx, y);
+  y += 120;
+
+  // "This certifies that"
+  ctx.fillStyle = textLight;
+  ctx.font = '300 32px "IBM Plex Sans", sans-serif';
+  ctx.fillText(str.certifies, cx, y);
+  y += 100;
+
+  // Student name (auto-scale if too wide)
+  ctx.fillStyle = textDark;
+  let nameSize = 72;
+  ctx.font = '700 ' + nameSize + 'px "IBM Plex Sans", sans-serif';
+  while (ctx.measureText(cert.name).width > cw - 60 && nameSize > 36) {
+    nameSize -= 2;
+    ctx.font = '700 ' + nameSize + 'px "IBM Plex Sans", sans-serif';
+  }
+  ctx.fillText(cert.name, cx, y);
+  y += 100;
+
+  // "has successfully completed"
+  ctx.fillStyle = textLight;
+  ctx.font = '300 32px "IBM Plex Sans", sans-serif';
+  ctx.fillText(str.completed, cx, y);
+  y += 100;
+
+  // Workshop title in accent color (auto-scale)
+  ctx.fillStyle = color;
+  let titleSize = 48;
+  const titleText = course.title[currentLang];
+  ctx.font = '600 ' + titleSize + 'px "IBM Plex Mono", monospace';
+  while (ctx.measureText(titleText).width > cw - 40 && titleSize > 28) {
+    titleSize -= 2;
+    ctx.font = '600 ' + titleSize + 'px "IBM Plex Mono", monospace';
+  }
+  ctx.fillText(titleText, cx, y);
+  y += 80;
+
+  // Topics label
+  ctx.fillStyle = textLight;
+  ctx.font = '400 24px "IBM Plex Sans", sans-serif';
+  ctx.fillText(str.topics + ':', cx, y);
+  y += 50;
+
+  // Bulleted topic list
+  ctx.textAlign = 'left';
+  ctx.fillStyle = textMid;
+  ctx.font = '400 25px "IBM Plex Sans", sans-serif';
+  const bulletIndent = cx - cw / 2 + 40;
+  const bulletTextX = bulletIndent + 30;
+  const items = course.desc[currentLang];
+  for (const item of items) {
+    ctx.fillStyle = color;
+    ctx.fillText('\u2022', bulletIndent, y);
+    ctx.fillStyle = textMid;
+    // Wrap long items
+    const wrapped = wrapText(ctx, item, cw - 100);
+    for (let j = 0; j < wrapped.length; j++) {
+      ctx.fillText(wrapped[j], bulletTextX, y);
+      y += 36;
+    }
+    y += 4;
+  }
+  ctx.textAlign = 'center';
+  y += 40;
+
+  // Workload
+  ctx.fillStyle = textDark;
+  ctx.font = '500 28px "IBM Plex Sans", sans-serif';
+  ctx.fillText(str.workload + ': ' + course.hours + ' ' + str.hours, cx, y);
+  y += 80;
+
+  // Date of completion
+  const dateObj = new Date(cert.date + 'T12:00:00');
+  const locale = currentLang === 'pt' ? 'pt-BR' : 'en-US';
+  const dateStr = new Intl.DateTimeFormat(locale, {
+    year: 'numeric', month: 'long', day: 'numeric',
+  }).format(dateObj);
+  ctx.fillStyle = textLight;
+  ctx.font = '400 26px "IBM Plex Sans", sans-serif';
+  ctx.fillText(str.dateLabel + ': ' + dateStr, cx, y);
+
+  // ── Bottom section (positioned from bottom edge) ──
+  let by = H - margin - 80;
+
+  // QR code
+  const baseURL = window.location.href.split('#')[0];
+  const shareURL = baseURL + '#v=' + encodeURIComponent(cert.code) +
+                   '&n=' + encodeURIComponent(cert.name);
+  drawQR(ctx, shareURL, cx, by, 180, textDark);
+  by -= 120;
+
+  // Validation URL
+  ctx.fillStyle = textLight;
+  ctx.font = '400 20px "IBM Plex Mono", monospace';
+  ctx.fillText(str.validURL + ': ' + baseURL, cx, by);
+  by -= 50;
+
+  // Validation code
+  ctx.fillStyle = textMid;
+  ctx.font = '500 24px "IBM Plex Mono", monospace';
+  ctx.fillText(str.validCode + ': ' + cert.code, cx, by);
+  by -= 50;
+
+  // Bottom accent rule
+  ctx.fillStyle = color;
+  ctx.fillRect(cx - 200, by, 400, 2);
+  by -= 100;
+
+  // Issuer title
+  ctx.fillStyle = textLight;
+  ctx.font = '400 24px "IBM Plex Sans", sans-serif';
+  ctx.fillText(series.issuerTitle[currentLang], cx, by);
+  by -= 45;
+
+  // Issuer name
+  ctx.fillStyle = textDark;
+  ctx.font = '600 34px "IBM Plex Sans", sans-serif';
+  ctx.fillText(series.issuer, cx, by);
+  by -= 30;
+
+  // Signature line
+  ctx.strokeStyle = textLight;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(cx - 160, by);
+  ctx.lineTo(cx + 160, by);
+  ctx.stroke();
+}
+
+/* ══════════════════════════════════════════════════
+   QR Code Rendering
+   ══════════════════════════════════════════════════ */
+
+function drawQR(ctx, url, cx, cy, size, color) {
+  const QrCode = qrcodegen.QrCode;
+  const qr = QrCode.encodeText(url, QrCode.Ecc.MEDIUM);
+  const modules = qr.size;
+  const cellSize = size / modules;
+
+  ctx.save();
+  // White background behind QR
+  ctx.fillStyle = '#fafaf8';
+  ctx.fillRect(cx - size / 2 - 6, cy - size / 2 - 6, size + 12, size + 12);
+
+  const ox = cx - size / 2;
+  const oy = cy - size / 2;
+  ctx.fillStyle = color;
+  for (let y = 0; y < modules; y++) {
+    for (let x = 0; x < modules; x++) {
+      if (qr.getModule(x, y)) {
+        ctx.fillRect(ox + x * cellSize, oy + y * cellSize, cellSize + 0.5, cellSize + 0.5);
+      }
+    }
+  }
+  ctx.restore();
+}
+
+/* ══════════════════════════════════════════════════
+   PDF Download
+   ══════════════════════════════════════════════════ */
+
+function downloadPDF() {
+  const canvas = document.getElementById('certCanvas');
+  if (typeof window.jspdf !== 'undefined') {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    });
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+    pdf.save('patchbay-cert-' + currentCert.code + '.pdf');
+  } else {
+    // Fallback: download as PNG
+    const link = document.createElement('a');
+    link.download = 'patchbay-cert-' + currentCert.code + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }
+}
+</script>
+</body>
+</html>

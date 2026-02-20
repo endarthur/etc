@@ -1,0 +1,122 @@
+{
+  "series": {
+    "patchbay": {
+      "name": "Patchbay",
+      "org": "Geoscientific Chaos Union",
+      "issuer": "Arthur Endlein",
+      "issuerTitle": {
+        "en": "Instructor \u2014 Patchbay Series",
+        "pt": "Instrutor \u2014 S\u00e9rie Patchbay"
+      },
+      "layout": "topo",
+      "pageAccent": "#d4a017",
+      "pageBg": "cables"
+    }
+  },
+  "courses": {
+    "PB-101": {
+      "series": "patchbay",
+      "title": {
+        "en": "Patchbay 101 \u2014 API Workshop",
+        "pt": "Patchbay 101 \u2014 Workshop de APIs"
+      },
+      "desc": {
+        "en": [
+          "HTTP methods, status codes, and request/response anatomy",
+          "JSON parsing and structured data extraction",
+          "REST API consumption with query parameters and headers",
+          "Building and debugging requests with fetch()",
+          "Integrating live API data into a web page"
+        ],
+        "pt": [
+          "M\u00e9todos HTTP, c\u00f3digos de status e anatomia de requisi\u00e7\u00e3o/resposta",
+          "An\u00e1lise de JSON e extra\u00e7\u00e3o de dados estruturados",
+          "Consumo de APIs REST com par\u00e2metros de consulta e cabe\u00e7alhos",
+          "Constru\u00e7\u00e3o e depura\u00e7\u00e3o de requisi\u00e7\u00f5es com fetch()",
+          "Integra\u00e7\u00e3o de dados de API em tempo real numa p\u00e1gina web"
+        ]
+      },
+      "hours": 3,
+      "color": "#d4a017"
+    },
+    "PB-201": {
+      "series": "patchbay",
+      "title": {
+        "en": "Patchbay 201 \u2014 Bot Workshop",
+        "pt": "Patchbay 201 \u2014 Workshop de Bot"
+      },
+      "desc": {
+        "en": [
+          "Telegram Bot API and bot registration with BotFather",
+          "Polling architecture and the message loop",
+          "Command parsing, routing, and response handling",
+          "External API integration from bot context",
+          "State management and interactive conversation flow"
+        ],
+        "pt": [
+          "API de Bot do Telegram e registro com BotFather",
+          "Arquitetura de polling e o loop de mensagens",
+          "An\u00e1lise de comandos, roteamento e tratamento de respostas",
+          "Integra\u00e7\u00e3o com APIs externas a partir do contexto do bot",
+          "Gerenciamento de estado e fluxo de conversa\u00e7\u00e3o interativa"
+        ]
+      },
+      "hours": 4,
+      "color": "#3ec9d1"
+    },
+    "PB-301": {
+      "series": "patchbay",
+      "title": {
+        "en": "Patchbay 301 \u2014 Flow Workshop",
+        "pt": "Patchbay 301 \u2014 Workshop de Fluxo"
+      },
+      "desc": {
+        "en": [
+          "Visual dataflow programming concepts and paradigms",
+          "Node-based pipeline design, wiring, and execution",
+          "API orchestration with HTTP and transformation nodes",
+          "Conditional logic and data routing",
+          "Sub-graph composition and reusable custom nodes",
+          "Full Telegram bot built entirely without code"
+        ],
+        "pt": [
+          "Conceitos e paradigmas de programa\u00e7\u00e3o visual de fluxo de dados",
+          "Design de pipelines baseado em n\u00f3s, conex\u00f5es e execu\u00e7\u00e3o",
+          "Orquestra\u00e7\u00e3o de APIs com n\u00f3s HTTP e de transforma\u00e7\u00e3o",
+          "L\u00f3gica condicional e roteamento de dados",
+          "Composi\u00e7\u00e3o de sub-grafos e n\u00f3s customizados reutiliz\u00e1veis",
+          "Bot completo do Telegram constru\u00eddo inteiramente sem c\u00f3digo"
+        ]
+      },
+      "hours": 8,
+      "color": "#6abf69"
+    },
+    "PB-401": {
+      "series": "patchbay",
+      "title": {
+        "en": "Patchbay 401 \u2014 Agent Workshop",
+        "pt": "Patchbay 401 \u2014 Workshop de Agente"
+      },
+      "desc": {
+        "en": [
+          "LLM-powered agent architecture and design patterns",
+          "The ReAct loop: think, act, observe, reply",
+          "Tool use and dynamic skill creation",
+          "Memory systems and persistent context",
+          "Multi-provider routing and model selection",
+          "Scheduling, logging, and autonomous operation"
+        ],
+        "pt": [
+          "Arquitetura de agentes com LLM e padr\u00f5es de design",
+          "O ciclo ReAct: pensar, agir, observar, responder",
+          "Uso de ferramentas e cria\u00e7\u00e3o din\u00e2mica de habilidades",
+          "Sistemas de mem\u00f3ria e contexto persistente",
+          "Roteamento multi-provedor e sele\u00e7\u00e3o de modelo",
+          "Agendamento, registro e opera\u00e7\u00e3o aut\u00f4noma"
+        ]
+      },
+      "hours": 10,
+      "color": "#a78bfa"
+    }
+  }
+}

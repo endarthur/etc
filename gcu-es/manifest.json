@@ -1,0 +1,33 @@
+{
+  "name": "GCUES",
+  "short_name": "GCUES",
+  "description": "Geoscientific Chaos Union Entertainment System — QR cartridge scanner and runner",
+  "start_url": "./gcues.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#d8d4ce",
+  "background_color": "#0a0a08",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='64' fill='%230a0a08'/%3E%3Ctext x='256' y='280' font-family='monospace' font-size='120' font-weight='bold' fill='%23d4a017' text-anchor='middle'%3EGCU%3C/text%3E%3Ctext x='256' y='370' font-family='monospace' font-size='64' font-weight='bold' fill='%23d8d4ce' text-anchor='middle' letter-spacing='8'%3EES%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='64' fill='%230a0a08'/%3E%3Ctext x='256' y='280' font-family='monospace' font-size='120' font-weight='bold' fill='%23d4a017' text-anchor='middle'%3EGCU%3C/text%3E%3Ctext x='256' y='370' font-family='monospace' font-size='64' font-weight='bold' fill='%23d8d4ce' text-anchor='middle' letter-spacing='8'%3EES%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "share_target": {
+    "action": "./gcues.html",
+    "method": "GET",
+    "params": {
+      "text": "text",
+      "url": "url"
+    }
+  }
+}

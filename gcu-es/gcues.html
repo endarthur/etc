@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#d8d4ce">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>GCUES</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ══════════════════════════════════════════════════
+   GCUES v0.1 — Geoscientific Chaos Union Entertainment System
+   ══════════════════════════════════════════════════ */
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Plastic frame palette */
+  --plastic: #d8d4ce;
+  --plastic-hi: #e8e4de;
+  --plastic-lo: #b8b4ae;
+  --plastic-shadow: #a09c96;
+  --plastic-text: #4a4640;
+  --plastic-emboss: rgba(255,255,255,0.6);
+
+  /* Dark screen palette */
+  --screen-bg: #0a0a08;
+  --screen-dim: #1a1a16;
+  --screen-text: #8a8780;
+  --screen-bright: #d4d0c8;
+  --amber: #d4a017;
+  --amber-dim: rgba(212,160,23,0.15);
+  --amber-glow: rgba(212,160,23,0.4);
+  --green: #6abf69;
+  --red: #c0392b;
+
+  /* Warm paper palette (library) */
+  --paper: #f4efe6;
+  --paper-line: #e0d8cc;
+  --paper-shadow: rgba(60,50,30,0.12);
+  --paper-text: #3a3530;
+  --paper-dim: #8a8478;
+  --stamp-ink: #6b4423;
+  --sticker-border: #c8c0b4;
+
+  /* Typography */
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'IBM Plex Sans', sans-serif;
+
+  /* Layout */
+  --bar-h: 54px;
+}
+
+html, body {
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background: #222;
+  font-family: var(--mono);
+}
+
+/* ── Console shell ── */
+#console {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--screen-bg);
+  overflow: hidden;
+}
+
+@media (min-width: 481px) {
+  body { display: flex; align-items: center; justify-content: center; }
+  #console {
+    height: min(100%, 860px);
+    border-radius: 12px;
+    box-shadow:
+      0 0 0 2px var(--plastic-lo),
+      0 8px 40px rgba(0,0,0,0.5);
+  }
+}
+
+/* ══════════════════════════════════════════════════
+   TOP BAR — molded plastic frame
+   ══════════════════════════════════════════════════ */
+#topbar {
+  flex: 0 0 var(--bar-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  background:
+    linear-gradient(180deg,
+      var(--plastic-hi) 0%,
+      var(--plastic) 30%,
+      var(--plastic) 70%,
+      var(--plastic-lo) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.5),
+    inset 0 -1px 0 var(--plastic-shadow),
+    0 2px 6px rgba(0,0,0,0.3);
+  z-index: 10;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.bar-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Physical buttons ── */
+.bar-btn {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--plastic-text);
+  text-shadow: 0 1px 0 var(--plastic-emboss);
+  background:
+    linear-gradient(180deg,
+      var(--plastic-hi) 0%,
+      var(--plastic) 50%,
+      var(--plastic-lo) 100%);
+  border: none;
+  border-radius: 4px;
+  width: 52px;
+  padding: 6px 0;
+  text-align: center;
+  cursor: pointer;
+  box-shadow:
+    1px 1px 0 var(--plastic-shadow),
+    2px 2px 2px rgba(0,0,0,0.15),
+    inset 0 1px 0 rgba(255,255,255,0.4);
+  transition: box-shadow 0.08s, transform 0.08s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bar-btn:active {
+  box-shadow:
+    0 0 0 var(--plastic-shadow),
+    inset 1px 1px 2px rgba(0,0,0,0.2);
+  transform: translate(1px, 1px);
+}
+
+.bar-label {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--plastic-text);
+  text-shadow: 0 1px 0 var(--plastic-emboss);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+}
+
+/* Color dot accents */
+.bar-label::after {
+  content: '';
+  display: block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-top: 3px;
+  position: relative;
+  left: -21px;
+  background: #7b68ae;
+  box-shadow: 14px 0 0 #c0392b, 28px 0 0 #d4a017, 42px 0 0 #2e86c1;
+}
+
+.bar-btn-icon {
+  font-size: 16px;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+/* ══════════════════════════════════════════════════
+   SCREEN AREA
+   ══════════════════════════════════════════════════ */
+#screen {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: var(--screen-bg);
+}
+
+.screen-state {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+}
+.screen-state.active { display: flex; }
+
+/* ── Idle state ── */
+#state-idle {
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.idle-prompt {
+  text-align: center;
+  color: var(--screen-text);
+}
+
+.idle-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.4;
+  animation: idle-pulse 3s ease-in-out infinite;
+}
+
+@keyframes idle-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+.idle-text {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.idle-hint {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--screen-text);
+  opacity: 0.5;
+  margin-top: 24px;
+  max-width: 260px;
+  line-height: 1.5;
+}
+
+/* ── Scanning state ── */
+#state-scanning {
+  background: #000;
+}
+
+#camera-feed {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.viewfinder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.vf-frame {
+  width: 220px;
+  height: 220px;
+  position: relative;
+}
+
+/* Corner brackets */
+.vf-frame::before, .vf-frame::after,
+.vf-corner-bl, .vf-corner-br {
+  content: '';
+  position: absolute;
+  width: 28px; height: 28px;
+  border-color: var(--amber);
+  border-style: solid;
+  border-width: 0;
+}
+
+.vf-frame::before { top: 0; left: 0; border-top-width: 3px; border-left-width: 3px; }
+.vf-frame::after { top: 0; right: 0; border-top-width: 3px; border-right-width: 3px; }
+.vf-corner-bl { bottom: 0; left: 0; border-bottom-width: 3px; border-left-width: 3px; }
+.vf-corner-br { bottom: 0; right: 0; border-bottom-width: 3px; border-right-width: 3px; }
+
+/* Amber sweep line */
+.vf-sweep {
+  position: absolute;
+  left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, var(--amber) 50%, transparent 100%);
+  box-shadow: 0 0 12px var(--amber-glow);
+  animation: sweep 2s ease-in-out infinite;
+}
+
+@keyframes sweep {
+  0% { top: 10%; }
+  50% { top: 88%; }
+  100% { top: 10%; }
+}
+
+.scan-label {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--amber);
+  text-shadow: 0 0 8px var(--amber-glow);
+}
+
+.scan-cancel {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--screen-text);
+  opacity: 0.6;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 12px;
+}
+
+/* ── Running state ── */
+#state-running { background: #fff; }
+
+#cartridge-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #fff;
+}
+
+/* ── Immersive mode ── */
+body.immersive { background: #000; }
+body.immersive #console {
+  max-width: none;
+  height: 100%;
+  border-radius: 0;
+  box-shadow: none;
+}
+body.immersive #topbar { display: none; }
+body.immersive #screen { height: 100%; }
+.immersive-exit { display: none; }
+body.immersive .immersive-exit {
+  position: fixed; top: 8px; right: 12px; z-index: 100;
+  background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.2);
+  font-size: 24px; line-height: 1; width: 36px; height: 36px;
+  border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+body.immersive .immersive-exit.visible { opacity: 0.6; pointer-events: auto; }
+
+@media (hover: hover) {
+  /* Desktop: hide after 3s, show on hover */
+  body.immersive .immersive-exit { opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  body.immersive:hover .immersive-exit,
+  body.immersive .immersive-exit:focus { opacity: 0.6; pointer-events: auto; }
+  body.immersive .immersive-exit:hover { opacity: 1; }
+}
+
+/* ── No scanner hint ── */
+.no-scanner-hint {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 12px 16px;
+  background: rgba(10,10,8,0.92);
+  border-top: 1px solid var(--amber-dim);
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--amber);
+  text-align: center;
+  line-height: 1.5;
+  display: none;
+  z-index: 5;
+}
+.no-scanner-hint.visible { display: block; }
+
+.no-scanner-hint kbd {
+  font-family: var(--mono);
+  font-size: 11px;
+  background: var(--screen-dim);
+  border: 1px solid var(--amber-dim);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+
+/* ══════════════════════════════════════════════════
+   LIBRARY OVERLAY — zine binder
+   ══════════════════════════════════════════════════ */
+#library {
+  position: absolute;
+  inset: 0;
+  top: var(--bar-h);
+  z-index: 20;
+  display: none;
+  flex-direction: column;
+  background: var(--paper);
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#library.open {
+  display: flex;
+  transform: translateY(0);
+}
+
+/* Animation helper: show it off-screen first, then slide */
+#library.opening {
+  display: flex;
+  transform: translateY(100%);
+}
+
+/* ── Binder rings ── */
+.binder-spine {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 28px;
+  background:
+    linear-gradient(90deg, #c8c0b4, #ddd8d0 40%, #c8c0b4);
+  box-shadow: 2px 0 4px var(--paper-shadow);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+  padding: 20px 0;
+}
+
+.ring {
+  width: 18px; height: 18px;
+  border: 2.5px solid #999;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: inset 1px 1px 2px rgba(0,0,0,0.15);
+}
+
+/* ── Library header ── */
+.lib-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 14px 10px 40px;
+  border-bottom: 1px solid var(--paper-line);
+}
+
+.lib-title {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--paper-text);
+}
+
+.lib-count {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--paper-dim);
+  margin-left: 8px;
+}
+
+.lib-close {
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  color: var(--paper-dim);
+  background: none;
+  border: 1px solid var(--paper-line);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.lib-close:hover { border-color: var(--paper-text); color: var(--paper-text); }
+
+/* ── Card grid ── */
+.lib-pages {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  margin-left: 28px;
+}
+
+.lib-page {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 10px;
+  padding: 14px;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── Cartridge card ── */
+.cart-card {
+  position: relative;
+  background: #fff;
+  border: 1.5px solid var(--sticker-border);
+  border-radius: 6px;
+  padding: 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 1px 2px 4px var(--paper-shadow);
+  transition: transform 0.15s, box-shadow 0.15s;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cart-card:active {
+  transform: scale(0.97);
+  box-shadow: 0 1px 2px var(--paper-shadow);
+}
+
+.cart-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--paper-text);
+  line-height: 1.4;
+  word-break: break-word;
+  /* Clamp to 3 lines */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cart-author {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-style: italic;
+  color: var(--stamp-ink);
+  opacity: 0.6;
+  margin-top: 2px;
+}
+
+.cart-meta {
+  font-family: var(--sans);
+  font-size: 9px;
+  color: var(--paper-dim);
+  margin-top: 6px;
+  letter-spacing: 0.04em;
+}
+
+/* Rubber stamp date */
+.cart-stamp {
+  position: absolute;
+  top: 6px; right: 6px;
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--stamp-ink);
+  opacity: 0.35;
+  transform: rotate(-8deg);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Card action buttons */
+.cart-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.cart-action-btn {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 6px;
+  background: var(--paper);
+  border: 1px solid var(--paper-line);
+  border-radius: 3px;
+  color: var(--paper-dim);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.cart-action-btn:hover { color: var(--paper-text); border-color: var(--sticker-border); }
+.cart-action-btn.danger:hover { color: var(--red); border-color: var(--red); }
+
+/* ── Page navigation ── */
+.lib-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 10px 14px 14px 40px;
+  border-top: 1px solid var(--paper-line);
+}
+
+.lib-nav-btn {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--paper-dim);
+  background: none;
+  border: 1px solid var(--paper-line);
+  border-radius: 4px;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.lib-nav-btn:hover { color: var(--paper-text); border-color: var(--paper-text); }
+.lib-nav-btn:disabled { opacity: 0.3; cursor: default; }
+
+.lib-page-num {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--paper-dim);
+}
+
+/* ── Empty library ── */
+.lib-empty {
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--paper-dim);
+}
+
+.lib-empty-icon {
+  font-size: 36px;
+  margin-bottom: 12px;
+  opacity: 0.4;
+}
+
+.lib-empty-text {
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* ── Paste overlay ── */
+#paste-overlay {
+  position: absolute;
+  inset: 0;
+  top: var(--bar-h);
+  z-index: 15;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10,10,8,0.85);
+}
+
+#paste-overlay.visible { display: flex; }
+
+.paste-box {
+  text-align: center;
+  color: var(--screen-text);
+  padding: 24px;
+}
+
+.paste-box textarea {
+  width: 280px;
+  height: 100px;
+  margin-top: 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  background: var(--screen-dim);
+  color: var(--screen-bright);
+  border: 1px solid rgba(212,160,23,0.3);
+  border-radius: 4px;
+  padding: 8px;
+  resize: none;
+}
+
+.paste-box-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.paste-btn {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 6px 14px;
+  background: var(--screen-dim);
+  border: 1px solid var(--amber-dim);
+  border-radius: 4px;
+  color: var(--amber);
+  cursor: pointer;
+}
+
+.paste-btn.primary {
+  background: var(--amber-dim);
+  border-color: var(--amber);
+}
+
+/* ── Toast notification ── */
+#toast {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--screen-bright);
+  background: rgba(26,26,22,0.94);
+  border: 1px solid var(--amber-dim);
+  border-radius: 8px;
+  padding: 10px 18px;
+  z-index: 30;
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+#toast.visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+</style>
+</head>
+
+<body>
+
+<div id="console">
+  <button class="immersive-exit" id="btn-immersive-exit" title="Exit fullscreen (Esc)">&times;</button>
+
+  <!-- ── Top bar ── -->
+  <div id="topbar">
+    <div class="bar-group">
+      <button class="bar-btn" id="btn-reset">Reset</button>
+      <button class="bar-btn" id="btn-eject">Eject</button>
+    </div>
+    <span class="bar-label">GCUES</span>
+    <div class="bar-group">
+      <button class="bar-btn" id="btn-paste" title="Import data URI">Imp</button>
+      <button class="bar-btn" id="btn-fullscreen" title="Fullscreen">Full</button>
+    </div>
+  </div>
+
+  <!-- ── Screen area ── -->
+  <div id="screen">
+
+    <!-- Idle -->
+    <div id="state-idle" class="screen-state active">
+      <div class="idle-prompt">
+        <div class="idle-icon">&#x1F4F7;</div>
+        <div class="idle-text">Tap to scan</div>
+      </div>
+      <div class="idle-hint">
+        Scan a QR cartridge to run it, or paste a <kbd>data:text/html</kbd> URI.
+      </div>
+    </div>
+
+    <!-- Scanning -->
+    <div id="state-scanning" class="screen-state">
+      <video id="camera-feed" autoplay playsinline muted></video>
+      <div class="viewfinder">
+        <div class="vf-frame">
+          <div class="vf-corner-bl"></div>
+          <div class="vf-corner-br"></div>
+          <div class="vf-sweep"></div>
+        </div>
+      </div>
+      <div class="scan-label">Scanning&hellip;</div>
+      <button class="scan-cancel" id="btn-scan-cancel">tap to cancel</button>
+    </div>
+
+    <!-- Running -->
+    <div id="state-running" class="screen-state">
+      <iframe id="cartridge-frame" sandbox="allow-scripts allow-modals" scrolling="no"></iframe>
+    </div>
+
+    <!-- No BarcodeDetector hint -->
+    <div class="no-scanner-hint" id="no-scanner-hint">
+      QR scanner unavailable in this browser. Use the
+      <kbd>Paste</kbd> button or open
+      <kbd>gcues.html#data:text/html,...</kbd>
+    </div>
+  </div>
+
+  <!-- ── Library overlay ── -->
+  <div id="library">
+    <div class="binder-spine">
+      <div class="ring"></div><div class="ring"></div><div class="ring"></div>
+      <div class="ring"></div><div class="ring"></div><div class="ring"></div>
+    </div>
+
+    <div class="lib-header">
+      <div>
+        <span class="lib-title">Cartridges</span>
+        <span class="lib-count" id="lib-count"></span>
+      </div>
+      <button class="lib-close" id="btn-lib-close">&times;</button>
+    </div>
+
+    <div class="lib-pages" id="lib-pages"></div>
+
+    <div class="lib-nav">
+      <button class="lib-nav-btn" id="btn-page-prev">&larr;</button>
+      <span class="lib-page-num" id="lib-page-num"></span>
+      <button class="lib-nav-btn" id="btn-page-next">&rarr;</button>
+    </div>
+  </div>
+
+  <!-- ── Paste overlay ── -->
+  <div id="paste-overlay">
+    <div class="paste-box">
+      <div style="font-family:var(--mono);font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:var(--amber);">
+        Paste Data URI
+      </div>
+      <textarea id="paste-input" placeholder="data:text/html,<h1>hello</h1>"></textarea>
+      <div class="paste-box-actions">
+        <button class="paste-btn" id="btn-paste-cancel">Cancel</button>
+        <button class="paste-btn primary" id="btn-paste-load">Load</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Toast ── -->
+  <div id="toast"></div>
+
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════
+   GCUES v0.1 — Runtime
+   ══════════════════════════════════════════════════ */
+(function() {
+'use strict';
+
+const CARDS_PER_PAGE = 6;
+let currentState = 'idle';    // idle | scanning | running
+let currentCart = null;        // currently loaded cartridge
+let libraryOpen = false;
+let libPage = 0;
+let allCartridges = [];
+let scanStream = null;
+let scanInterval = null;
+
+// ── DOM refs ──
+const $ = (s) => document.querySelector(s);
+const $idle     = $('#state-idle');
+const $scanning = $('#state-scanning');
+const $running  = $('#state-running');
+const $video    = $('#camera-feed');
+const $iframe   = $('#cartridge-frame');
+const $library  = $('#library');
+const $libPages = $('#lib-pages');
+const $libCount = $('#lib-count');
+const $libPageNum = $('#lib-page-num');
+const $toast    = $('#toast');
+const $pasteOverlay = $('#paste-overlay');
+const $pasteInput   = $('#paste-input');
+const $noScannerHint = $('#no-scanner-hint');
+
+// ══════════════════════════════════════════════════
+// INDEXEDDB STORAGE
+// ══════════════════════════════════════════════════
+
+const DB_NAME = 'gcues';
+const DB_VER  = 1;
+const STORE   = 'cartridges';
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const r = indexedDB.open(DB_NAME, DB_VER);
+    r.onupgradeneeded = () => {
+      const db = r.result;
+      if (!db.objectStoreNames.contains(STORE)) {
+        db.createObjectStore(STORE, { keyPath: 'id' });
+      }
+    };
+    r.onsuccess = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+  });
+}
+
+async function getAllCartridges() {
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).getAll();
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+
+async function saveCartridge(cart) {
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).put(cart);
+    tx.oncomplete = () => res();
+    tx.onerror = () => rej(tx.error);
+  });
+}
+
+async function deleteCartridge(id) {
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).delete(id);
+    tx.oncomplete = () => res();
+    tx.onerror = () => rej(tx.error);
+  });
+}
+
+async function findByHash(hash) {
+  const carts = await getAllCartridges();
+  return carts.find(c => c.hash === hash) || null;
+}
+
+// ── Utilities ──
+
+async function hashHTML(html) {
+  const buf = new TextEncoder().encode(html);
+  const digest = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Parse optional metadata comment: <!-- gcues title: Foo; author: Bar -->
+function parseMeta(html) {
+  const m = html.match(/<!--\s*gcues\s+(.+?)\s*-->/i);
+  if (!m) return {};
+  const meta = {};
+  m[1].split(';').forEach(pair => {
+    const idx = pair.indexOf(':');
+    if (idx > 0) {
+      const key = pair.slice(0, idx).trim().toLowerCase();
+      const val = pair.slice(idx + 1).trim();
+      if (key && val) meta[key] = val;
+    }
+  });
+  return meta;
+}
+
+function extractTitle(html) {
+  // 1. gcues metadata comment
+  const meta = parseMeta(html);
+  if (meta.title) return meta.title;
+  // 2. <title> or heading tags
+  try {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const title = doc.querySelector('title');
+    if (title && title.textContent.trim()) return title.textContent.trim();
+    for (const tag of ['h1', 'h2', 'h3']) {
+      const el = doc.querySelector(tag);
+      if (el && el.textContent.trim()) return el.textContent.trim();
+    }
+  } catch {}
+  return 'untitled cartridge';
+}
+
+function decodeDataURI(uri) {
+  const str = uri.trim();
+  // data:text/html;base64,...
+  const b64Match = str.match(/^data:text\/html;base64,(.+)$/i);
+  if (b64Match) {
+    try { return atob(b64Match[1]); } catch { return null; }
+  }
+  // data:text/html,...
+  const plainMatch = str.match(/^data:text\/html,(.+)$/is);
+  if (plainMatch) {
+    try { return decodeURIComponent(plainMatch[1]); } catch { return plainMatch[1]; }
+  }
+  return null;
+}
+
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  return (bytes / 1024).toFixed(1) + ' KB';
+}
+
+function formatDate(ts) {
+  const d = new Date(ts);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
+}
+
+// ══════════════════════════════════════════════════
+// STATE MACHINE
+// ══════════════════════════════════════════════════
+
+function setState(s) {
+  currentState = s;
+  $idle.classList.toggle('active', s === 'idle');
+  $scanning.classList.toggle('active', s === 'scanning');
+  $running.classList.toggle('active', s === 'running');
+}
+
+// ══════════════════════════════════════════════════
+// SCANNER
+// ══════════════════════════════════════════════════
+
+const hasBarcodeDetector = typeof BarcodeDetector !== 'undefined';
+
+async function startScan() {
+  if (!hasBarcodeDetector) {
+    $noScannerHint.classList.add('visible');
+    setTimeout(() => $noScannerHint.classList.remove('visible'), 4000);
+    return;
+  }
+
+  try {
+    scanStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+  } catch (err) {
+    toast('Camera access denied');
+    return;
+  }
+
+  $video.srcObject = scanStream;
+  setState('scanning');
+
+  const detector = new BarcodeDetector({ formats: ['qr_code'] });
+  scanInterval = setInterval(async () => {
+    try {
+      const codes = await detector.detect($video);
+      if (codes.length > 0) {
+        const raw = codes[0].rawValue;
+        const html = decodeDataURI(raw);
+        if (html) {
+          stopScan();
+          if (navigator.vibrate) navigator.vibrate(100);
+          await ingestAndRun(html);
+        }
+      }
+    } catch {}
+  }, 150);
+}
+
+function stopScan() {
+  if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
+  if (scanStream) {
+    scanStream.getTracks().forEach(t => t.stop());
+    scanStream = null;
+  }
+  $video.srcObject = null;
+}
+
+// ══════════════════════════════════════════════════
+// INGEST & RUN
+// ══════════════════════════════════════════════════
+
+async function ingestAndRun(html) {
+  const hash = await hashHTML(html);
+  const existing = await findByHash(hash);
+
+  if (existing) {
+    runCartridge(existing);
+    toast('Cartridge loaded (duplicate)');
+    return;
+  }
+
+  const meta = parseMeta(html);
+  const cart = {
+    id: generateId(),
+    title: extractTitle(html),
+    html: html,
+    hash: hash,
+    scannedAt: Date.now(),
+    size: new Blob([html]).size,
+    meta: meta
+  };
+
+  await saveCartridge(cart);
+  runCartridge(cart);
+  toast('Cartridge saved!');
+}
+
+function runCartridge(cart) {
+  currentCart = cart;
+  $iframe.srcdoc = cart.html;
+  setState('running');
+  if (libraryOpen) closeLibrary();
+}
+
+function resetCartridge() {
+  if (!currentCart) return;
+  // Clear and re-set srcdoc to force full reload
+  $iframe.removeAttribute('srcdoc');
+  requestAnimationFrame(() => {
+    $iframe.srcdoc = currentCart.html;
+  });
+}
+
+// ══════════════════════════════════════════════════
+// LIBRARY
+// ══════════════════════════════════════════════════
+
+async function openLibrary() {
+  allCartridges = await getAllCartridges();
+  // Sort newest first
+  allCartridges.sort((a, b) => b.scannedAt - a.scannedAt);
+
+  // Stop scanning if active
+  if (currentState === 'scanning') {
+    stopScan();
+    setState('idle');
+  }
+
+  libPage = 0;
+  renderLibrary();
+  libraryOpen = true;
+
+  // Trigger slide animation
+  $library.classList.add('opening');
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      $library.classList.remove('opening');
+      $library.classList.add('open');
+    });
+  });
+}
+
+function closeLibrary() {
+  libraryOpen = false;
+  $library.classList.remove('open');
+  // Let transition finish, then hide
+  setTimeout(() => {
+    if (!libraryOpen) $library.classList.remove('opening');
+  }, 400);
+}
+
+function renderLibrary() {
+  $libPages.innerHTML = '';
+  $libCount.textContent = allCartridges.length ? '(' + allCartridges.length + ')' : '';
+
+  const totalPages = Math.max(1, Math.ceil(allCartridges.length / CARDS_PER_PAGE));
+  if (libPage >= totalPages) libPage = totalPages - 1;
+
+  const page = document.createElement('div');
+  page.className = 'lib-page';
+
+  if (allCartridges.length === 0) {
+    page.innerHTML = '<div class="lib-empty">' +
+      '<div class="lib-empty-icon">&#x1F4E6;</div>' +
+      '<div class="lib-empty-text">No cartridges yet.<br>Scan a QR code or paste a data URI.</div>' +
+      '</div>';
+  } else {
+    const start = libPage * CARDS_PER_PAGE;
+    const slice = allCartridges.slice(start, start + CARDS_PER_PAGE);
+
+    slice.forEach((cart, i) => {
+      const card = document.createElement('div');
+      card.className = 'cart-card';
+      // Slight random rotation from id hash
+      const rot = ((hashCode(cart.id) % 5) - 2) * 0.8;
+      card.style.transform = 'rotate(' + rot + 'deg)';
+
+      const authorLine = cart.meta && cart.meta.author
+        ? '<div class="cart-author">' + escapeHTML(cart.meta.author) + '</div>' : '';
+
+      card.innerHTML =
+        '<div class="cart-stamp">' + formatDate(cart.scannedAt) + '</div>' +
+        '<div class="cart-title">' + escapeHTML(cart.title) + '</div>' +
+        authorLine +
+        '<div class="cart-meta">' + formatSize(cart.size) + '</div>' +
+        '<div class="cart-actions">' +
+          '<button class="cart-action-btn" data-action="rename" data-id="' + cart.id + '">Rename</button>' +
+          '<button class="cart-action-btn" data-action="export" data-id="' + cart.id + '">Export</button>' +
+          '<button class="cart-action-btn danger" data-action="delete" data-id="' + cart.id + '">Del</button>' +
+        '</div>';
+
+      // Tap card body (not buttons) to load
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.cart-action-btn')) return;
+        runCartridge(cart);
+      });
+
+      page.appendChild(card);
+    });
+  }
+
+  $libPages.appendChild(page);
+
+  // Page nav
+  const totalPgs = Math.max(1, Math.ceil(allCartridges.length / CARDS_PER_PAGE));
+  $libPageNum.textContent = (libPage + 1) + ' / ' + totalPgs;
+  $('#btn-page-prev').disabled = libPage <= 0;
+  $('#btn-page-next').disabled = libPage >= totalPgs - 1;
+}
+
+// Simple string hash for card rotation
+function hashCode(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) {
+    h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h);
+}
+
+function escapeHTML(s) {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+// Library card actions (delegated)
+$libPages.addEventListener('click', async (e) => {
+  const btn = e.target.closest('.cart-action-btn');
+  if (!btn) return;
+
+  const id = btn.dataset.id;
+  const action = btn.dataset.action;
+
+  if (action === 'rename') {
+    const cart = allCartridges.find(c => c.id === id);
+    if (cart) renameCartridge(cart);
+    return;
+  }
+
+  if (action === 'export') {
+    const cart = allCartridges.find(c => c.id === id);
+    if (cart) exportCartridge(cart);
+  }
+
+  if (action === 'delete') {
+    await deleteCartridge(id);
+    // If we deleted the running cartridge, go idle
+    if (currentCart && currentCart.id === id) {
+      currentCart = null;
+      setState('idle');
+    }
+    allCartridges = allCartridges.filter(c => c.id !== id);
+    renderLibrary();
+    toast('Cartridge deleted');
+  }
+});
+
+// ══════════════════════════════════════════════════
+// RENAME
+// ══════════════════════════════════════════════════
+
+async function renameCartridge(cart) {
+  const name = prompt('Rename cartridge:', cart.title);
+  if (name === null || !name.trim()) return;
+  cart.title = name.trim();
+  await saveCartridge(cart);
+  // Update in-memory list
+  const idx = allCartridges.findIndex(c => c.id === cart.id);
+  if (idx >= 0) allCartridges[idx] = cart;
+  renderLibrary();
+  toast('Renamed!');
+}
+
+// ══════════════════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════════════════
+
+function exportCartridge(cart) {
+  const blob = new Blob([cart.html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = slugify(cart.title) + '.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Exported: ' + a.download);
+}
+
+function slugify(s) {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'cartridge';
+}
+
+// ══════════════════════════════════════════════════
+// PASTE OVERLAY
+// ══════════════════════════════════════════════════
+
+function openPasteOverlay() {
+  $pasteInput.value = '';
+  $pasteOverlay.classList.add('visible');
+  $pasteInput.focus();
+}
+
+function closePasteOverlay() {
+  $pasteOverlay.classList.remove('visible');
+  $pasteInput.value = '';
+}
+
+async function loadFromPaste() {
+  const raw = $pasteInput.value.trim();
+  if (!raw) return;
+
+  const html = decodeDataURI(raw);
+  if (!html) {
+    toast('Not a valid data:text/html URI');
+    return;
+  }
+
+  closePasteOverlay();
+  await ingestAndRun(html);
+}
+
+// ══════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════
+
+let toastTimer = null;
+
+function toast(msg) {
+  $toast.textContent = msg;
+  $toast.classList.add('visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $toast.classList.remove('visible'), 2200);
+}
+
+// ══════════════════════════════════════════════════
+// FULLSCREEN (immersive mode)
+// ══════════════════════════════════════════════════
+
+function enterImmersive() {
+  document.body.classList.add('immersive');
+  const el = document.documentElement;
+  (el.requestFullscreen || el.webkitRequestFullscreen || function(){}).call(el);
+  flashImmersiveExit();
+}
+
+function exitImmersive() {
+  document.body.classList.remove('immersive');
+  if (document.fullscreenElement) {
+    (document.exitFullscreen || document.webkitExitFullscreen || function(){}).call(document);
+  }
+}
+
+function toggleFullscreen() {
+  if (document.body.classList.contains('immersive')) exitImmersive();
+  else enterImmersive();
+}
+
+// Sync immersive state if user exits fullscreen via browser (Esc, F11, etc.)
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement) document.body.classList.remove('immersive');
+});
+
+// Mobile: show exit button on tap, auto-hide after 3s
+let immersiveTimer = null;
+const $immExit = $('#btn-immersive-exit');
+function flashImmersiveExit() {
+  $immExit.classList.add('visible');
+  clearTimeout(immersiveTimer);
+  immersiveTimer = setTimeout(() => $immExit.classList.remove('visible'), 3000);
+}
+document.addEventListener('touchstart', () => {
+  if (document.body.classList.contains('immersive')) flashImmersiveExit();
+}, { passive: true });
+
+// ══════════════════════════════════════════════════
+// FALLBACKS — share target, hash URL, clipboard paste
+// ══════════════════════════════════════════════════
+
+async function checkShareTarget() {
+  const params = new URLSearchParams(location.search);
+  // share_target may pass data as 'text', 'url', or 'title'
+  const shared = params.get('text') || params.get('url') || '';
+  if (shared) {
+    const html = decodeDataURI(shared);
+    if (html) {
+      // Clean URL
+      history.replaceState(null, '', location.pathname);
+      await ingestAndRun(html);
+      return true;
+    }
+  }
+  return false;
+}
+
+async function checkHashURL() {
+  if (location.hash && location.hash.length > 1) {
+    const raw = decodeURIComponent(location.hash.slice(1));
+    const html = decodeDataURI(raw);
+    if (html) {
+      history.replaceState(null, '', location.pathname);
+      await ingestAndRun(html);
+      return true;
+    }
+  }
+  return false;
+}
+
+// Clipboard paste listener
+document.addEventListener('paste', async (e) => {
+  if (libraryOpen || $pasteOverlay.classList.contains('visible')) return;
+  const text = (e.clipboardData || window.clipboardData).getData('text');
+  if (text) {
+    const html = decodeDataURI(text.trim());
+    if (html) {
+      e.preventDefault();
+      await ingestAndRun(html);
+    }
+  }
+});
+
+// ══════════════════════════════════════════════════
+// WIRE UP CONTROLS
+// ══════════════════════════════════════════════════
+
+// Idle tap → scan
+$idle.addEventListener('click', () => {
+  if (currentState === 'idle') startScan();
+});
+
+// Scan cancel
+$('#btn-scan-cancel').addEventListener('click', () => {
+  stopScan();
+  setState('idle');
+});
+
+// Top bar buttons
+$('#btn-reset').addEventListener('click', resetCartridge);
+$('#btn-eject').addEventListener('click', () => {
+  if (libraryOpen) closeLibrary();
+  else openLibrary();
+});
+$('#btn-fullscreen').addEventListener('click', toggleFullscreen);
+$('#btn-immersive-exit').addEventListener('click', exitImmersive);
+$('#btn-paste').addEventListener('click', openPasteOverlay);
+
+// Library close
+$('#btn-lib-close').addEventListener('click', closeLibrary);
+
+// Library page nav
+$('#btn-page-prev').addEventListener('click', () => {
+  if (libPage > 0) { libPage--; renderLibrary(); }
+});
+$('#btn-page-next').addEventListener('click', () => {
+  const total = Math.ceil(allCartridges.length / CARDS_PER_PAGE);
+  if (libPage < total - 1) { libPage++; renderLibrary(); }
+});
+
+// Paste overlay controls
+$('#btn-paste-cancel').addEventListener('click', closePasteOverlay);
+$('#btn-paste-load').addEventListener('click', loadFromPaste);
+$pasteInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); loadFromPaste(); }
+});
+
+// ══════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════
+
+async function init() {
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+
+  // Check fallbacks in order: share target first, then hash URL
+  if (await checkShareTarget()) return;
+  if (await checkHashURL()) return;
+
+  // Show scanner hint if no BarcodeDetector
+  if (!hasBarcodeDetector) {
+    $noScannerHint.classList.add('visible');
+    setTimeout(() => $noScannerHint.classList.remove('visible'), 5000);
+  }
+}
+
+init();
+
+})();
+</script>
+
+</body>
+</html>

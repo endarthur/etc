@@ -1,0 +1,1758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GCUES Press</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ══════════════════════════════════════════════════
+   GCUES Press — 3-Column Desktop App Layout
+   ══════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #111110;
+  --surface: #1a1a18;
+  --surface-hi: #222220;
+  --border: #2a2a26;
+  --border-hi: #3a3a34;
+  --text: #d4d0c8;
+  --text-dim: #8a8780;
+  --text-faint: #5a5850;
+  --amber: #d4a017;
+  --amber-dim: rgba(212,160,23,0.12);
+  --amber-glow: rgba(212,160,23,0.3);
+  --green: #6abf69;
+  --green-dim: rgba(106,191,105,0.12);
+  --red: #c0392b;
+  --red-dim: rgba(192,57,43,0.12);
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'IBM Plex Sans', sans-serif;
+}
+
+html { height: 100%; }
+
+body {
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Toolbar ── */
+.toolbar {
+  flex: 0 0 48px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.toolbar h1 {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--amber);
+  white-space: nowrap;
+}
+
+.toolbar .sub {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  margin-right: 8px;
+}
+
+#examples {
+  font-family: var(--mono);
+  font-size: 11px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 8px;
+  max-width: 220px;
+}
+
+#examples:focus { outline: none; border-color: var(--amber); }
+
+.toolbar-spacer { flex: 1; }
+
+.toolbar-auto {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.toolbar .btn {
+  padding: 6px 14px;
+  font-size: 11px;
+}
+
+/* ── Scrollbars ── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+*::-webkit-scrollbar-thumb:hover { background: var(--dim); }
+
+/* ── Workspace: 3 columns ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.panel-source {
+  flex: 0 0 260px;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 16px;
+  border-right: 1px solid var(--border);
+}
+
+.panel-overlay {
+  flex: 0 0 340px;
+  overflow-y: auto;
+  padding: 16px;
+  border-right: 1px solid var(--border);
+}
+
+.panel-qr {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.panel-section {
+  margin-bottom: 16px;
+}
+
+/* ── Section labels ── */
+.section-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+
+/* ── Metadata editor (stacked / tall) ── */
+.meta-editor {
+  margin-bottom: 16px;
+}
+
+.meta-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.meta-fields label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.meta-fields input {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 8px;
+}
+
+.meta-fields input:focus {
+  outline: none;
+  border-color: var(--amber);
+}
+
+/* ── Dropzone ── */
+.dropzone {
+  border: 2px dashed var(--border-hi);
+  border-radius: 8px;
+  padding: 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.dropzone:hover, .dropzone.dragover {
+  border-color: var(--amber);
+  background: var(--amber-dim);
+}
+
+.dropzone-icon {
+  font-size: 22px;
+  opacity: 0.4;
+  margin-bottom: 2px;
+}
+
+.dropzone-text {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.dropzone input[type="file"] {
+  display: none;
+}
+
+/* ── Source editor ── */
+.editor-wrap {
+  position: relative;
+  margin-top: 8px;
+}
+
+#source {
+  width: 100%;
+  min-height: 180px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  resize: vertical;
+  tab-size: 2;
+}
+
+#source:focus {
+  outline: none;
+  border-color: var(--amber);
+  box-shadow: 0 0 0 1px var(--amber-dim);
+}
+
+.source-info {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+/* ── Buttons ── */
+.btn {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 8px 18px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn:hover {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+.btn-primary {
+  background: var(--amber-dim);
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+.btn-primary:hover {
+  background: rgba(212,160,23,0.25);
+}
+
+.btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* ── Stats ── */
+.result-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  flex: 1;
+  min-width: 100px;
+}
+
+.stat-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 2px;
+}
+
+.stat-value {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.stat-value.fits { color: var(--green); }
+.stat-value.tight { color: var(--amber); }
+.stat-value.overflow { color: var(--red); }
+
+.stat-detail {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-top: 2px;
+}
+
+/* ── Budget bar ── */
+.budget-bar {
+  height: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.budget-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s, background 0.3s;
+}
+
+.budget-fill.fits { background: var(--green); }
+.budget-fill.tight { background: var(--amber); }
+.budget-fill.overflow { background: var(--red); }
+
+/* ── Data URI output ── */
+.uri-output {
+  position: relative;
+}
+
+#data-uri {
+  width: 100%;
+  height: 64px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+  resize: vertical;
+  word-break: break-all;
+}
+
+.uri-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* ── QR canvas area ── */
+.qr-canvas-area {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.qr-wrap {
+  text-align: center;
+  padding: 12px;
+  background: #fff;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+.canvas-container {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+
+#qr-canvas {
+  image-rendering: pixelated;
+  max-width: 100%;
+  height: auto;
+}
+
+#handle-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.qr-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 12px 0;
+}
+
+/* ── QR settings (always visible) ── */
+.qr-settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.qr-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.qr-field label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.qr-field select,
+.qr-field input[type="number"],
+.qr-field input[type="color"] {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 8px;
+}
+
+.qr-field select:focus,
+.qr-field input:focus {
+  outline: none;
+  border-color: var(--amber);
+}
+
+.qr-field input[type="color"] {
+  width: 40px;
+  height: 30px;
+  padding: 2px;
+  cursor: pointer;
+}
+
+/* ── Overlay (middle panel) ── */
+.overlay-dropzone {
+  border: 1.5px dashed var(--border-hi);
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  margin-bottom: 12px;
+}
+
+.overlay-dropzone:hover, .overlay-dropzone.dragover {
+  border-color: var(--amber);
+}
+
+.overlay-dropzone-text {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.overlay-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: end;
+}
+
+.overlay-controls .qr-field {
+  flex: 1;
+  min-width: 110px;
+}
+
+.overlay-controls input[type="range"] {
+  width: 100%;
+  accent-color: var(--amber);
+}
+
+.range-value {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-faint);
+  text-align: right;
+}
+
+/* ── Readability meter ── */
+.readability {
+  margin-top: 14px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+}
+
+.readability-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.readability-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.readability-score {
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.readability-score.good { color: var(--green); }
+.readability-score.ok { color: var(--amber); }
+.readability-score.bad { color: var(--red); }
+
+.readability-bar {
+  height: 6px;
+  background: var(--surface);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.readability-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s, background 0.3s;
+}
+
+.readability-fill.good { background: var(--green); }
+.readability-fill.ok { background: var(--amber); }
+.readability-fill.bad { background: var(--red); }
+
+.readability-hints {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.readability-hints li {
+  margin-left: 16px;
+  margin-bottom: 2px;
+}
+
+.readability-settings {
+  display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin-top: 6px;
+  font-family: var(--mono); font-size: 11px; color: var(--dim);
+}
+.readability-settings label { display: flex; align-items: center; gap: 3px; white-space: nowrap; }
+.readability-settings input {
+  background: var(--surface); color: var(--fg); border: 1px solid var(--border);
+  font-family: var(--mono); font-size: 11px; padding: 2px 4px; border-radius: 3px;
+  width: 42px;
+}
+
+.readability-note {
+  font-family: var(--mono); font-size: 10px; color: var(--dim);
+  margin: 8px 0 0; line-height: 1.4; font-style: italic;
+}
+
+.readability-checking {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--amber);
+  animation: pulse-text 1s ease-in-out infinite;
+}
+
+@keyframes pulse-text {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* ── Messages ── */
+.msg {
+  font-family: var(--sans);
+  font-size: 12px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.msg-warn {
+  color: var(--amber);
+  background: var(--amber-dim);
+  border: 1px solid rgba(212,160,23,0.2);
+}
+
+.msg-err {
+  color: var(--red);
+  background: var(--red-dim);
+  border: 1px solid rgba(192,57,43,0.2);
+}
+
+/* ── Footer ── */
+footer {
+  flex: 0 0 auto;
+  padding: 6px 16px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+footer a { color: var(--text-dim); }
+
+/* ── Test overlay ── */
+.test-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #000;
+  display: flex; align-items: stretch; justify-content: stretch;
+}
+.test-overlay[hidden] { display: none; }
+.test-iframe {
+  flex: 1; border: none; background: #fff;
+}
+.test-close {
+  position: absolute; top: 8px; right: 12px; z-index: 10000;
+  background: rgba(0,0,0,0.6); color: #fff; border: 1px solid rgba(255,255,255,0.2);
+  font-size: 24px; line-height: 1; width: 36px; height: 36px;
+  border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  opacity: 0.5; transition: opacity 0.2s;
+}
+.test-close:hover { opacity: 1; }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  body {
+    height: auto;
+    overflow: auto;
+  }
+
+  .toolbar {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .toolbar h1 { font-size: 13px; }
+  .toolbar-spacer { display: none; }
+  #examples { max-width: none; flex: 1 1 100%; order: 10; }
+
+  .workspace {
+    flex-direction: column;
+    overflow: visible;
+  }
+
+  .panel-source { order: 1; }
+  .panel-qr { order: 2; }
+  .panel-overlay { order: 3; }
+
+  .panel-source, .panel-overlay, .panel-qr {
+    flex: none;
+    width: 100%;
+    overflow-y: visible;
+    border-right: none;
+  }
+
+  .panel-source, .panel-overlay {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-overlay {
+    flex-basis: auto;
+  }
+
+  #source { min-height: 140px; }
+}
+</style>
+</head>
+
+<body>
+
+  <!-- ── Toolbar ── -->
+  <div class="toolbar">
+    <h1>GCUES Press</h1>
+    <span class="sub">cartridge generator</span>
+    <select id="examples">
+      <option value="">Load example...</option>
+    </select>
+    <div class="toolbar-spacer"></div>
+    <label class="toolbar-auto">
+      <input type="checkbox" id="chk-auto" checked> Auto
+    </label>
+    <button type="button" class="btn" id="btn-minify">Minify</button>
+    <button type="button" class="btn btn-primary" id="btn-press">Press</button>
+  </div>
+
+  <!-- ── Workspace: 3 columns ── -->
+  <div class="workspace">
+
+    <!-- ── Col 1: Source ── -->
+    <div class="panel-source">
+
+      <div class="meta-editor">
+        <div class="section-label">Metadata</div>
+        <div class="meta-fields">
+          <label>Title <input id="meta-title" type="text"></label>
+          <label>Author <input id="meta-author" type="text"></label>
+          <label>Extra <input id="meta-extra" type="text" placeholder="key: val; key: val"></label>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <div class="section-label">Source HTML</div>
+        <div class="dropzone" id="dropzone">
+          <div class="dropzone-icon">&#x1F4C4;</div>
+          <div class="dropzone-text">Drop .html or click to browse</div>
+          <input type="file" id="file-input" accept=".html,.htm">
+        </div>
+        <div class="editor-wrap">
+          <textarea id="source" placeholder="Paste or type cartridge HTML..."></textarea>
+          <div class="source-info">
+            <span id="source-size">0 bytes</span>
+            <span id="source-meta"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-section" id="uri-section" style="display:none">
+        <div class="section-label">Data URI</div>
+        <div class="uri-output">
+          <textarea id="data-uri" readonly></textarea>
+          <div class="uri-actions">
+            <button type="button" class="btn" id="btn-copy">Copy URI</button>
+            <button type="button" class="btn" id="btn-test">Test in GCUES</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Col 2: Overlay ── -->
+    <div class="panel-overlay">
+
+      <div class="section-label">Image Overlay</div>
+
+      <div class="overlay-dropzone" id="overlay-dropzone">
+        <div class="overlay-dropzone-text">Drop a PNG/SVG or click to browse</div>
+        <input type="file" id="overlay-input" accept="image/*" style="display:none;">
+      </div>
+
+      <div class="overlay-controls">
+        <div class="qr-field">
+          <label>X position</label>
+          <input type="range" id="ov-x" min="0" max="100" value="50">
+          <div class="range-value" id="ov-x-val">50%</div>
+        </div>
+        <div class="qr-field">
+          <label>Y position</label>
+          <input type="range" id="ov-y" min="0" max="100" value="50">
+          <div class="range-value" id="ov-y-val">50%</div>
+        </div>
+        <div class="qr-field">
+          <label>Scale</label>
+          <input type="range" id="ov-scale" min="5" max="80" value="25">
+          <div class="range-value" id="ov-scale-val">25%</div>
+        </div>
+        <div class="qr-field">
+          <label>Opacity</label>
+          <input type="range" id="ov-opacity" min="0" max="100" value="100">
+          <div class="range-value" id="ov-opacity-val">100%</div>
+        </div>
+        <div class="qr-field">
+          <label>Rotation</label>
+          <input type="range" id="ov-rotation" min="0" max="360" value="0">
+          <div class="range-value" id="ov-rotation-val">0&deg;</div>
+        </div>
+        <div class="qr-field" style="flex:0;">
+          <label>&nbsp;</label>
+          <button type="button" class="btn" id="btn-ov-clear" style="padding:5px 10px;">Clear</button>
+        </div>
+      </div>
+
+      <div class="readability" id="readability">
+        <div class="readability-header">
+          <span class="readability-label">Scan readability</span>
+          <span class="readability-score" id="read-score">&mdash;</span>
+        </div>
+        <div class="readability-bar">
+          <div class="readability-fill" id="read-fill"></div>
+        </div>
+        <div class="readability-settings">
+          <label title="Number of scale variations to test">Samples <input type="number" id="read-samples" value="5" min="3" max="50"></label>
+          <label title="Smallest scale factor (%)">Min <input type="number" id="read-min" value="55" min="10" max="95">%</label>
+          <label title="Largest scale factor (%)">Max <input type="number" id="read-max" value="115" min="105" max="300">%</label>
+        </div>
+        <div id="read-status"></div>
+        <p class="readability-note">Approximate test &mdash; rescales the bitmap and runs jsQR at each size. Real phone cameras have better decoders and optics, so actual results will vary. When in doubt, scan it with your phone.</p>
+        <button type="button" class="btn" id="btn-find-mask" style="margin-top:8px;">Find best mask</button>
+      </div>
+
+    </div>
+
+    <!-- ── Col 3: QR Output ── -->
+    <div class="panel-qr">
+
+      <div class="panel-section">
+        <div class="section-label">QR Settings</div>
+        <div class="qr-settings">
+          <div class="qr-field">
+            <label>Error Correction</label>
+            <select id="qr-ecc">
+              <option value="LOW" selected>Low (7%)</option>
+              <option value="MEDIUM">Medium (15%)</option>
+              <option value="QUARTILE">Quartile (25%)</option>
+              <option value="HIGH">High (30%)</option>
+            </select>
+          </div>
+          <div class="qr-field">
+            <label>Mask</label>
+            <select id="qr-mask">
+              <option value="-1" selected>Auto</option>
+              <option value="0">0</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+            </select>
+          </div>
+          <div class="qr-field">
+            <label>Min ver</label>
+            <input type="number" id="qr-min-ver" value="1" min="1" max="40" style="width:56px;">
+          </div>
+          <div class="qr-field">
+            <label>Max ver</label>
+            <input type="number" id="qr-max-ver" value="40" min="1" max="40" style="width:56px;">
+          </div>
+          <div class="qr-field">
+            <label>Boost ECC</label>
+            <select id="qr-boost">
+              <option value="1" selected>Yes</option>
+              <option value="0">No</option>
+            </select>
+          </div>
+          <div class="qr-field">
+            <label>FG</label>
+            <input type="color" id="qr-fg" value="#0a0a08">
+          </div>
+          <div class="qr-field">
+            <label>BG</label>
+            <input type="color" id="qr-bg" value="#ffffff">
+          </div>
+          <div class="qr-field">
+            <label>Scale</label>
+            <input type="number" id="qr-scale" value="0" min="0" max="20" style="width:56px;" title="0 = auto">
+          </div>
+        </div>
+      </div>
+
+      <div id="msg-area"></div>
+
+      <div class="qr-canvas-area">
+        <div class="qr-wrap" id="qr-wrap-bg">
+          <div class="canvas-container">
+            <canvas id="qr-canvas" width="1" height="1"></canvas>
+            <canvas id="handle-canvas" width="1" height="1"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="result-stats">
+        <div class="stat">
+          <div class="stat-label">Mode</div>
+          <div class="stat-value" id="stat-mode">&mdash;</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">URI size</div>
+          <div class="stat-value" id="stat-uri-size">&mdash;</div>
+          <div class="stat-detail" id="stat-uri-detail"></div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">QR ver</div>
+          <div class="stat-value" id="stat-qr-ver">&mdash;</div>
+          <div class="stat-detail" id="stat-qr-detail"></div>
+        </div>
+      </div>
+
+      <div class="budget-bar">
+        <div class="budget-fill" id="budget-fill"></div>
+      </div>
+
+      <div class="qr-actions">
+        <button type="button" class="btn" id="btn-dl-qr">Download QR</button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div id="test-overlay" class="test-overlay" hidden>
+    <button type="button" class="test-close" id="test-close" title="Close (Esc)">&times;</button>
+    <iframe id="test-iframe" class="test-iframe"></iframe>
+  </div>
+
+  <footer>
+    GCUES Press &mdash;
+    QR: <a href="https://www.nayuki.io/page/qr-code-generator-library">qrcodegen</a> (Nayuki, MIT).
+    Decode: <a href="https://github.com/cozmo/jsQR">jsQR</a> (Wolfe, Apache-2.0).
+    Compression: native <code>CompressionStream</code>.
+  </footer>
+
+<!-- ── Vendored: qrcodegen (injected by build.js) ── -->
+<script>
+// __INJECT_QRCODEGEN__
+</script>
+
+<!-- ── Vendored: jsQR (injected by build.js) ── -->
+<script>
+// __INJECT_JSQR__
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   GCUES Press — Runtime
+   ══════════════════════════════════════════════════ */
+(function() {
+'use strict';
+
+const QR_CAPACITY = { LOW: 2953, MEDIUM: 2331, QUARTILE: 1663, HIGH: 1273 };
+
+const $ = (s) => document.querySelector(s);
+const $source       = $('#source');
+const $msgArea      = $('#msg-area');
+const $dataUri      = $('#data-uri');
+const $qrCanvas     = $('#qr-canvas');
+const $handleCanvas = $('#handle-canvas');
+const $metaTitle    = $('#meta-title');
+const $metaAuthor   = $('#meta-author');
+const $metaExtra    = $('#meta-extra');
+const $examples     = $('#examples');
+
+// State flag: have we pressed at least once?
+let hasResults = false;
+
+// ══════════════════════════════════════════════════
+// EXAMPLES
+// ══════════════════════════════════════════════════
+
+const EXAMPLES = {
+  hello:
+    '<h1 style="font-family:monospace;text-align:center;margin-top:40vh">Hello from GCUES!</h1>',
+
+  gradient:
+    '<!-- gcues title: Gradient Wave; author: GCU --><body style="margin:0;height:100vh;background:linear-gradient(45deg,#ff006e,#0ff,#ff006e);background-size:400%;animation:g 3s ease infinite"><style>@keyframes g{0%,100%{background-position:0 50%}50%{background-position:100% 50%}}</style>',
+
+  ball:
+    '<!-- gcues title: Bouncing Ball; author: GCU Lab --><canvas id=c><\/canvas><script>const c=document.getElementById(\'c\'),x=c.getContext(\'2d\');c.width=innerWidth;c.height=innerHeight;let bx=100,by=100,dx=3,dy=2;function d(){x.fillStyle=\'#0a0a08\';x.fillRect(0,0,c.width,c.height);bx+=dx;by+=dy;if(bx<20||bx>c.width-20)dx=-dx;if(by<20||by>c.height-20)dy=-dy;x.beginPath();x.arc(bx,by,18,0,7);x.fillStyle=\'#d4a017\';x.fill();requestAnimationFrame(d)}d()<\/script>',
+
+  clock:
+    '<!-- gcues title: Amber Clock --><body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#0a0a08;font-family:monospace"><div id=t style="font-size:15vw;color:#d4a017;text-shadow:0 0 30px rgba(212,160,23,0.4)"><\/div><script>setInterval(()=>t.textContent=new Date().toLocaleTimeString(),500)<\/script>',
+
+  notepad:
+    '<!-- gcues title: Notepad; author: GCU --><body style="margin:0;font-family:sans-serif"><div contenteditable style="padding:24px;min-height:100vh;font-size:16px;line-height:1.6;outline:none;background:#f4efe6;color:#3a3530" spellcheck=false>Start typing...<\/div>'
+};
+
+const EXAMPLE_LABELS = {
+  hello: 'Hello World',
+  gradient: 'Gradient Wave',
+  ball: 'Bouncing Ball',
+  clock: 'Amber Clock',
+  notepad: 'Notepad'
+};
+
+for (var key in EXAMPLES) {
+  var opt = document.createElement('option');
+  opt.value = key;
+  opt.textContent = EXAMPLE_LABELS[key] + ' (' + new Blob([EXAMPLES[key]]).size + ' B)';
+  $examples.appendChild(opt);
+}
+
+// ══════════════════════════════════════════════════
+// METADATA
+// ══════════════════════════════════════════════════
+
+let metaSyncing = false;
+
+function parseMeta(html) {
+  const m = html.match(/<!--\s*gcues\s+(.+?)\s*-->/i);
+  if (!m) return {};
+  const meta = {};
+  m[1].split(';').forEach(pair => {
+    const idx = pair.indexOf(':');
+    if (idx > 0) {
+      const k = pair.slice(0, idx).trim().toLowerCase();
+      const v = pair.slice(idx + 1).trim();
+      if (k && v) meta[k] = v;
+    }
+  });
+  return meta;
+}
+
+function updateSourceInfo() {
+  const html = $source.value;
+  const size = new Blob([html]).size;
+  $('#source-size').textContent = size + ' bytes';
+  const meta = parseMeta(html);
+  const parts = [];
+  if (meta.title) parts.push(meta.title);
+  if (meta.author) parts.push('by ' + meta.author);
+  $('#source-meta').textContent = parts.length ? parts.join(' \u2014 ') : '';
+}
+
+function syncSourceToMeta() {
+  if (metaSyncing) return;
+  metaSyncing = true;
+  const meta = parseMeta($source.value);
+  $metaTitle.value = meta.title || '';
+  $metaAuthor.value = meta.author || '';
+  const extras = [];
+  for (var k in meta) {
+    if (k !== 'title' && k !== 'author') extras.push(k + ': ' + meta[k]);
+  }
+  $metaExtra.value = extras.join('; ');
+  metaSyncing = false;
+}
+
+function syncMetaToSource() {
+  if (metaSyncing) return;
+  metaSyncing = true;
+  const parts = [];
+  const title = $metaTitle.value.trim();
+  const author = $metaAuthor.value.trim();
+  const extra = $metaExtra.value.trim();
+  if (title) parts.push('title: ' + title);
+  if (author) parts.push('author: ' + author);
+  if (extra) parts.push(extra);
+  const comment = parts.length ? '<!-- gcues ' + parts.join('; ') + ' -->' : '';
+  const html = $source.value;
+  const existing = html.match(/<!--\s*gcues\s+.+?\s*-->/i);
+  if (existing) {
+    $source.value = comment ? html.replace(existing[0], comment) : html.replace(/<!--\s*gcues\s+.+?\s*-->\s*/i, '');
+  } else if (comment) {
+    $source.value = comment + '\n' + html;
+  }
+  updateSourceInfo();
+  metaSyncing = false;
+  if ($('#chk-auto').checked) {
+    clearTimeout(pressTimer);
+    pressTimer = setTimeout(press, 500);
+  }
+}
+
+// ══════════════════════════════════════════════════
+// MINIFICATION
+// ══════════════════════════════════════════════════
+
+function minifyHTML(html) {
+  let metaComment = '';
+  html = html.replace(/(<!--\s*gcues\s+.+?\s*-->)\s*/i, (_, m) => { metaComment = m; return ''; });
+  html = html.replace(/<!--[\s\S]*?-->/g, '');
+  html = html.replace(/>\s+</g, '><');
+  html = html.replace(/\s{2,}/g, ' ');
+  html = html.trim();
+  if (metaComment) html = metaComment + html;
+  return html;
+}
+
+// ══════════════════════════════════════════════════
+// COMPRESSION
+// ══════════════════════════════════════════════════
+
+async function compressHTML(html) {
+  const encoded = new TextEncoder().encode(html);
+  const cs = new CompressionStream('deflate-raw');
+  const writer = cs.writable.getWriter();
+  writer.write(encoded);
+  writer.close();
+  const reader = cs.readable.getReader();
+  const chunks = [];
+  while (true) { const { done, value } = await reader.read(); if (done) break; chunks.push(value); }
+  const totalLen = chunks.reduce((s, c) => s + c.length, 0);
+  const compressed = new Uint8Array(totalLen);
+  let offset = 0;
+  for (const chunk of chunks) { compressed.set(chunk, offset); offset += chunk.length; }
+  let binary = '';
+  for (let i = 0; i < compressed.length; i++) binary += String.fromCharCode(compressed[i]);
+  const b64 = btoa(binary);
+  return "<script>fetch('data:application/octet-stream;base64," + b64 + "').then(r=>r.blob()).then(b=>new Response(b.stream().pipeThrough(new DecompressionStream('deflate-raw'))).text()).then(h=>{document.open();document.write(h);document.close()})<\\/script>";
+}
+
+function makeRawDataURI(html) { return 'data:text/html,' + encodeURIComponent(html); }
+
+async function makeCompressedDataURI(html) {
+  return 'data:text/html,' + encodeURIComponent(await compressHTML(html));
+}
+
+// ══════════════════════════════════════════════════
+// QR CODE RENDERING
+// ══════════════════════════════════════════════════
+
+function getQRSettings() {
+  const QrCode = qrcodegen.QrCode;
+  return {
+    ecc: QrCode.Ecc[$('#qr-ecc').value],
+    mask: parseInt($('#qr-mask').value),
+    minVer: parseInt($('#qr-min-ver').value) || 1,
+    maxVer: parseInt($('#qr-max-ver').value) || 40,
+    boost: $('#qr-boost').value === '1',
+    fg: $('#qr-fg').value,
+    bg: $('#qr-bg').value,
+    scale: parseInt($('#qr-scale').value) || 0
+  };
+}
+
+function renderQRToCanvas(canvas, dataUri, settingsOverride) {
+  const QrCode = qrcodegen.QrCode;
+  const QrSeg = qrcodegen.QrSegment;
+  const s = Object.assign(getQRSettings(), settingsOverride || {});
+  let qr;
+  try {
+    qr = QrCode.encodeSegments(QrSeg.makeSegments(dataUri), s.ecc, s.minVer, s.maxVer, s.mask, s.boost);
+  } catch (e) {
+    return { ok: false, error: 'Data too large for QR (' + dataUri.length + ' chars)' };
+  }
+  const modules = qr.size;
+  const scale = s.scale > 0 ? s.scale : Math.max(4, Math.floor(400 / modules));
+  const border = 4;
+  const totalSize = (modules + border * 2) * scale;
+  canvas.width = totalSize;
+  canvas.height = totalSize;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = s.bg;
+  ctx.fillRect(0, 0, totalSize, totalSize);
+  ctx.fillStyle = s.fg;
+  for (let y = 0; y < modules; y++)
+    for (let x = 0; x < modules; x++)
+      if (qr.getModule(x, y))
+        ctx.fillRect((x + border) * scale, (y + border) * scale, scale, scale);
+  return { ok: true, version: qr.version, modules, ecc: s.ecc };
+}
+
+function renderQR(dataUri) {
+  const result = renderQRToCanvas($qrCanvas, dataUri);
+  if (result.ok) $('#qr-wrap-bg').style.background = getQRSettings().bg;
+  return result;
+}
+
+function compositeOverlayToCanvas(canvas) {
+  if (!overlayImg) return;
+  const ctx = canvas.getContext('2d');
+  const cw = canvas.width, ch = canvas.height;
+  const xPct = parseInt($('#ov-x').value) / 100;
+  const yPct = parseInt($('#ov-y').value) / 100;
+  const scalePct = parseInt($('#ov-scale').value) / 100;
+  const opacity = parseInt($('#ov-opacity').value) / 100;
+  const rotation = (parseInt($('#ov-rotation').value) || 0) * Math.PI / 180;
+  const maxDim = Math.max(overlayImg.naturalWidth, overlayImg.naturalHeight);
+  const targetSize = cw * scalePct;
+  const ratio = targetSize / maxDim;
+  const ow = overlayImg.naturalWidth * ratio;
+  const oh = overlayImg.naturalHeight * ratio;
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  ctx.translate(xPct * cw, yPct * ch);
+  ctx.rotate(rotation);
+  ctx.drawImage(overlayImg, -ow / 2, -oh / 2, ow, oh);
+  ctx.restore();
+}
+
+function getScaleVariations() {
+  const n = Math.max(3, Math.min(50, parseInt($('#read-samples').value) || 5));
+  const lo = (parseInt($('#read-min').value) || 55) / 100;
+  const hi = (parseInt($('#read-max').value) || 115) / 100;
+  // Generate n evenly spaced steps, then ensure 1.0 is always included
+  const set = new Set();
+  for (let i = 0; i < n; i++) {
+    const t = i / (n - 1);                     // 0..1
+    const s = lo + (hi - lo) * t;
+    set.add(Math.round(s * 1000) / 1000);       // round to 3dp to avoid float noise
+  }
+  set.add(1.0);                                  // always test native scale
+  return [...set].sort((a, b) => a - b);
+}
+
+async function scoreCanvas(canvas) {
+  const variations = getScaleVariations();
+  let successes = 0;
+  for (const sc of variations) {
+    const t = document.createElement('canvas');
+    t.width = Math.round(canvas.width * sc);
+    t.height = Math.round(canvas.height * sc);
+    t.getContext('2d').drawImage(canvas, 0, 0, t.width, t.height);
+    if (await decodeCanvas(t) !== null) successes++;
+  }
+  return successes;
+}
+
+async function findBestMask() {
+  if (!lastQrDataUri || !overlayImg) return;
+  if (!hasJsQR && !hasBarcodeDetector) return;
+  const $btn = $('#btn-find-mask'), $status = $('#read-status');
+  const origText = $btn.textContent;
+  $btn.disabled = true;
+  const results = [];
+  for (let mask = 0; mask <= 7; mask++) {
+    $btn.textContent = 'Testing mask ' + mask + '/7\u2026';
+    const off = document.createElement('canvas');
+    const r = renderQRToCanvas(off, lastQrDataUri, { mask });
+    if (!r.ok) { results.push({ mask, score: 0 }); continue; }
+    compositeOverlayToCanvas(off);
+    results.push({ mask, score: await scoreCanvas(off) });
+    await new Promise(r => setTimeout(r, 10));
+  }
+  $btn.textContent = 'Testing auto\u2026';
+  const offA = document.createElement('canvas');
+  const rA = renderQRToCanvas(offA, lastQrDataUri, { mask: -1 });
+  if (rA.ok) { compositeOverlayToCanvas(offA); results.push({ mask: -1, score: await scoreCanvas(offA), label: 'auto' }); }
+  const total = getScaleVariations().length;
+  results.sort((a, b) => b.score - a.score);
+  const best = results[0];
+  maskResultsShown = true;
+  const barLen = 10;
+  $status.innerHTML = '<ul class="readability-hints">' + results.map(r => {
+    const label = r.label || ('mask ' + r.mask);
+    const pct = Math.round((r.score / total) * 100);
+    const filled = Math.round(barLen * r.score / total);
+    return '<li>' + label + ': ' + '\u2588'.repeat(filled) + '\u2591'.repeat(barLen - filled) + ' ' + r.score + '/' + total + ' (' + pct + '%)' + (r === best ? ' \u2190 best' : '') + '</li>';
+  }).join('') + '</ul>';
+  $('#qr-mask').value = String(best.mask);
+  refreshComposite();
+  $btn.textContent = origText;
+  $btn.disabled = false;
+}
+
+// ══════════════════════════════════════════════════
+// PRESS
+// ══════════════════════════════════════════════════
+
+async function press() {
+  const html = $source.value;
+  if (!html.trim()) return;
+  $msgArea.innerHTML = '';
+
+  const rawUri = makeRawDataURI(html);
+  let compUri = null, useCompressed = false;
+  try { compUri = await makeCompressedDataURI(html); if (compUri.length < rawUri.length) useCompressed = true; } catch {}
+
+  const finalUri = useCompressed ? compUri : rawUri;
+  const uriBytesRaw = new Blob([rawUri]).size;
+  const uriBytesComp = compUri ? new Blob([compUri]).size : null;
+  const uriBytesUsed = new Blob([finalUri]).size;
+
+  $('#stat-mode').textContent = useCompressed ? 'Compressed' : 'Raw';
+  $('#stat-mode').className = 'stat-value';
+
+  const eccName = $('#qr-ecc').value;
+  const qrMax = QR_CAPACITY[eccName] || QR_CAPACITY.LOW;
+  const pct = uriBytesUsed / qrMax * 100;
+  const cls = pct <= 75 ? 'fits' : pct <= 100 ? 'tight' : 'overflow';
+
+  const $uriSize = $('#stat-uri-size');
+  $uriSize.textContent = uriBytesUsed.toLocaleString() + ' B';
+  $uriSize.className = 'stat-value ' + cls;
+
+  let detail = 'raw: ' + uriBytesRaw.toLocaleString();
+  if (uriBytesComp !== null) detail += ' / comp: ' + uriBytesComp.toLocaleString();
+  $('#stat-uri-detail').textContent = detail;
+
+  const $fill = $('#budget-fill');
+  $fill.style.width = Math.min(100, pct).toFixed(1) + '%';
+  $fill.className = 'budget-fill ' + cls;
+
+  $dataUri.value = finalUri;
+  $('#uri-section').style.display = '';
+
+  lastQrDataUri = finalUri;
+  const qrResult = renderQR(finalUri);
+  syncHandleCanvas();
+  if (qrResult.ok && overlayImg) { compositeOverlay(); checkReadability(); }
+  drawHandles();
+
+  const $qrVer = $('#stat-qr-ver');
+  if (qrResult.ok) {
+    $qrVer.textContent = 'V' + qrResult.version;
+    $qrVer.className = 'stat-value ' + (qrResult.version <= 30 ? 'fits' : 'tight');
+    $('#stat-qr-detail').textContent = qrResult.modules + '\u00D7' + qrResult.modules;
+  } else {
+    $qrVer.textContent = 'N/A';
+    $qrVer.className = 'stat-value overflow';
+    $('#stat-qr-detail').textContent = '';
+    $msgArea.innerHTML = '<div class="msg msg-err">' + qrResult.error + '</div>';
+  }
+
+  if (pct > 100) $msgArea.innerHTML += '<div class="msg msg-warn">Exceeds QR V40 capacity. Minify or simplify.</div>';
+  else if (pct > 85) $msgArea.innerHTML += '<div class="msg msg-warn">Tight fit. Consider reducing size.</div>';
+
+  hasResults = true;
+}
+
+// ══════════════════════════════════════════════════
+// OVERLAY + READABILITY
+// ══════════════════════════════════════════════════
+
+let overlayImg = null;
+let lastQrDataUri = null;
+
+function compositeOverlay() { compositeOverlayToCanvas($qrCanvas); }
+
+function refreshComposite() {
+  if (lastQrDataUri) {
+    renderQR(lastQrDataUri);
+    if (overlayImg) { compositeOverlay(); checkReadability(); }
+    syncHandleCanvas();
+    drawHandles();
+  }
+}
+
+const hasBarcodeDetector = typeof BarcodeDetector !== 'undefined';
+const hasJsQR = typeof jsQR !== 'undefined';
+let checkTimer = null;
+let maskResultsShown = false;
+
+async function checkReadability() {
+  if (maskResultsShown) return;
+  const $score = $('#read-score'), $fill = $('#read-fill'), $status = $('#read-status');
+  if (!hasJsQR && !hasBarcodeDetector) {
+    $status.innerHTML = '<div class="readability-hints">No decoder. Test with phone camera.</div>';
+    $score.textContent = '?'; $score.className = 'readability-score'; $fill.style.width = '0%'; return;
+  }
+  if (!overlayImg) {
+    $score.textContent = '\u2014'; $score.className = 'readability-score'; $fill.style.width = '0%'; $status.innerHTML = ''; return;
+  }
+  $status.innerHTML = '<div class="readability-checking">Checking\u2026</div>';
+  clearTimeout(checkTimer);
+  checkTimer = setTimeout(async () => { await runReadabilityTest($score, $fill, $status); }, 200);
+}
+
+async function decodeCanvas(canvas) {
+  if (hasJsQR) {
+    const ctx = canvas.getContext('2d');
+    const d = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const r = jsQR(d.data, canvas.width, canvas.height);
+    if (r) return r.data;
+  }
+  if (hasBarcodeDetector) {
+    try { const codes = await new BarcodeDetector({ formats: ['qr_code'] }).detect(canvas); if (codes.length) return codes[0].rawValue; } catch {}
+  }
+  return null;
+}
+
+async function runReadabilityTest($score, $fill, $status) {
+  const variations = getScaleVariations();
+  const total = variations.length;
+  let successes = 0, correct = 0;
+  for (const sc of variations) {
+    const t = document.createElement('canvas');
+    t.width = Math.round($qrCanvas.width * sc);
+    t.height = Math.round($qrCanvas.height * sc);
+    t.getContext('2d').drawImage($qrCanvas, 0, 0, t.width, t.height);
+    const decoded = await decodeCanvas(t);
+    if (decoded !== null) { successes++; if (lastQrDataUri && decoded === lastQrDataUri) correct++; }
+  }
+  const pct = Math.round((successes / total) * 100);
+  const cls = pct >= 80 ? 'good' : pct >= 40 ? 'ok' : 'bad';
+  $score.textContent = pct + '%'; $score.className = 'readability-score ' + cls;
+  $fill.style.width = pct + '%'; $fill.className = 'readability-fill ' + cls;
+  const hints = [];
+  if (pct === 0) hints.push('QR unreadable with current overlay.');
+  if (pct < 80 && overlayImg) {
+    const ecc = $('#qr-ecc').value, ovs = parseInt($('#ov-scale').value);
+    if (ecc !== 'HIGH') hints.push('Try <strong>High</strong> error correction.');
+    if (ovs > 25) hints.push('Reduce overlay scale (now ' + ovs + '%).');
+    if (parseInt($('#ov-opacity').value) > 90) hints.push('Reduce overlay opacity.');
+    const xP = parseInt($('#ov-x').value), yP = parseInt($('#ov-y').value);
+    if ((xP < 25 && yP < 25) || (xP > 75 && yP < 25) || (xP < 25 && yP > 75)) hints.push('Move overlay away from finder patterns.');
+    if ($('#qr-mask').value === '-1' && pct > 0 && pct < 60) hints.push('Try different mask patterns.');
+  }
+  if (pct >= 80 && successes === total) { hints.push('Scans reliably (' + successes + '/' + total + ').'); if (correct === successes) hints.push('All decodes correct.'); }
+  hints.push('<em>' + (hasJsQR ? 'jsQR' : 'BarcodeDetector') + '</em>');
+  $status.innerHTML = '<ul class="readability-hints">' + hints.map(h => '<li>' + h + '</li>').join('') + '</ul>';
+}
+
+// ══════════════════════════════════════════════════
+// INTERACTIVE OVERLAY HANDLES
+// ══════════════════════════════════════════════════
+
+let dragState = null;
+
+function screenPx(px) {
+  const rect = $handleCanvas.getBoundingClientRect();
+  return px * ($handleCanvas.width / (rect.width || 1));
+}
+
+function canvasCoords(e) {
+  const rect = $handleCanvas.getBoundingClientRect();
+  return {
+    x: (e.clientX - rect.left) * ($handleCanvas.width / rect.width),
+    y: (e.clientY - rect.top) * ($handleCanvas.height / rect.height)
+  };
+}
+
+function syncHandleCanvas() {
+  $handleCanvas.width = $qrCanvas.width;
+  $handleCanvas.height = $qrCanvas.height;
+}
+
+function getOverlayBounds() {
+  if (!overlayImg) return null;
+  const cw = $qrCanvas.width, ch = $qrCanvas.height;
+  const cx = (parseInt($('#ov-x').value) / 100) * cw;
+  const cy = (parseInt($('#ov-y').value) / 100) * ch;
+  const scalePct = parseInt($('#ov-scale').value) / 100;
+  const rotation = (parseInt($('#ov-rotation').value) || 0) * Math.PI / 180;
+  const maxDim = Math.max(overlayImg.naturalWidth, overlayImg.naturalHeight);
+  const ratio = (cw * scalePct) / maxDim;
+  return { cx, cy, w: overlayImg.naturalWidth * ratio, h: overlayImg.naturalHeight * ratio, rotation };
+}
+
+function snapAngle(deg) {
+  for (const s of [0, 45, 90, 135, 180, 225, 270, 315, 360])
+    if (Math.abs(deg - s) < 4) return s % 360;
+  return deg;
+}
+
+function drawHandles() {
+  const ctx = $handleCanvas.getContext('2d');
+  ctx.clearRect(0, 0, $handleCanvas.width, $handleCanvas.height);
+  const b = getOverlayBounds();
+  if (!b) return;
+
+  const hs = screenPx(8), rotOff = screenPx(28), lw = screenPx(1.5);
+
+  ctx.save();
+  ctx.translate(b.cx, b.cy);
+  ctx.rotate(b.rotation);
+
+  // Selection rect
+  ctx.setLineDash([screenPx(6), screenPx(4)]);
+  ctx.strokeStyle = 'rgba(212,160,23,0.85)';
+  ctx.lineWidth = lw;
+  ctx.strokeRect(-b.w / 2, -b.h / 2, b.w, b.h);
+  ctx.setLineDash([]);
+
+  // Corners
+  const corners = [[-b.w/2,-b.h/2],[b.w/2,-b.h/2],[b.w/2,b.h/2],[-b.w/2,b.h/2]];
+  ctx.fillStyle = '#d4a017';
+  ctx.strokeStyle = '#1a1a18';
+  ctx.lineWidth = screenPx(1);
+  for (const [hx, hy] of corners) {
+    ctx.fillRect(hx - hs, hy - hs, hs * 2, hs * 2);
+    ctx.strokeRect(hx - hs, hy - hs, hs * 2, hs * 2);
+  }
+
+  // Rotation handle
+  ctx.beginPath();
+  ctx.moveTo(0, -b.h / 2);
+  ctx.lineTo(0, -b.h / 2 - rotOff);
+  ctx.strokeStyle = 'rgba(212,160,23,0.85)';
+  ctx.lineWidth = lw;
+  ctx.stroke();
+  const rr = screenPx(6);
+  ctx.beginPath();
+  ctx.arc(0, -b.h / 2 - rotOff, rr, 0, Math.PI * 2);
+  ctx.fillStyle = '#d4a017';
+  ctx.fill();
+  ctx.strokeStyle = '#1a1a18';
+  ctx.lineWidth = screenPx(1);
+  ctx.stroke();
+  // Arc hint
+  ctx.beginPath();
+  ctx.arc(0, -b.h / 2 - rotOff, rr * 0.55, -Math.PI * 0.7, Math.PI * 0.3);
+  ctx.strokeStyle = '#1a1a18';
+  ctx.lineWidth = screenPx(1);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function hitTest(px, py) {
+  const b = getOverlayBounds();
+  if (!b) return null;
+  const dx = px - b.cx, dy = py - b.cy;
+  const cos = Math.cos(-b.rotation), sin = Math.sin(-b.rotation);
+  const lx = dx * cos - dy * sin, ly = dx * sin + dy * cos;
+  const hs = screenPx(12), rotOff = screenPx(28), rotR = screenPx(10);
+
+  if (Math.sqrt(lx * lx + (ly + b.h / 2 + rotOff) ** 2) < rotR) return { type: 'rotate' };
+  for (const c of [{n:'tl',x:-b.w/2,y:-b.h/2},{n:'tr',x:b.w/2,y:-b.h/2},{n:'br',x:b.w/2,y:b.h/2},{n:'bl',x:-b.w/2,y:b.h/2}])
+    if (Math.abs(lx - c.x) < hs && Math.abs(ly - c.y) < hs) return { type: 'resize', corner: c.n };
+  if (Math.abs(lx) < b.w / 2 && Math.abs(ly) < b.h / 2) return { type: 'move' };
+  return null;
+}
+
+function setSlider(id, val, suffix) {
+  $('#' + id).value = val;
+  $('#' + id + '-val').textContent = val + suffix;
+}
+
+function onHandleDown(e) {
+  if (!overlayImg) return;
+  const pos = canvasCoords(e), hit = hitTest(pos.x, pos.y);
+  if (!hit) return;
+  e.preventDefault();
+  $handleCanvas.setPointerCapture(e.pointerId);
+  const b = getOverlayBounds();
+  dragState = {
+    type: hit.type, corner: hit.corner,
+    startX: pos.x, startY: pos.y,
+    startOvX: parseInt($('#ov-x').value), startOvY: parseInt($('#ov-y').value),
+    startOvScale: parseInt($('#ov-scale').value),
+    cx: b.cx, cy: b.cy
+  };
+}
+
+function onHandleMove(e) {
+  if (!overlayImg) { $handleCanvas.style.cursor = 'default'; return; }
+  const pos = canvasCoords(e);
+  if (!dragState) {
+    const hit = hitTest(pos.x, pos.y);
+    $handleCanvas.style.cursor = !hit ? 'default' : hit.type === 'move' ? 'move' : hit.type === 'rotate' ? 'crosshair' : 'nwse-resize';
+    return;
+  }
+  e.preventDefault();
+  const cw = $qrCanvas.width, ch = $qrCanvas.height;
+  if (dragState.type === 'move') {
+    setSlider('ov-x', Math.round(Math.max(0, Math.min(100, dragState.startOvX + (pos.x - dragState.startX) / cw * 100))), '%');
+    setSlider('ov-y', Math.round(Math.max(0, Math.min(100, dragState.startOvY + (pos.y - dragState.startY) / ch * 100))), '%');
+    refreshComposite();
+  }
+  if (dragState.type === 'resize') {
+    const sd = Math.sqrt((dragState.startX - dragState.cx) ** 2 + (dragState.startY - dragState.cy) ** 2);
+    const cd = Math.sqrt((pos.x - dragState.cx) ** 2 + (pos.y - dragState.cy) ** 2);
+    if (sd > 0) { setSlider('ov-scale', Math.round(Math.max(5, Math.min(80, dragState.startOvScale * cd / sd))), '%'); refreshComposite(); }
+  }
+  if (dragState.type === 'rotate') {
+    let deg = Math.atan2(pos.x - dragState.cx, -(pos.y - dragState.cy)) * 180 / Math.PI;
+    deg = snapAngle(Math.round(((deg % 360) + 360) % 360));
+    setSlider('ov-rotation', deg, '\u00B0');
+    refreshComposite();
+  }
+}
+
+function onHandleUp(e) {
+  if (dragState) { $handleCanvas.releasePointerCapture(e.pointerId); dragState = null; }
+}
+
+$handleCanvas.addEventListener('pointerdown', onHandleDown);
+$handleCanvas.addEventListener('pointermove', onHandleMove);
+$handleCanvas.addEventListener('pointerup', onHandleUp);
+$handleCanvas.addEventListener('pointercancel', onHandleUp);
+
+// ══════════════════════════════════════════════════
+// CONTROLS
+// ══════════════════════════════════════════════════
+
+// Examples
+$examples.addEventListener('change', function() {
+  var key = $examples.value;
+  if (!key) return;
+  $source.value = EXAMPLES[key] || '';
+  updateSourceInfo();
+  syncSourceToMeta();
+  press();
+  $examples.value = '';
+});
+
+// Metadata
+$metaTitle.addEventListener('input', syncMetaToSource);
+$metaAuthor.addEventListener('input', syncMetaToSource);
+$metaExtra.addEventListener('input', syncMetaToSource);
+
+// File drop
+const $dropzone = $('#dropzone'), $fileInput = $('#file-input');
+$dropzone.addEventListener('click', () => $fileInput.click());
+$dropzone.addEventListener('dragover', e => { e.preventDefault(); $dropzone.classList.add('dragover'); });
+$dropzone.addEventListener('dragleave', () => $dropzone.classList.remove('dragover'));
+$dropzone.addEventListener('drop', e => {
+  e.preventDefault(); $dropzone.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) { loadFile(e.dataTransfer.files[0]); return; }
+  const text = e.dataTransfer.getData('text');
+  if (text) {
+    const html = decodeDataURI(text);
+    if (html) { $source.value = html; updateSourceInfo(); syncSourceToMeta(); if ($('#chk-auto').checked) press(); }
+  }
+});
+$fileInput.addEventListener('change', () => { if ($fileInput.files[0]) loadFile($fileInput.files[0]); });
+
+function loadFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    const raw = reader.result;
+    $source.value = decodeDataURI(raw) || raw;
+    updateSourceInfo(); syncSourceToMeta();
+    if ($('#chk-auto').checked) press();
+  };
+  reader.readAsText(file);
+}
+
+// Press / Minify
+$('#btn-press').addEventListener('click', press);
+$('#btn-minify').addEventListener('click', () => {
+  if (!$source.value.trim()) return;
+  $source.value = minifyHTML($source.value);
+  updateSourceInfo(); syncSourceToMeta();
+  if ($('#chk-auto').checked) press();
+});
+
+// Auto-decode data URIs pasted into source
+function decodeDataURI(str) {
+  const s = str.trim();
+  const b64 = s.match(/^data:text\/html;base64,(.+)$/i);
+  if (b64) try { return atob(b64[1]); } catch { return null; }
+  const plain = s.match(/^data:text\/html,(.+)$/is);
+  if (plain) try { return decodeURIComponent(plain[1]); } catch { return plain[1]; }
+  return null;
+}
+
+$source.addEventListener('paste', (e) => {
+  const text = (e.clipboardData || window.clipboardData).getData('text');
+  const html = decodeDataURI(text);
+  if (html) {
+    e.preventDefault();
+    $source.value = html;
+    updateSourceInfo(); syncSourceToMeta();
+    if ($('#chk-auto').checked) press();
+  }
+});
+
+// Auto-press on edit
+let pressTimer = null;
+$source.addEventListener('input', () => {
+  updateSourceInfo(); syncSourceToMeta();
+  if ($('#chk-auto').checked) { clearTimeout(pressTimer); pressTimer = setTimeout(press, 500); }
+});
+
+// QR settings change → re-press
+for (const id of ['qr-ecc','qr-mask','qr-min-ver','qr-max-ver','qr-boost','qr-fg','qr-bg','qr-scale'])
+  $('#' + id).addEventListener('change', () => { maskResultsShown = false; if (hasResults) press(); });
+
+// Overlay file
+const $ovDrop = $('#overlay-dropzone'), $ovInput = $('#overlay-input');
+$ovDrop.addEventListener('click', () => $ovInput.click());
+$ovDrop.addEventListener('dragover', e => { e.preventDefault(); $ovDrop.classList.add('dragover'); });
+$ovDrop.addEventListener('dragleave', () => $ovDrop.classList.remove('dragover'));
+$ovDrop.addEventListener('drop', e => { e.preventDefault(); $ovDrop.classList.remove('dragover'); const f = e.dataTransfer.files[0]; if (f && f.type.startsWith('image/')) loadOverlay(f); });
+$ovInput.addEventListener('change', () => { if ($ovInput.files[0]) loadOverlay($ovInput.files[0]); });
+
+function loadOverlay(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      overlayImg = img; maskResultsShown = false;
+      $ovDrop.querySelector('.overlay-dropzone-text').textContent = file.name + ' (' + img.naturalWidth + '\u00D7' + img.naturalHeight + ')';
+      refreshComposite();
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// Overlay sliders
+for (const id of ['ov-x','ov-y','ov-scale','ov-opacity','ov-rotation']) {
+  const slider = $('#' + id), valEl = $('#' + id + '-val');
+  slider.addEventListener('input', () => { maskResultsShown = false; valEl.textContent = slider.value + (id === 'ov-rotation' ? '\u00B0' : '%'); refreshComposite(); });
+}
+
+// Clear overlay
+$('#btn-ov-clear').addEventListener('click', () => {
+  overlayImg = null; maskResultsShown = false;
+  $ovDrop.querySelector('.overlay-dropzone-text').textContent = 'Drop a PNG/SVG or click to browse';
+  $ovInput.value = '';
+  setSlider('ov-rotation', 0, '\u00B0');
+  if (lastQrDataUri) { renderQR(lastQrDataUri); checkReadability(); }
+  syncHandleCanvas(); drawHandles();
+});
+
+$('#btn-find-mask').addEventListener('click', findBestMask);
+
+// Readability settings → re-check
+for (const id of ['read-samples','read-min','read-max'])
+  $('#' + id).addEventListener('change', () => { maskResultsShown = false; if (overlayImg && lastQrDataUri) checkReadability(); });
+
+// Copy / Test / Download
+$('#btn-copy').addEventListener('click', () => {
+  navigator.clipboard.writeText($dataUri.value).then(() => {
+    $('#btn-copy').textContent = 'Copied!';
+    setTimeout(() => $('#btn-copy').textContent = 'Copy URI', 1500);
+  });
+});
+// Test overlay
+const $testOverlay = $('#test-overlay'), $testIframe = $('#test-iframe');
+function openTest() {
+  const u = $dataUri.value; if (!u) return;
+  $testIframe.src = 'gcues.html#' + encodeURIComponent(u);
+  $testOverlay.hidden = false;
+}
+function closeTest() {
+  $testOverlay.hidden = true;
+  $testIframe.src = 'about:blank';
+}
+$('#btn-test').addEventListener('click', openTest);
+$('#test-close').addEventListener('click', closeTest);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$testOverlay.hidden) closeTest(); });
+$('#btn-dl-qr').addEventListener('click', () => { const a = document.createElement('a'); a.download = 'gcues-cartridge-qr.png'; a.href = $qrCanvas.toDataURL('image/png'); a.click(); });
+
+// Init
+updateSourceInfo();
+
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,17 @@
+GCUES Test URIs — paste these into the Paste overlay or use as hash URLs
+================================================================================
+
+1. Hello World — 90 bytes
+data:text/html,<h1 style="font-family:monospace;text-align:center;margin-top:40vh">Hello from GCUES!</h1>
+
+2. Gradient Wave — 285 bytes (has metadata)
+data:text/html,<!-- gcues title: Gradient Wave; author: GCU --><body style="margin:0;height:100vh;background:linear-gradient(45deg,%23ff006e,%230ff,%23ff006e);background-size:400%25;animation:g 3s ease infinite"><style>@keyframes g{0%25,100%25{background-position:0 50%25}50%25{background-position:100%25 50%25}}</style>
+
+3. Bouncing Ball — 455 bytes (has metadata)
+data:text/html,<!-- gcues title: Bouncing Ball; author: GCU Lab --><canvas id=c></canvas><script>const c=document.getElementById('c'),x=c.getContext('2d');c.width=innerWidth;c.height=innerHeight;let bx=100,by=100,dx=3,dy=2;function d(){x.fillStyle='%230a0a08';x.fillRect(0,0,c.width,c.height);bx+=dx;by+=dy;if(bx<20||bx>c.width-20)dx=-dx;if(by<20||by>c.height-20)dy=-dy;x.beginPath();x.arc(bx,by,18,0,7);x.fillStyle='%23d4a017';x.fill();requestAnimationFrame(d)}d()</script>
+
+4. Amber Clock — 343 bytes (has metadata)
+data:text/html,<!-- gcues title: Amber Clock --><body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:%230a0a08;font-family:monospace"><div id=t style="font-size:15vw;color:%23d4a017;text-shadow:0 0 30px rgba(212,160,23,0.4)"></div><script>setInterval(()=>t.textContent=new Date().toLocaleTimeString(),500)</script>
+
+5. Notepad — 262 bytes (has metadata)
+data:text/html,<!-- gcues title: Notepad; author: GCU --><body style="margin:0;font-family:sans-serif"><div contenteditable style="padding:24px;min-height:100vh;font-size:16px;line-height:1.6;outline:none;background:%23f4efe6;color:%233a3530" spellcheck=false>Start typing...</div>

@@ -1416,7 +1416,17 @@ async function compressHTML(html) {
   let binary = '';
   for (let i = 0; i < compressed.length; i++) binary += String.fromCharCode(compressed[i]);
   const b64 = btoa(binary);
-  return "<script>fetch('data:application/octet-stream;base64," + b64 + "').then(r=>r.blob()).then(b=>new Response(b.stream().pipeThrough(new DecompressionStream('deflate-raw'))).text()).then(h=>{document.open();document.write(h);document.close()})<\\/script>";
+  // Prepend gcues metadata comment so parseMeta() works on compressed output
+  const meta = parseMeta(html);
+  let prefix = '';
+  if (meta.title || meta.author || meta.desc) {
+    const parts = [];
+    if (meta.title) parts.push('title: ' + meta.title);
+    if (meta.author) parts.push('author: ' + meta.author);
+    if (meta.desc) parts.push('desc: ' + meta.desc);
+    prefix = '<!-- gcues ' + parts.join('; ') + ' -->';
+  }
+  return prefix + "<script>fetch('data:application/octet-stream;base64," + b64 + "').then(r=>r.blob()).then(b=>new Response(b.stream().pipeThrough(new DecompressionStream('deflate-raw'))).text()).then(h=>{document.open();document.write(h);document.close()})<\\/script>";
 }
 
 function makeRawDataURI(html) { return 'data:text/html,' + encodeURIComponent(html); }
@@ -1586,13 +1596,16 @@ async function press() {
   const html = $source.value;
   if (!html.trim()) return;
   $msgArea.innerHTML = '';
-  lastHash = await hashHTML(html);
 
   const rawUri = makeRawDataURI(html);
   let compUri = null, useCompressed = false;
   try { compUri = await makeCompressedDataURI(html); if (compUri.length < rawUri.length) useCompressed = true; } catch {}
 
   const finalUri = useCompressed ? compUri : rawUri;
+
+  // Hash the decoded URI content (what GCUES console will see), not the raw source
+  const decodedForHash = decodeDataURI(finalUri);
+  lastHash = await hashHTML(decodedForHash || html);
   const uriBytesRaw = new Blob([rawUri]).size;
   const uriBytesComp = compUri ? new Blob([compUri]).size : null;
   const uriBytesUsed = new Blob([finalUri]).size;
@@ -2083,7 +2096,7 @@ $('#btn-copy').addEventListener('click', () => {
 const $testOverlay = $('#test-overlay'), $testIframe = $('#test-iframe');
 function openTest() {
   const u = $dataUri.value; if (!u) return;
-  $testIframe.src = 'gcues.html#' + encodeURIComponent(u);
+  $testIframe.src = 'index.html#' + encodeURIComponent(u);
   $testOverlay.hidden = false;
 }
 function closeTest() {

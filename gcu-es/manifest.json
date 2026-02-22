@@ -2,7 +2,7 @@
   "name": "GCUES",
   "short_name": "GCUES",
   "description": "Geoscientific Chaos Union Entertainment System — QR cartridge scanner and runner",
-  "start_url": "./gcues.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
@@ -23,7 +23,7 @@
     }
   ],
   "share_target": {
-    "action": "./gcues.html",
+    "action": "./index.html",
     "method": "GET",
     "params": {
       "text": "text",

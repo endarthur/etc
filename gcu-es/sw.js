@@ -6,7 +6,7 @@
 const CACHE_NAME = 'gcues-v1';
 const APP_SHELL = [
   './',
-  './gcues.html',
+  './index.html',
   './manifest.json'
 ];
 

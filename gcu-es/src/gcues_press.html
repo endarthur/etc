@@ -194,7 +194,55 @@ body {
   padding: 5px 8px;
 }
 
-.meta-fields input:focus {
+.meta-fields input:focus,
+.meta-fields textarea:focus {
+  outline: none;
+  border-color: var(--amber);
+}
+
+.meta-fields textarea {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 8px;
+  resize: vertical;
+  min-height: 44px;
+  line-height: 1.5;
+  width: 100%;
+}
+
+.card-text-field {
+  margin: 12px 0;
+}
+
+.card-text-field .card-text-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 4px;
+}
+
+.card-text-field textarea {
+  width: 100%;
+  min-height: 56px;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  resize: vertical;
+}
+
+.card-text-field textarea:focus {
   outline: none;
   border-color: var(--amber);
 }
@@ -302,6 +350,13 @@ body {
   cursor: default;
 }
 
+input[type="number"].btn {
+  padding: 8px 6px;
+  text-align: center;
+  min-width: 60px;
+  -moz-appearance: textfield;
+}
+
 /* ── Stats ── */
 .result-stats {
   display: flex;
@@ -392,6 +447,38 @@ body {
   margin-top: 6px;
 }
 
+/* ── Output tabs ── */
+.output-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.output-tab {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.output-tab:hover { color: var(--text); }
+.output-tab.active {
+  color: var(--amber);
+  border-bottom-color: var(--amber);
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
 /* ── QR canvas area ── */
 .qr-canvas-area {
   display: flex;
@@ -426,12 +513,51 @@ body {
   width: 100%;
   height: 100%;
   touch-action: none;
+  border-radius: 6px;
 }
 
 .qr-actions {
   display: flex;
   gap: 8px;
   justify-content: center;
+  margin: 12px 0;
+}
+
+/* ── Card preview ── */
+.card-preview-area {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.card-preview-wrap {
+  position: relative;
+  display: inline-block;
+  border-radius: 6px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.06);
+  line-height: 0;
+}
+
+#card-preview {
+  border-radius: 6px;
+  max-width: 100%;
+  height: auto;
+}
+
+.card-preview-label {
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-faint);
+  margin-top: 8px;
+}
+
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
   margin: 12px 0;
 }
 
@@ -513,19 +639,19 @@ body {
 
 .overlay-controls .qr-field {
   flex: 1;
-  min-width: 110px;
+  min-width: 70px;
 }
 
-.overlay-controls input[type="range"] {
+.overlay-controls input[type="number"] {
   width: 100%;
-  accent-color: var(--amber);
-}
-
-.range-value {
   font-family: var(--mono);
-  font-size: 10px;
-  color: var(--text-faint);
-  text-align: right;
+  font-size: 12px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 8px;
+  box-sizing: border-box;
 }
 
 /* ── Readability meter ── */
@@ -730,6 +856,9 @@ footer a { color: var(--text-dim); }
     </select>
     <div class="toolbar-spacer"></div>
     <label class="toolbar-auto">
+      <input type="checkbox" id="chk-debug"> Debug
+    </label>
+    <label class="toolbar-auto">
       <input type="checkbox" id="chk-auto" checked> Auto
     </label>
     <button type="button" class="btn" id="btn-minify">Minify</button>
@@ -747,6 +876,7 @@ footer a { color: var(--text-dim); }
         <div class="meta-fields">
           <label>Title <input id="meta-title" type="text"></label>
           <label>Author <input id="meta-author" type="text"></label>
+          <label>Desc <textarea id="meta-desc" rows="2" placeholder="Short description"></textarea></label>
           <label>Extra <input id="meta-extra" type="text" placeholder="key: val; key: val"></label>
         </div>
       </div>
@@ -755,8 +885,8 @@ footer a { color: var(--text-dim); }
         <div class="section-label">Source HTML</div>
         <div class="dropzone" id="dropzone">
           <div class="dropzone-icon">&#x1F4C4;</div>
-          <div class="dropzone-text">Drop .html or click to browse</div>
-          <input type="file" id="file-input" accept=".html,.htm">
+          <div class="dropzone-text">Drop .html / .pdf or click to browse</div>
+          <input type="file" id="file-input" accept=".html,.htm,.pdf">
         </div>
         <div class="editor-wrap">
           <textarea id="source" placeholder="Paste or type cartridge HTML..."></textarea>
@@ -792,34 +922,29 @@ footer a { color: var(--text-dim); }
 
       <div class="overlay-controls">
         <div class="qr-field">
-          <label>X position</label>
-          <input type="range" id="ov-x" min="0" max="100" value="50">
-          <div class="range-value" id="ov-x-val">50%</div>
+          <label>X %</label>
+          <input type="number" id="ov-x" value="50" step="1">
         </div>
         <div class="qr-field">
-          <label>Y position</label>
-          <input type="range" id="ov-y" min="0" max="100" value="50">
-          <div class="range-value" id="ov-y-val">50%</div>
+          <label>Y %</label>
+          <input type="number" id="ov-y" value="50" step="1">
         </div>
         <div class="qr-field">
-          <label>Scale</label>
-          <input type="range" id="ov-scale" min="5" max="80" value="25">
-          <div class="range-value" id="ov-scale-val">25%</div>
+          <label>Scale %</label>
+          <input type="number" id="ov-scale" value="25" min="1" step="1">
         </div>
         <div class="qr-field">
-          <label>Opacity</label>
-          <input type="range" id="ov-opacity" min="0" max="100" value="100">
-          <div class="range-value" id="ov-opacity-val">100%</div>
+          <label>Opacity %</label>
+          <input type="number" id="ov-opacity" value="100" min="0" max="100" step="1">
         </div>
         <div class="qr-field">
           <label>Rotation</label>
-          <input type="range" id="ov-rotation" min="0" max="360" value="0">
-          <div class="range-value" id="ov-rotation-val">0&deg;</div>
+          <input type="number" id="ov-rotation" value="0" step="1">
         </div>
-        <div class="qr-field" style="flex:0;">
-          <label>&nbsp;</label>
-          <button type="button" class="btn" id="btn-ov-clear" style="padding:5px 10px;">Clear</button>
-        </div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px;">
+        <button type="button" class="btn" id="btn-ov-center" style="padding:5px 10px;">Center</button>
+        <button type="button" class="btn" id="btn-ov-clear" style="padding:5px 10px;">Clear</button>
       </div>
 
       <div class="readability" id="readability">
@@ -903,14 +1028,47 @@ footer a { color: var(--text-dim); }
 
       <div id="msg-area"></div>
 
-      <div class="qr-canvas-area">
-        <div class="qr-wrap" id="qr-wrap-bg">
-          <div class="canvas-container">
-            <canvas id="qr-canvas" width="1" height="1"></canvas>
-            <canvas id="handle-canvas" width="1" height="1"></canvas>
-          </div>
+      <!-- Hidden QR canvas (used internally by overlay, readability, download) -->
+      <div style="display:none;">
+        <canvas id="qr-canvas" width="1" height="1"></canvas>
+      </div>
+
+      <!-- ── Card preview ── -->
+      <div class="card-preview-area">
+        <div class="card-preview-wrap">
+          <canvas id="card-preview" width="1" height="1"></canvas>
+          <canvas id="handle-canvas" width="1" height="1"></canvas>
         </div>
       </div>
+      <div class="card-preview-label" id="card-preview-label"></div>
+      <div class="card-text-field">
+        <div class="card-text-label">
+          Card text
+          <label style="margin-left:12px;font-weight:400;font-size:10px;text-transform:none;letter-spacing:0;">
+            <input type="checkbox" id="chk-auto-title" checked> Auto title/author
+          </label>
+          <label style="margin-left:8px;font-weight:400;font-size:10px;text-transform:none;letter-spacing:0;">
+            <input type="checkbox" id="chk-wrap-text" checked> Wrap below
+          </label>
+          <span style="margin-left:8px;font-size:9px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0;"># title &ensp; ~ subtitle &ensp; **bold** &ensp; *italic*</span>
+        </div>
+        <textarea id="card-text" rows="3" placeholder="Auto-fills from desc (editable)"></textarea>
+      </div>
+      <div class="card-actions">
+        <select id="pdf-size" class="btn" style="text-transform:none;font-weight:400;">
+          <option value="tcg">TCG 63.5&times;88.9mm</option>
+          <option value="tarot">Tarot 70&times;120mm</option>
+          <option value="custom">Custom&hellip;</option>
+        </select>
+        <span id="custom-size-inputs" style="display:none;">
+          <input type="number" id="custom-w" min="30" max="300" step="0.1" value="63.5" class="btn" placeholder="W">&times;<input type="number" id="custom-h" min="30" max="300" step="0.1" value="88.9" class="btn" placeholder="H"><span style="font-size:9px;color:var(--text-dim);margin-left:2px;">mm</span>
+        </span>
+        <span style="font-size:9px;color:var(--text-dim);">safe</span><input type="number" id="safe-zone" min="0" max="10" step="0.1" value="2" class="btn"><span style="font-size:9px;color:var(--text-dim);">mm</span>
+        <label style="font-size:10px;color:var(--text-dim);cursor:pointer;"><input type="checkbox" id="chk-data-page" checked style="vertical-align:middle;"> Data page</label>
+        <button type="button" class="btn btn-primary" id="btn-dl-pdf">Download PDF</button>
+        <button type="button" class="btn" id="btn-dl-qr">QR PNG</button>
+      </div>
+      <div style="font-size:9px;color:var(--text-faint);padding:2px 0;">For print production, open the PDF in Affinity/Illustrator to convert to CMYK and export as PDF/X.</div>
 
       <div class="result-stats">
         <div class="stat">
@@ -933,10 +1091,6 @@ footer a { color: var(--text-dim); }
         <div class="budget-fill" id="budget-fill"></div>
       </div>
 
-      <div class="qr-actions">
-        <button type="button" class="btn" id="btn-dl-qr">Download QR</button>
-      </div>
-
     </div>
 
   </div>
@@ -950,6 +1104,7 @@ footer a { color: var(--text-dim); }
     GCUES Press &mdash;
     QR: <a href="https://www.nayuki.io/page/qr-code-generator-library">qrcodegen</a> (Nayuki, MIT).
     Decode: <a href="https://github.com/cozmo/jsQR">jsQR</a> (Wolfe, Apache-2.0).
+    PDF: <a href="https://github.com/parallax/jsPDF">jsPDF</a> (parallax, MIT).
     Compression: native <code>CompressionStream</code>.
   </footer>
 
@@ -961,6 +1116,11 @@ footer a { color: var(--text-dim); }
 <!-- ── Vendored: jsQR (injected by build.js) ── -->
 <script>
 // __INJECT_JSQR__
+</script>
+
+<!-- ── Vendored: jsPDF (injected by build.js) ── -->
+<script>
+// __INJECT_JSPDF__
 </script>
 
 <script>
@@ -981,10 +1141,133 @@ const $handleCanvas = $('#handle-canvas');
 const $metaTitle    = $('#meta-title');
 const $metaAuthor   = $('#meta-author');
 const $metaExtra    = $('#meta-extra');
+const $metaDesc     = $('#meta-desc');
+const $cardText     = $('#card-text');
 const $examples     = $('#examples');
 
 // State flag: have we pressed at least once?
 let hasResults = false;
+let lastHash = '';
+
+// ══════════════════════════════════════════════════
+// HASH ART GENERATOR
+// ══════════════════════════════════════════════════
+
+async function hashHTML(html) {
+  const buf = new TextEncoder().encode(html);
+  const digest = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function generateHashArt(hexHash, sizePx) {
+  const COLORS = ['#7b68ae', '#c0392b', '#d4a017', '#2e86c1'];
+  const hb = [];
+  for (let i = 0; i < 32; i++) hb.push(parseInt(hexHash.substr(i * 2, 2), 16) || 0);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = sizePx;
+  canvas.height = sizePx;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, sizePx, sizePx);
+
+  const cell = sizePx / 8;
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 4; col++) {
+      const idx = row * 4 + col;
+      if ((hb[idx >> 3] >> (idx & 7)) & 1) {
+        ctx.fillStyle = COLORS[(hb[4 + (idx >> 2)] >> ((idx & 3) * 2)) & 3];
+        ctx.fillRect(col * cell, row * cell, cell, cell);
+        ctx.fillRect((7 - col) * cell, row * cell, cell, cell);
+      }
+    }
+  }
+  return canvas;
+}
+
+
+function wrapCardText(ctx, text, maxWidth) {
+  if (!text) return [];
+  const lines = [];
+  for (const raw of text.split('\n')) {
+    if (!raw) { lines.push(''); continue; }
+    if (ctx.measureText(raw).width <= maxWidth) {
+      lines.push(raw);
+    } else {
+      let current = '';
+      for (const ch of raw) {
+        if (ctx.measureText(current + ch).width > maxWidth && current) {
+          lines.push(current);
+          current = ch;
+        } else {
+          current += ch;
+        }
+      }
+      if (current) lines.push(current);
+    }
+  }
+  return lines;
+}
+
+// Parse card markup: # title, ~ subtitle, **bold**, *italic*, plain mono
+function parseCardMarkup(text) {
+  if (!text) return [];
+  return text.split('\n').map(line => {
+    if (line.startsWith('# ')) return { style: 'title', segments: [{ text: line.slice(2), style: 'title' }] };
+    if (line.startsWith('~ ')) return { style: 'subtitle', segments: [{ text: line.slice(2), style: 'subtitle' }] };
+    // Inline: **bold** and *italic* within mono text
+    const segments = [];
+    const re = /\*\*(.+?)\*\*|\*(.+?)\*/g;
+    let last = 0, m;
+    while ((m = re.exec(line)) !== null) {
+      if (m.index > last) segments.push({ text: line.slice(last, m.index), style: 'mono' });
+      if (m[1] !== undefined) segments.push({ text: m[1], style: 'bold' });
+      else segments.push({ text: m[2], style: 'italic' });
+      last = m.index + m[0].length;
+    }
+    if (last < line.length) segments.push({ text: line.slice(last), style: 'mono' });
+    if (!segments.length) segments.push({ text: '', style: 'mono' });
+    return { style: 'mixed', segments };
+  });
+}
+
+// Draw parsed segments on a canvas context, returns y after last line.
+// float: optional { wrapY, fullX, fullMaxW } — after curY passes wrapY,
+// text uses fullX and fullMaxW (wraps below the identicon).
+function drawCardMarkup(ctx, parsed, x, y, maxW, fonts, colors, lineHeights, float) {
+  let curY = y;
+  function getX() { return (float && curY >= float.wrapY) ? float.fullX : x; }
+  function getW() { return (float && curY >= float.wrapY) ? float.fullMaxW : maxW; }
+
+  for (const line of parsed) {
+    const lx = getX(), lw = getW();
+    if (line.style === 'title' || line.style === 'subtitle') {
+      ctx.font = fonts[line.style];
+      ctx.fillStyle = colors[line.style];
+      ctx.fillText(line.segments[0].text, lx, curY);
+      curY += lineHeights[line.style];
+    } else {
+      let curX = lx;
+      for (const seg of line.segments) {
+        ctx.font = fonts[seg.style];
+        ctx.fillStyle = colors[seg.style];
+        const chars = [...seg.text];
+        for (const ch of chars) {
+          const w = ctx.measureText(ch).width;
+          const cx = getX(), cw = getW();
+          if (curX + w > cx + cw && curX > cx) {
+            curY += lineHeights.mono;
+            curX = getX();
+          }
+          ctx.fillText(ch, curX, curY);
+          curX += w;
+        }
+      }
+      curY += lineHeights.mono;
+    }
+  }
+  return curY;
+}
 
 // ══════════════════════════════════════════════════
 // EXAMPLES
@@ -1029,7 +1312,7 @@ for (var key in EXAMPLES) {
 let metaSyncing = false;
 
 function parseMeta(html) {
-  const m = html.match(/<!--\s*gcues\s+(.+?)\s*-->/i);
+  const m = html.match(/<!--\s*gcues\s+([\s\S]+?)\s*-->/i);
   if (!m) return {};
   const meta = {};
   m[1].split(';').forEach(pair => {
@@ -1060,9 +1343,11 @@ function syncSourceToMeta() {
   const meta = parseMeta($source.value);
   $metaTitle.value = meta.title || '';
   $metaAuthor.value = meta.author || '';
+  $metaDesc.value = meta.desc || '';
+  $cardText.placeholder = meta.desc || 'Auto-fills from desc (editable)';
   const extras = [];
   for (var k in meta) {
-    if (k !== 'title' && k !== 'author') extras.push(k + ': ' + meta[k]);
+    if (k !== 'title' && k !== 'author' && k !== 'desc') extras.push(k + ': ' + meta[k]);
   }
   $metaExtra.value = extras.join('; ');
   metaSyncing = false;
@@ -1074,15 +1359,17 @@ function syncMetaToSource() {
   const parts = [];
   const title = $metaTitle.value.trim();
   const author = $metaAuthor.value.trim();
+  const desc = $metaDesc.value.replace(/\n/g, ' ').trim();
   const extra = $metaExtra.value.trim();
   if (title) parts.push('title: ' + title);
   if (author) parts.push('author: ' + author);
+  if (desc) parts.push('desc: ' + desc);
   if (extra) parts.push(extra);
   const comment = parts.length ? '<!-- gcues ' + parts.join('; ') + ' -->' : '';
   const html = $source.value;
-  const existing = html.match(/<!--\s*gcues\s+.+?\s*-->/i);
+  const existing = html.match(/<!--\s*gcues\s+[\s\S]+?\s*-->/i);
   if (existing) {
-    $source.value = comment ? html.replace(existing[0], comment) : html.replace(/<!--\s*gcues\s+.+?\s*-->\s*/i, '');
+    $source.value = comment ? html.replace(existing[0], comment) : html.replace(/<!--\s*gcues\s+[\s\S]+?\s*-->\s*/i, '');
   } else if (comment) {
     $source.value = comment + '\n' + html;
   }
@@ -1168,7 +1455,7 @@ function renderQRToCanvas(canvas, dataUri, settingsOverride) {
   }
   const modules = qr.size;
   const scale = s.scale > 0 ? s.scale : Math.max(4, Math.floor(400 / modules));
-  const border = 4;
+  const border = s.border !== undefined ? s.border : 4;
   const totalSize = (modules + border * 2) * scale;
   canvas.width = totalSize;
   canvas.height = totalSize;
@@ -1184,12 +1471,13 @@ function renderQRToCanvas(canvas, dataUri, settingsOverride) {
 }
 
 function renderQR(dataUri) {
-  const result = renderQRToCanvas($qrCanvas, dataUri);
-  if (result.ok) $('#qr-wrap-bg').style.background = getQRSettings().bg;
-  return result;
+  return renderQRToCanvas($qrCanvas, dataUri);
 }
 
-function compositeOverlayToCanvas(canvas) {
+// Composite overlay onto a canvas. If qrRegion is provided, remap card-space
+// overlay coordinates into the QR-only canvas (for readability testing).
+// qrRegion: { qrX, qrY, qrSize, cardW, cardH } — all in mm.
+function compositeOverlayToCanvas(canvas, qrRegion) {
   if (!overlayImg) return;
   const ctx = canvas.getContext('2d');
   const cw = canvas.width, ch = canvas.height;
@@ -1199,13 +1487,26 @@ function compositeOverlayToCanvas(canvas) {
   const opacity = parseInt($('#ov-opacity').value) / 100;
   const rotation = (parseInt($('#ov-rotation').value) || 0) * Math.PI / 180;
   const maxDim = Math.max(overlayImg.naturalWidth, overlayImg.naturalHeight);
-  const targetSize = cw * scalePct;
+
+  let cx, cy, targetSize;
+  if (qrRegion) {
+    // Overlay coords are card-relative %, remap to QR canvas pixels
+    const { qrX, qrY, qrSize, cardW, cardH } = qrRegion;
+    cx = ((xPct * cardW - qrX) / qrSize) * cw;
+    cy = ((yPct * cardH - qrY) / qrSize) * ch;
+    targetSize = (scalePct * cardW / qrSize) * cw;
+  } else {
+    cx = xPct * cw;
+    cy = yPct * ch;
+    targetSize = cw * scalePct;
+  }
+
   const ratio = targetSize / maxDim;
   const ow = overlayImg.naturalWidth * ratio;
   const oh = overlayImg.naturalHeight * ratio;
   ctx.save();
   ctx.globalAlpha = opacity;
-  ctx.translate(xPct * cw, yPct * ch);
+  ctx.translate(cx, cy);
   ctx.rotate(rotation);
   ctx.drawImage(overlayImg, -ow / 2, -oh / 2, ow, oh);
   ctx.restore();
@@ -1245,20 +1546,21 @@ async function findBestMask() {
   const $btn = $('#btn-find-mask'), $status = $('#read-status');
   const origText = $btn.textContent;
   $btn.disabled = true;
+  const region = getQrRegion();
   const results = [];
   for (let mask = 0; mask <= 7; mask++) {
     $btn.textContent = 'Testing mask ' + mask + '/7\u2026';
     const off = document.createElement('canvas');
     const r = renderQRToCanvas(off, lastQrDataUri, { mask });
     if (!r.ok) { results.push({ mask, score: 0 }); continue; }
-    compositeOverlayToCanvas(off);
+    compositeOverlayToCanvas(off, region);
     results.push({ mask, score: await scoreCanvas(off) });
     await new Promise(r => setTimeout(r, 10));
   }
   $btn.textContent = 'Testing auto\u2026';
   const offA = document.createElement('canvas');
   const rA = renderQRToCanvas(offA, lastQrDataUri, { mask: -1 });
-  if (rA.ok) { compositeOverlayToCanvas(offA); results.push({ mask: -1, score: await scoreCanvas(offA), label: 'auto' }); }
+  if (rA.ok) { compositeOverlayToCanvas(offA, region); results.push({ mask: -1, score: await scoreCanvas(offA), label: 'auto' }); }
   const total = getScaleVariations().length;
   results.sort((a, b) => b.score - a.score);
   const best = results[0];
@@ -1284,6 +1586,7 @@ async function press() {
   const html = $source.value;
   if (!html.trim()) return;
   $msgArea.innerHTML = '';
+  lastHash = await hashHTML(html);
 
   const rawUri = makeRawDataURI(html);
   let compUri = null, useCompressed = false;
@@ -1321,7 +1624,6 @@ async function press() {
   const qrResult = renderQR(finalUri);
   syncHandleCanvas();
   if (qrResult.ok && overlayImg) { compositeOverlay(); checkReadability(); }
-  drawHandles();
 
   const $qrVer = $('#stat-qr-ver');
   if (qrResult.ok) {
@@ -1339,6 +1641,9 @@ async function press() {
   else if (pct > 85) $msgArea.innerHTML += '<div class="msg msg-warn">Tight fit. Consider reducing size.</div>';
 
   hasResults = true;
+
+  // Update card preview if that tab is visible
+  if (typeof renderCardPreview === 'function') renderCardPreview();
 }
 
 // ══════════════════════════════════════════════════
@@ -1348,7 +1653,14 @@ async function press() {
 let overlayImg = null;
 let lastQrDataUri = null;
 
-function compositeOverlay() { compositeOverlayToCanvas($qrCanvas); }
+function getQrRegion() {
+  const preset = getPreset();
+  const meta = parseMeta($source.value);
+  const L = cardLayout(preset);
+  return { qrX: L.qrX, qrY: L.qrY, qrSize: L.qrSize, cardW: L.w, cardH: L.h };
+}
+
+function compositeOverlay() { compositeOverlayToCanvas($qrCanvas, getQrRegion()); }
 
 function refreshComposite() {
   if (lastQrDataUri) {
@@ -1356,6 +1668,7 @@ function refreshComposite() {
     if (overlayImg) { compositeOverlay(); checkReadability(); }
     syncHandleCanvas();
     drawHandles();
+    if (typeof renderCardPreview === 'function') renderCardPreview();
   }
 }
 
@@ -1444,13 +1757,13 @@ function canvasCoords(e) {
 }
 
 function syncHandleCanvas() {
-  $handleCanvas.width = $qrCanvas.width;
-  $handleCanvas.height = $qrCanvas.height;
+  $handleCanvas.width = $cardPreview.width;
+  $handleCanvas.height = $cardPreview.height;
 }
 
 function getOverlayBounds() {
   if (!overlayImg) return null;
-  const cw = $qrCanvas.width, ch = $qrCanvas.height;
+  const cw = $cardPreview.width, ch = $cardPreview.height;
   const cx = (parseInt($('#ov-x').value) / 100) * cw;
   const cy = (parseInt($('#ov-y').value) / 100) * ch;
   const scalePct = parseInt($('#ov-scale').value) / 100;
@@ -1466,9 +1779,12 @@ function snapAngle(deg) {
   return deg;
 }
 
+let handlesVisible = true;
+
 function drawHandles() {
   const ctx = $handleCanvas.getContext('2d');
   ctx.clearRect(0, 0, $handleCanvas.width, $handleCanvas.height);
+  if (!handlesVisible) return;
   const b = getOverlayBounds();
   if (!b) return;
 
@@ -1535,15 +1851,20 @@ function hitTest(px, py) {
   return null;
 }
 
-function setSlider(id, val, suffix) {
+function setSlider(id, val) {
   $('#' + id).value = val;
-  $('#' + id + '-val').textContent = val + suffix;
 }
 
 function onHandleDown(e) {
   if (!overlayImg) return;
   const pos = canvasCoords(e), hit = hitTest(pos.x, pos.y);
-  if (!hit) return;
+  if (!hit) {
+    // Click outside overlay — hide handles for clean preview
+    if (handlesVisible) { handlesVisible = false; drawHandles(); }
+    return;
+  }
+  // Click on overlay — show handles if hidden, then start drag
+  if (!handlesVisible) { handlesVisible = true; drawHandles(); return; }
   e.preventDefault();
   $handleCanvas.setPointerCapture(e.pointerId);
   const b = getOverlayBounds();
@@ -1565,21 +1886,21 @@ function onHandleMove(e) {
     return;
   }
   e.preventDefault();
-  const cw = $qrCanvas.width, ch = $qrCanvas.height;
+  const cw = $cardPreview.width, ch = $cardPreview.height;
   if (dragState.type === 'move') {
-    setSlider('ov-x', Math.round(Math.max(0, Math.min(100, dragState.startOvX + (pos.x - dragState.startX) / cw * 100))), '%');
-    setSlider('ov-y', Math.round(Math.max(0, Math.min(100, dragState.startOvY + (pos.y - dragState.startY) / ch * 100))), '%');
+    setSlider('ov-x', Math.round(dragState.startOvX + (pos.x - dragState.startX) / cw * 100));
+    setSlider('ov-y', Math.round(dragState.startOvY + (pos.y - dragState.startY) / ch * 100));
     refreshComposite();
   }
   if (dragState.type === 'resize') {
     const sd = Math.sqrt((dragState.startX - dragState.cx) ** 2 + (dragState.startY - dragState.cy) ** 2);
     const cd = Math.sqrt((pos.x - dragState.cx) ** 2 + (pos.y - dragState.cy) ** 2);
-    if (sd > 0) { setSlider('ov-scale', Math.round(Math.max(5, Math.min(80, dragState.startOvScale * cd / sd))), '%'); refreshComposite(); }
+    if (sd > 0) { setSlider('ov-scale', Math.round(Math.max(1, dragState.startOvScale * cd / sd))); refreshComposite(); }
   }
   if (dragState.type === 'rotate') {
     let deg = Math.atan2(pos.x - dragState.cx, -(pos.y - dragState.cy)) * 180 / Math.PI;
     deg = snapAngle(Math.round(((deg % 360) + 360) % 360));
-    setSlider('ov-rotation', deg, '\u00B0');
+    setSlider('ov-rotation', deg);
     refreshComposite();
   }
 }
@@ -1612,6 +1933,14 @@ $examples.addEventListener('change', function() {
 $metaTitle.addEventListener('input', syncMetaToSource);
 $metaAuthor.addEventListener('input', syncMetaToSource);
 $metaExtra.addEventListener('input', syncMetaToSource);
+$metaDesc.addEventListener('input', () => {
+  syncMetaToSource();
+  $cardText.placeholder = $metaDesc.value.trim() || 'Auto-fills from desc (editable)';
+  if (lastQrDataUri) renderCardPreview();
+});
+$cardText.addEventListener('input', () => {
+  if (lastQrDataUri) renderCardPreview();
+});
 
 // File drop
 const $dropzone = $('#dropzone'), $fileInput = $('#file-input');
@@ -1629,7 +1958,16 @@ $dropzone.addEventListener('drop', e => {
 });
 $fileInput.addEventListener('change', () => { if ($fileInput.files[0]) loadFile($fileInput.files[0]); });
 
-function loadFile(file) {
+async function loadFile(file) {
+  if (file.name.toLowerCase().endsWith('.pdf')) {
+    const uri = await extractFromPDF(file);
+    if (!uri) { $msgArea.innerHTML = '<div class="msg msg-err">No GCUES cartridge data found in PDF.</div>'; return; }
+    const html = decodeDataURI(uri);
+    if (html) { $source.value = html; } else { $source.value = uri; }
+    updateSourceInfo(); syncSourceToMeta();
+    if ($('#chk-auto').checked) press();
+    return;
+  }
   const reader = new FileReader();
   reader.onload = () => {
     const raw = reader.result;
@@ -1703,18 +2041,27 @@ function loadOverlay(file) {
   reader.readAsDataURL(file);
 }
 
-// Overlay sliders
+// Overlay inputs
 for (const id of ['ov-x','ov-y','ov-scale','ov-opacity','ov-rotation']) {
-  const slider = $('#' + id), valEl = $('#' + id + '-val');
-  slider.addEventListener('input', () => { maskResultsShown = false; valEl.textContent = slider.value + (id === 'ov-rotation' ? '\u00B0' : '%'); refreshComposite(); });
+  $('#' + id).addEventListener('input', () => { maskResultsShown = false; refreshComposite(); });
 }
+
+// Center overlay
+$('#btn-ov-center').addEventListener('click', () => {
+  setSlider('ov-x', 50);
+  setSlider('ov-y', 50);
+  setSlider('ov-scale', 25);
+  setSlider('ov-rotation', 0);
+  handlesVisible = true;
+  refreshComposite();
+});
 
 // Clear overlay
 $('#btn-ov-clear').addEventListener('click', () => {
   overlayImg = null; maskResultsShown = false;
   $ovDrop.querySelector('.overlay-dropzone-text').textContent = 'Drop a PNG/SVG or click to browse';
   $ovInput.value = '';
-  setSlider('ov-rotation', 0, '\u00B0');
+  setSlider('ov-rotation', 0);
   if (lastQrDataUri) { renderQR(lastQrDataUri); checkReadability(); }
   syncHandleCanvas(); drawHandles();
 });
@@ -1748,7 +2095,563 @@ $('#test-close').addEventListener('click', closeTest);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$testOverlay.hidden) closeTest(); });
 $('#btn-dl-qr').addEventListener('click', () => { const a = document.createElement('a'); a.download = 'gcues-cartridge-qr.png'; a.href = $qrCanvas.toDataURL('image/png'); a.click(); });
 
-// Init
+// ══════════════════════════════════════════════════
+// PDF CARTRIDGE CARD
+// ══════════════════════════════════════════════════
+
+const PDF_SIZES = {
+  tcg:    { w: 63.5, h: 88.9,  label: 'TCG' },
+  tarot:  { w: 70,   h: 120,   label: 'Tarot' }
+};
+
+function getPreset() {
+  const key = $('#pdf-size').value;
+  if (key !== 'custom') return PDF_SIZES[key] || PDF_SIZES.tcg;
+  const w = parseFloat($('#custom-w').value) || 63.5;
+  const h = parseFloat($('#custom-h').value) || 88.9;
+  return { w, h, label: w + '\u00D7' + h };
+}
+
+// Show/hide custom inputs, persist to localStorage
+(function initCustomSize() {
+  const $sel = $('#pdf-size');
+  const $cust = $('#custom-size-inputs');
+  const $cw = $('#custom-w');
+  const $ch = $('#custom-h');
+
+  const saved = JSON.parse(localStorage.getItem('gcues-custom-size') || 'null');
+  if (saved) { $cw.value = saved.w; $ch.value = saved.h; }
+
+  function toggle() { $cust.style.display = $sel.value === 'custom' ? '' : 'none'; }
+  $sel.addEventListener('change', toggle);
+  toggle();
+
+  function saveCustom() {
+    const w = parseFloat($cw.value), h = parseFloat($ch.value);
+    if (w && h) localStorage.setItem('gcues-custom-size', JSON.stringify({ w, h }));
+    if (lastQrDataUri) renderCardPreview();
+  }
+  $cw.addEventListener('change', saveCustom);
+  $ch.addEventListener('change', saveCustom);
+
+  // Safe zone persistence
+  const $sz = $('#safe-zone');
+  const savedSafe = localStorage.getItem('gcues-safe-zone');
+  if (savedSafe !== null) $sz.value = savedSafe;
+  $sz.addEventListener('change', () => {
+    localStorage.setItem('gcues-safe-zone', $sz.value);
+    if (lastQrDataUri) renderCardPreview();
+  });
+})();
+
+// Shared layout calculator — returns positions in mm
+function cardLayout(preset) {
+  const { w, h } = preset;
+  const margin = 4;
+  const safe = parseFloat($('#safe-zone').value) || 2;
+  const inset = margin + safe;
+
+  const headerTop = inset;
+  const headerH = 6;
+
+  const footerH = 4.5;
+  const footerRuleY = h - inset - footerH;
+  const footerTextY = h - inset - 1;
+
+  // QR gets priority: as large as possible, top-aligned, respecting quiet zones
+  const qrPad = 3;  // ~4 modules quiet zone
+  const minMetaH = 12;
+  const qrAvailW = w - inset * 2;
+  const qrY = headerTop + headerH + qrPad;
+  const qrMaxH = footerRuleY - 1 - minMetaH - qrY - qrPad;
+  const qrSize = Math.max(10, Math.min(qrAvailW, qrMaxH));
+  const qrX = (w - qrSize) / 2;
+
+  // Meta: takes remaining space, capped at 20mm
+  const metaTop = qrY + qrSize + qrPad;
+  const metaH = Math.min(20, footerRuleY - 1 - metaTop);
+
+  // Identicon fills full meta height
+  const artSize = metaH;
+  const artGap = 2.5;
+  const artX = inset;
+  const artY = metaTop;
+
+  // Text anchors top-left, aligned with identicon top + padding
+  const textX = inset + artSize + artGap;
+  const textY = artY + 2.5;  // first baseline near art top
+
+  return { w, h, margin, inset, headerTop, headerH, qrSize, qrX, qrY,
+           artSize, artGap, artX, artY, textX, textY,
+           metaTop, metaH, footerRuleY, footerTextY };
+}
+
+function downloadPDF() {
+  if (!lastQrDataUri) return;
+  const preset = getPreset();
+  const meta = parseMeta($source.value);
+  const title = meta.title || $metaTitle.value || 'Untitled';
+  const author = meta.author || $metaAuthor.value || '';
+  const cardTextRaw = $cardText.value.trim() || meta.desc || '';
+
+  const L = cardLayout(preset);
+
+  // Hi-res QR for print
+  const hiCanvas = document.createElement('canvas');
+  const hiResult = renderQRToCanvas(hiCanvas, lastQrDataUri, { scale: 10, border: 0 });
+  if (!hiResult.ok) return;
+
+  const bgColor = $('#qr-bg').value;
+  const fgColor = $('#qr-fg').value;
+  const bgRgb = hexToRgb(bgColor);
+  const fgRgb = hexToRgb(fgColor);
+  const fgDimRgb = hexToRgb(mixColor(fgColor, bgColor, 0.6));
+  const fgFaintRgb = hexToRgb(mixColor(fgColor, bgColor, 0.7));
+  const fgFooterRgb = hexToRgb(mixColor(fgColor, bgColor, 0.75));
+
+  const pdf = new jspdf.jsPDF({ orientation: L.w > L.h ? 'l' : 'p', unit: 'mm', format: [L.w, L.h] });
+
+  pdf.setFillColor(bgRgb[0], bgRgb[1], bgRgb[2]);
+  pdf.rect(0, 0, L.w, L.h, 'F');
+
+  // ── Header ──
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(7);
+  pdf.setTextColor(fgRgb[0], fgRgb[1], fgRgb[2]);
+  pdf.text('GCUES', L.inset, L.headerTop + 3.5);
+
+  pdf.setDrawColor(212, 160, 23);
+  pdf.setLineWidth(0.5);
+  pdf.line(L.inset, L.headerTop + 5, L.w - L.inset, L.headerTop + 5);
+
+  const dots = [[123,104,174],[192,57,43],[212,160,23],[46,134,193]];
+  const dotStartX = L.w - L.inset - dots.length * 3;
+  dots.forEach((c, i) => {
+    pdf.setFillColor(c[0], c[1], c[2]);
+    pdf.circle(dotStartX + i * 3, L.headerTop + 2.5, 0.8, 'F');
+  });
+
+  // ── QR code ──
+  pdf.addImage(hiCanvas.toDataURL('image/png'), 'PNG', L.qrX, L.qrY, L.qrSize, L.qrSize);
+
+  // ── Hash Art ──
+  if (lastHash) {
+    const artCanvas = generateHashArt(lastHash, 200);
+    pdf.addImage(artCanvas.toDataURL('image/png'), 'PNG', L.artX, L.artY, L.artSize, L.artSize);
+  }
+
+  // ── Metadata text (flows freely from textY) ──
+  const srcSize = new Blob([$source.value]).size;
+  const ver = hiResult.version ? 'V' + hiResult.version : '';
+  const autoTitle = $('#chk-auto-title').checked;
+  const availW = L.w - L.inset - L.textX;
+  let curY = L.textY;
+
+  const pdfFonts = {
+    title:    { font: 'helvetica', style: 'bold',   size: 6.5, rgb: fgRgb,      lh: 3.5 },
+    subtitle: { font: 'helvetica', style: 'italic', size: 5.5, rgb: fgDimRgb,   lh: 3 },
+    mono:     { font: 'courier',   style: 'normal', size: 5,   rgb: fgFaintRgb, lh: 2.5 },
+    bold:     { font: 'courier',   style: 'bold',   size: 5,   rgb: fgRgb,      lh: 2.5 },
+    italic:   { font: 'helvetica', style: 'italic', size: 5,   rgb: fgDimRgb,   lh: 2.5 },
+  };
+
+  function pdfSetFont(s) {
+    const f = pdfFonts[s];
+    pdf.setFont(f.font, f.style);
+    pdf.setFontSize(f.size);
+    pdf.setTextColor(f.rgb[0], f.rgb[1], f.rgb[2]);
+  }
+
+  if (autoTitle) {
+    pdfSetFont('title');
+    pdf.text(title, L.textX, curY);
+    curY += pdfFonts.title.lh;
+
+    if (author) {
+      pdfSetFont('subtitle');
+      pdf.text('by ' + author, L.textX, curY);
+      curY += pdfFonts.subtitle.lh;
+    }
+  }
+
+  if (cardTextRaw) {
+    const parsed = parseCardMarkup(cardTextRaw);
+    const wrapBelow = $('#chk-wrap-text').checked;
+    const wrapY = L.artY + L.artSize + 1;  // 1mm padding below art
+    const fullX = L.inset;
+    const fullAvailW = L.w - L.inset * 2;
+
+    function getX() { return (wrapBelow && curY >= wrapY) ? fullX : L.textX; }
+    function getW() { return (wrapBelow && curY >= wrapY) ? fullAvailW : availW; }
+
+    for (const line of parsed) {
+      const lx = getX(), lw = getW();
+      if (line.style === 'title' || line.style === 'subtitle') {
+        pdfSetFont(line.style);
+        pdf.text(line.segments[0].text, lx, curY);
+        curY += pdfFonts[line.style].lh;
+      } else {
+        let curX = lx;
+        for (const seg of line.segments) {
+          pdfSetFont(seg.style);
+          const segW = pdf.getTextWidth(seg.text);
+          const cx = getX(), cw = getW();
+          if (curX + segW > cx + cw && curX > cx) {
+            curY += pdfFonts.mono.lh;
+            curX = getX();
+          }
+          pdf.text(seg.text, curX, curY);
+          curX += segW;
+        }
+        curY += pdfFonts.mono.lh;
+      }
+    }
+  }
+
+  // ── Footer (includes stats) ──
+  pdf.setDrawColor(212, 160, 23);
+  pdf.setLineWidth(0.3);
+  pdf.line(L.inset, L.footerRuleY, L.w - L.inset, L.footerRuleY);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(4.5);
+  pdf.setTextColor(fgFooterRgb[0], fgFooterRgb[1], fgFooterRgb[2]);
+  const modeText = $('#stat-mode').textContent || 'Raw';
+  pdf.text('GCUES CARTRIDGE \u00B7 ' + new Date().toISOString().split('T')[0]
+    + ' \u00B7 ' + srcSize + ' B \u00B7 ' + modeText + ' \u00B7 ' + ver, L.inset, L.footerTextY);
+
+  // ── Image overlay (full-card layer) ──
+  if (overlayImg) {
+    const DPI = 300;
+    const pxW = Math.round(L.w / 25.4 * DPI), pxH = Math.round(L.h / 25.4 * DPI);
+    const ovC = document.createElement('canvas');
+    ovC.width = pxW; ovC.height = pxH;
+    const ovCtx = ovC.getContext('2d');
+    const oxPct = parseInt($('#ov-x').value) / 100;
+    const oyPct = parseInt($('#ov-y').value) / 100;
+    const oscale = parseInt($('#ov-scale').value) / 100;
+    const oalpha = parseInt($('#ov-opacity').value) / 100;
+    const orot = (parseInt($('#ov-rotation').value) || 0) * Math.PI / 180;
+    const maxDim = Math.max(overlayImg.naturalWidth, overlayImg.naturalHeight);
+    const target = pxW * oscale;
+    const ratio = target / maxDim;
+    const ow = overlayImg.naturalWidth * ratio;
+    const oh = overlayImg.naturalHeight * ratio;
+    ovCtx.globalAlpha = oalpha;
+    ovCtx.translate(oxPct * pxW, oyPct * pxH);
+    ovCtx.rotate(orot);
+    ovCtx.drawImage(overlayImg, -ow / 2, -oh / 2, ow, oh);
+    pdf.addImage(ovC.toDataURL('image/png'), 'PNG', 0, 0, L.w, L.h);
+  }
+
+  // ── Page 2: selectable text fallback (optional) ──
+  if ($('#chk-data-page').checked) {
+    pdf.addPage([L.w, L.h]);
+    pdf.setFillColor(255, 255, 255);
+    pdf.rect(0, 0, L.w, L.h, 'F');
+
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(5.5);
+    pdf.setTextColor(10, 10, 8);
+    pdf.text('GCUES Cartridge Data', L.margin, L.margin + 3);
+
+    pdf.setFontSize(4.5);
+    pdf.setTextColor(120, 120, 120);
+    pdf.text('Select all and paste into GCUES, or import this PDF into Press.', L.margin, L.margin + 7);
+
+    pdf.setFont('courier', 'normal');
+    pdf.setFontSize(3.5);
+    pdf.setTextColor(180, 180, 180);
+    const lines = pdf.splitTextToSize(lastQrDataUri, L.w - L.margin * 2);
+    pdf.text(lines, L.margin, L.margin + 12);
+  }
+
+  pdf.setProperties({ title: 'GCUES: ' + title, subject: lastQrDataUri, creator: 'GCUES Press' });
+
+  const slug = (title || 'cartridge').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+  pdf.save('gcues-' + slug + '.pdf');
+}
+
+$('#btn-dl-pdf').addEventListener('click', downloadPDF);
+
+// ══════════════════════════════════════════════════
+// OUTPUT TABS + CARD PREVIEW
+// ══════════════════════════════════════════════════
+
+const $cardPreview = $('#card-preview');
+
+$('#pdf-size').addEventListener('change', () => {
+  if (lastQrDataUri) renderCardPreview();
+});
+
+$('#chk-debug').addEventListener('change', () => {
+  if (lastQrDataUri) renderCardPreview();
+});
+
+$('#chk-auto-title').addEventListener('change', () => {
+  if (lastQrDataUri) renderCardPreview();
+});
+
+$('#chk-wrap-text').addEventListener('change', () => {
+  if (lastQrDataUri) renderCardPreview();
+});
+
+// Mix a color toward a target by ratio (0 = original, 1 = target)
+function mixColor(hex, target, ratio) {
+  const h = hex.replace('#',''), t = target.replace('#','');
+  const r = Math.round(parseInt(h.substr(0,2),16) * (1-ratio) + parseInt(t.substr(0,2),16) * ratio);
+  const g = Math.round(parseInt(h.substr(2,2),16) * (1-ratio) + parseInt(t.substr(2,2),16) * ratio);
+  const b = Math.round(parseInt(h.substr(4,2),16) * (1-ratio) + parseInt(t.substr(4,2),16) * ratio);
+  return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
+}
+
+function hexToRgb(hex) {
+  const h = hex.replace('#','');
+  return [parseInt(h.substr(0,2),16), parseInt(h.substr(2,2),16), parseInt(h.substr(4,2),16)];
+}
+
+function renderCardPreview() {
+  if (!lastQrDataUri) return;
+  const preset = getPreset();
+  const meta = parseMeta($source.value);
+  const title = meta.title || $metaTitle.value || 'Untitled';
+  const author = meta.author || $metaAuthor.value || '';
+  const cardTextRaw = $cardText.value.trim() || meta.desc || '';
+
+  const bgColor = $('#qr-bg').value;
+  const fgColor = $('#qr-fg').value;
+  const fgDim = mixColor(fgColor, bgColor, 0.6);     // author
+  const fgFaint = mixColor(fgColor, bgColor, 0.7);    // card text
+  const fgFooter = mixColor(fgColor, bgColor, 0.75);  // footer
+
+  const S = 4;
+  const px = (mm) => mm * S;
+  const fs = (ptMm) => ptMm * S * 0.35;
+
+  const L = cardLayout(preset);
+
+  const cw = Math.round(L.w * S), ch = Math.round(L.h * S);
+  $cardPreview.width = cw;
+  $cardPreview.height = ch;
+  const ctx = $cardPreview.getContext('2d');
+
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, cw, ch);
+  const m = px(L.inset);
+
+  const dbg = $('#chk-debug').checked;
+  if (dbg) {
+    ctx.strokeStyle = 'magenta'; ctx.lineWidth = 1;
+    ctx.strokeRect(m, px(L.headerTop), cw - m * 2, px(L.headerH));
+    ctx.strokeStyle = 'cyan'; ctx.lineWidth = 1;
+    ctx.strokeRect(m, px(L.footerRuleY), cw - m * 2, px(L.footerTextY - L.footerRuleY + 1));
+  }
+
+  // ── Header ──
+  ctx.font = 'bold ' + fs(7) + 'px Helvetica, Arial, sans-serif';
+  ctx.fillStyle = fgColor;
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('GCUES', m, px(L.headerTop + 3.5));
+
+  ctx.strokeStyle = '#d4a017';
+  ctx.lineWidth = px(0.5);
+  ctx.beginPath();
+  ctx.moveTo(m, px(L.headerTop + 5));
+  ctx.lineTo(cw - m, px(L.headerTop + 5));
+  ctx.stroke();
+
+  const dots = ['#7b68ae','#c0392b','#d4a017','#2e86c1'];
+  const dotStartX = cw - m - dots.length * px(3);
+  dots.forEach((c, i) => {
+    ctx.beginPath();
+    ctx.arc(dotStartX + i * px(3), px(L.headerTop + 2.5), px(0.8), 0, Math.PI * 2);
+    ctx.fillStyle = c;
+    ctx.fill();
+  });
+
+  // ── QR code ──
+  const qrOff = document.createElement('canvas');
+  const qrResult = renderQRToCanvas(qrOff, lastQrDataUri, { scale: 4, border: 0 });
+  if (qrResult.ok) {
+    ctx.drawImage(qrOff, px(L.qrX), px(L.qrY), px(L.qrSize), px(L.qrSize));
+
+    if (dbg) {
+      const qzMm = (L.qrSize / qrResult.modules) * 4;
+      ctx.strokeStyle = 'green'; ctx.lineWidth = 1;
+      ctx.setLineDash([4, 3]);
+      ctx.strokeRect(px(L.qrX - qzMm), px(L.qrY - qzMm), px(L.qrSize + qzMm * 2), px(L.qrSize + qzMm * 2));
+      ctx.setLineDash([]);
+    }
+  }
+
+  if (dbg) {
+    ctx.strokeStyle = 'blue'; ctx.lineWidth = 1;
+    ctx.strokeRect(m, px(L.metaTop), cw - m * 2, px(L.metaH));
+    ctx.strokeStyle = 'red'; ctx.lineWidth = 1;
+    ctx.strokeRect(px(L.artX), px(L.artY), px(L.artSize), px(L.artSize));
+  }
+
+  if (lastHash) {
+    const artCanvas = generateHashArt(lastHash, Math.round(px(L.artSize)));
+    ctx.drawImage(artCanvas, px(L.artX), px(L.artY), px(L.artSize), px(L.artSize));
+  }
+
+  // ── Metadata text (flows freely from textY) ──
+  const srcSize = new Blob([$source.value]).size;
+  const ver = qrResult.ok && qrResult.version ? 'V' + qrResult.version : '';
+  const textX = px(L.textX);
+  const titleFontPx = fs(6.5);
+  const subtitleFontPx = fs(5.5);
+  const monoFontPx = fs(5);
+  const autoTitle = $('#chk-auto-title').checked;
+  let curY = px(L.textY);
+
+  const fonts = {
+    title: 'bold ' + titleFontPx + 'px Helvetica, Arial, sans-serif',
+    subtitle: 'italic ' + subtitleFontPx + 'px Helvetica, Arial, sans-serif',
+    mono: monoFontPx + 'px "IBM Plex Mono", monospace',
+    bold: 'bold ' + monoFontPx + 'px "IBM Plex Mono", monospace',
+    italic: 'italic ' + monoFontPx + 'px Helvetica, Arial, sans-serif',
+  };
+  const colors = {
+    title: fgColor, subtitle: fgDim,
+    mono: fgFaint, bold: fgColor, italic: fgDim,
+  };
+  const lineH = {
+    title: titleFontPx + px(0.5),
+    subtitle: subtitleFontPx + px(0.5),
+    mono: monoFontPx + px(0.3),
+  };
+
+  ctx.textBaseline = 'alphabetic';
+
+  // Auto title/author (unless disabled)
+  if (autoTitle) {
+    ctx.font = fonts.title;
+    ctx.fillStyle = colors.title;
+    ctx.fillText(title, textX, curY);
+    curY += lineH.title;
+
+    if (author) {
+      ctx.font = fonts.subtitle;
+      ctx.fillStyle = colors.subtitle;
+      ctx.fillText('by ' + author, textX, curY);
+      curY += lineH.subtitle;
+    }
+  }
+
+  // Card text with markup
+  if (cardTextRaw) {
+    const parsed = parseCardMarkup(cardTextRaw);
+    const availW = cw - m - textX;
+    const wrapBelow = $('#chk-wrap-text').checked;
+    const float = wrapBelow ? {
+      wrapY: px(L.artY + L.artSize) + px(1),  // 1mm padding below art
+      fullX: m,
+      fullMaxW: cw - m * 2,
+    } : null;
+    curY = drawCardMarkup(ctx, parsed, textX, curY, availW, fonts, colors, lineH, float);
+  }
+
+  // ── Footer (includes stats) ──
+  ctx.strokeStyle = '#d4a017';
+  ctx.lineWidth = px(0.3);
+  ctx.beginPath();
+  ctx.moveTo(m, px(L.footerRuleY));
+  ctx.lineTo(cw - m, px(L.footerRuleY));
+  ctx.stroke();
+
+  const modeText = $('#stat-mode').textContent || 'Raw';
+  ctx.font = fs(4.5) + 'px Helvetica, Arial, sans-serif';
+  ctx.fillStyle = fgFooter;
+  ctx.fillText('GCUES CARTRIDGE \u00B7 ' + new Date().toISOString().split('T')[0]
+    + ' \u00B7 ' + srcSize + ' B \u00B7 ' + modeText + ' \u00B7 ' + ver, m, px(L.footerTextY));
+
+  // ── Image overlay (composited over the full card) ──
+  if (overlayImg) {
+    const oxPct = parseInt($('#ov-x').value) / 100;
+    const oyPct = parseInt($('#ov-y').value) / 100;
+    const oscale = parseInt($('#ov-scale').value) / 100;
+    const oalpha = parseInt($('#ov-opacity').value) / 100;
+    const orot = (parseInt($('#ov-rotation').value) || 0) * Math.PI / 180;
+    const maxDim = Math.max(overlayImg.naturalWidth, overlayImg.naturalHeight);
+    const target = cw * oscale;
+    const ratio = target / maxDim;
+    const ow = overlayImg.naturalWidth * ratio;
+    const oh = overlayImg.naturalHeight * ratio;
+    ctx.save();
+    ctx.globalAlpha = oalpha;
+    ctx.translate(oxPct * cw, oyPct * ch);
+    ctx.rotate(orot);
+    ctx.drawImage(overlayImg, -ow / 2, -oh / 2, ow, oh);
+    ctx.restore();
+  }
+
+  $('#card-preview-label').textContent = preset.label + ' \u2014 ' + L.w + '\u00D7' + L.h + 'mm (QR: ' + L.qrSize.toFixed(1) + 'mm)';
+}
+
+// ══════════════════════════════════════════════════
+// PDF IMPORT (raw byte regex — no PDF.js needed)
+// ══════════════════════════════════════════════════
+
+function unescapePdfString(s) {
+  return s
+    .replace(/\\n/g, '\n')
+    .replace(/\\r/g, '\r')
+    .replace(/\\t/g, '\t')
+    .replace(/\\\(/g, '(')
+    .replace(/\\\)/g, ')')
+    .replace(/\\\\/g, '\\')
+    .replace(/\\([0-7]{1,3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)));
+}
+
+async function extractFromPDF(file) {
+  const buf = await file.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  const text = Array.from(bytes, b => String.fromCharCode(b)).join('');
+
+  // Strategy 1: /Subject as literal string
+  const subj = text.match(/\/Subject\s*\(([^)]*data:text\/html[^)]*)\)/);
+  if (subj) return unescapePdfString(subj[1]);
+
+  // Strategy 2: /Subject as hex string
+  const hex = text.match(/\/Subject\s*<([0-9A-Fa-f]+)>/);
+  if (hex) {
+    const decoded = hex[1].replace(/../g, m => String.fromCharCode(parseInt(m, 16)));
+    if (decoded.includes('data:text/html')) return decoded;
+  }
+
+  // Strategy 3: find data URI anywhere in the PDF
+  const raw = text.match(/data:text\/html[,%][^\s)>]*/);
+  if (raw) return unescapePdfString(raw[0]);
+
+  return null;
+}
+
+// Init — check fragment for auto-load (#example=gradient, #load=data:text/html,...)
+(function initFromFragment() {
+  const hash = location.hash.slice(1);
+  if (!hash) return;
+  const params = new URLSearchParams(hash);
+  const ex = params.get('example');
+  if (ex && EXAMPLES[ex]) {
+    $source.value = EXAMPLES[ex];
+    updateSourceInfo();
+    syncSourceToMeta();
+    press();
+    return;
+  }
+  const load = params.get('load');
+  if (load) {
+    const html = decodeDataURI(load);
+    if (html) {
+      $source.value = html;
+      updateSourceInfo();
+      syncSourceToMeta();
+      press();
+      return;
+    }
+  }
+})();
 updateSourceInfo();
 
 })();

@@ -732,6 +732,142 @@ body.immersive .immersive-exit.visible { opacity: 0.6; pointer-events: auto; }
   transform: translateX(-50%) translateY(0);
   opacity: 1;
 }
+
+/* ── Trust confirmation screen ── */
+#state-confirm {
+  align-items: center;
+  justify-content: center;
+  background: var(--screen-bg);
+}
+
+.confirm-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 24px 20px;
+  max-width: 320px;
+  gap: 6px;
+}
+
+.confirm-art {
+  border-radius: 4px;
+  image-rendering: pixelated;
+  margin-bottom: 10px;
+}
+
+.confirm-title {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--screen-bright);
+  word-break: break-word;
+}
+
+.confirm-author {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--screen-text);
+  font-style: italic;
+}
+
+.confirm-size {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--screen-text);
+  opacity: 0.7;
+}
+
+.confirm-warning {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--amber);
+  line-height: 1.5;
+  margin: 12px 0;
+  padding: 10px;
+  background: var(--amber-dim);
+  border: 1px solid rgba(212,160,23,0.2);
+  border-radius: 6px;
+}
+
+.confirm-hash {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--screen-text);
+  opacity: 0.4;
+  word-break: break-all;
+  margin-bottom: 8px;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.confirm-btn {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 10px 24px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.confirm-btn.reject {
+  background: var(--screen-dim);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--screen-text);
+}
+
+.confirm-btn.reject:hover {
+  border-color: rgba(255,255,255,0.25);
+  color: var(--screen-bright);
+}
+
+.confirm-btn.accept {
+  background: var(--amber-dim);
+  border: 1px solid var(--amber);
+  color: var(--amber);
+}
+
+.confirm-btn.accept:hover {
+  background: rgba(212,160,23,0.25);
+}
+
+/* ── Library card hash art ── */
+.cart-card-top {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.cart-hash-art {
+  flex: 0 0 auto;
+  border-radius: 2px;
+  image-rendering: pixelated;
+}
+
+.cart-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cart-desc {
+  font-family: var(--sans);
+  font-size: 8px;
+  color: var(--paper-dim);
+  line-height: 1.3;
+  margin-top: 2px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 </style>
 </head>
 
@@ -763,7 +899,7 @@ body.immersive .immersive-exit.visible { opacity: 0.6; pointer-events: auto; }
         <div class="idle-text">Tap to scan</div>
       </div>
       <div class="idle-hint">
-        Scan a QR cartridge to run it, or paste a <kbd>data:text/html</kbd> URI.
+        Scan a QR cartridge to run it, paste a <kbd>data:text/html</kbd> URI, or import a .pdf cartridge card.
       </div>
     </div>
 
@@ -779,6 +915,24 @@ body.immersive .immersive-exit.visible { opacity: 0.6; pointer-events: auto; }
       </div>
       <div class="scan-label">Scanning&hellip;</div>
       <button class="scan-cancel" id="btn-scan-cancel">tap to cancel</button>
+    </div>
+
+    <!-- Trust confirmation -->
+    <div id="state-confirm" class="screen-state">
+      <div class="confirm-screen">
+        <canvas class="confirm-art" id="confirm-art" width="120" height="120"></canvas>
+        <div class="confirm-title" id="confirm-title"></div>
+        <div class="confirm-author" id="confirm-author"></div>
+        <div class="confirm-size" id="confirm-size"></div>
+        <div class="confirm-warning">
+          &#x26A0; This cartridge runs HTML and JavaScript in a sandboxed frame. Only accept cartridges from sources you trust.
+        </div>
+        <div class="confirm-hash" id="confirm-hash"></div>
+        <div class="confirm-actions">
+          <button class="confirm-btn reject" id="btn-reject">Reject</button>
+          <button class="confirm-btn accept" id="btn-accept">Run &#x25B6;</button>
+        </div>
+      </div>
     </div>
 
     <!-- Running -->
@@ -829,6 +983,12 @@ body.immersive .immersive-exit.visible { opacity: 0.6; pointer-events: auto; }
         <button class="paste-btn" id="btn-paste-cancel">Cancel</button>
         <button class="paste-btn primary" id="btn-paste-load">Load</button>
       </div>
+      <div style="margin-top:12px;border-top:1px solid var(--amber-dim);padding-top:10px;">
+        <label class="paste-btn" style="cursor:pointer;">
+          Import .html / .pdf
+          <input type="file" id="file-import" accept=".html,.htm,.pdf" style="display:none;">
+        </label>
+      </div>
     </div>
   </div>
 
@@ -845,8 +1005,9 @@ body.immersive .immersive-exit.visible { opacity: 0.6; pointer-events: auto; }
 'use strict';
 
 const CARDS_PER_PAGE = 6;
-let currentState = 'idle';    // idle | scanning | running
+let currentState = 'idle';    // idle | scanning | confirm | running
 let currentCart = null;        // currently loaded cartridge
+let pendingCart = null;        // cart awaiting trust confirmation
 let libraryOpen = false;
 let libPage = 0;
 let allCartridges = [];
@@ -857,6 +1018,7 @@ let scanInterval = null;
 const $ = (s) => document.querySelector(s);
 const $idle     = $('#state-idle');
 const $scanning = $('#state-scanning');
+const $confirm  = $('#state-confirm');
 const $running  = $('#state-running');
 const $video    = $('#camera-feed');
 const $iframe   = $('#cartridge-frame');
@@ -934,6 +1096,30 @@ async function hashHTML(html) {
   return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+function generateHashArt(hexHash, sizePx) {
+  const COLORS = ['#7b68ae', '#c0392b', '#d4a017', '#2e86c1'];
+  const hb = [];
+  for (let i = 0; i < 32; i++) hb.push(parseInt(hexHash.substr(i * 2, 2), 16) || 0);
+  const canvas = document.createElement('canvas');
+  canvas.width = sizePx;
+  canvas.height = sizePx;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, sizePx, sizePx);
+  const cell = sizePx / 8;
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 4; col++) {
+      const idx = row * 4 + col;
+      if ((hb[idx >> 3] >> (idx & 7)) & 1) {
+        ctx.fillStyle = COLORS[(hb[4 + (idx >> 2)] >> ((idx & 3) * 2)) & 3];
+        ctx.fillRect(col * cell, row * cell, cell, cell);
+        ctx.fillRect((7 - col) * cell, row * cell, cell, cell);
+      }
+    }
+  }
+  return canvas;
+}
+
 // Parse optional metadata comment: <!-- gcues title: Foo; author: Bar -->
 function parseMeta(html) {
   const m = html.match(/<!--\s*gcues\s+(.+?)\s*-->/i);
@@ -1004,6 +1190,7 @@ function setState(s) {
   currentState = s;
   $idle.classList.toggle('active', s === 'idle');
   $scanning.classList.toggle('active', s === 'scanning');
+  $confirm.classList.toggle('active', s === 'confirm');
   $running.classList.toggle('active', s === 'running');
 }
 
@@ -1068,10 +1255,11 @@ async function ingestAndRun(html) {
 
   if (existing) {
     runCartridge(existing);
-    toast('Cartridge loaded (duplicate)');
+    toast('Cartridge loaded');
     return;
   }
 
+  // New cartridge — show trust prompt
   const meta = parseMeta(html);
   const cart = {
     id: generateId(),
@@ -1083,9 +1271,47 @@ async function ingestAndRun(html) {
     meta: meta
   };
 
+  showTrustPrompt(cart);
+}
+
+function showTrustPrompt(cart) {
+  pendingCart = cart;
+
+  // Draw hash art
+  const artCanvas = generateHashArt(cart.hash, 120);
+  const $art = $('#confirm-art');
+  $art.width = 120;
+  $art.height = 120;
+  $art.getContext('2d').drawImage(artCanvas, 0, 0);
+
+  // Fill metadata
+  $('#confirm-title').textContent = cart.title;
+  const authorEl = $('#confirm-author');
+  if (cart.meta && cart.meta.author) {
+    authorEl.textContent = 'by ' + cart.meta.author;
+    authorEl.style.display = '';
+  } else {
+    authorEl.style.display = 'none';
+  }
+  $('#confirm-size').textContent = formatSize(cart.size);
+  $('#confirm-hash').textContent = 'SHA-256: ' + cart.hash.slice(0, 12) + '\u2026';
+
+  setState('confirm');
+}
+
+async function acceptCartridge() {
+  if (!pendingCart) return;
+  const cart = pendingCart;
+  pendingCart = null;
   await saveCartridge(cart);
   runCartridge(cart);
   toast('Cartridge saved!');
+}
+
+function rejectCartridge() {
+  pendingCart = null;
+  setState('idle');
+  toast('Cartridge rejected');
 }
 
 function runCartridge(cart) {
@@ -1164,23 +1390,37 @@ function renderLibrary() {
     slice.forEach((cart, i) => {
       const card = document.createElement('div');
       card.className = 'cart-card';
-      // Slight random rotation from id hash
       const rot = ((hashCode(cart.id) % 5) - 2) * 0.8;
       card.style.transform = 'rotate(' + rot + 'deg)';
 
       const authorLine = cart.meta && cart.meta.author
         ? '<div class="cart-author">' + escapeHTML(cart.meta.author) + '</div>' : '';
+      const descLine = cart.meta && cart.meta.desc
+        ? '<div class="cart-desc">' + escapeHTML(cart.meta.desc) + '</div>' : '';
 
       card.innerHTML =
         '<div class="cart-stamp">' + formatDate(cart.scannedAt) + '</div>' +
-        '<div class="cart-title">' + escapeHTML(cart.title) + '</div>' +
-        authorLine +
+        '<div class="cart-card-top">' +
+          '<canvas class="cart-hash-art" width="32" height="32"></canvas>' +
+          '<div class="cart-card-info">' +
+            '<div class="cart-title">' + escapeHTML(cart.title) + '</div>' +
+            authorLine +
+            descLine +
+          '</div>' +
+        '</div>' +
         '<div class="cart-meta">' + formatSize(cart.size) + '</div>' +
         '<div class="cart-actions">' +
           '<button class="cart-action-btn" data-action="rename" data-id="' + cart.id + '">Rename</button>' +
           '<button class="cart-action-btn" data-action="export" data-id="' + cart.id + '">Export</button>' +
           '<button class="cart-action-btn danger" data-action="delete" data-id="' + cart.id + '">Del</button>' +
         '</div>';
+
+      // Render hash art thumbnail
+      if (cart.hash) {
+        const artC = card.querySelector('.cart-hash-art');
+        const art = generateHashArt(cart.hash, 32);
+        artC.getContext('2d').drawImage(art, 0, 0);
+      }
 
       // Tap card body (not buttons) to load
       card.addEventListener('click', (e) => {
@@ -1414,6 +1654,60 @@ document.addEventListener('paste', async (e) => {
 });
 
 // ══════════════════════════════════════════════════
+// PDF IMPORT (raw byte regex — no PDF.js needed)
+// ══════════════════════════════════════════════════
+
+function unescapePdfString(s) {
+  return s
+    .replace(/\\n/g, '\n')
+    .replace(/\\r/g, '\r')
+    .replace(/\\t/g, '\t')
+    .replace(/\\\(/g, '(')
+    .replace(/\\\)/g, ')')
+    .replace(/\\\\/g, '\\')
+    .replace(/\\([0-7]{1,3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)));
+}
+
+async function extractFromPDF(file) {
+  const buf = await file.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  const text = Array.from(bytes, b => String.fromCharCode(b)).join('');
+
+  const subj = text.match(/\/Subject\s*\(([^)]*data:text\/html[^)]*)\)/);
+  if (subj) return unescapePdfString(subj[1]);
+
+  const hex = text.match(/\/Subject\s*<([0-9A-Fa-f]+)>/);
+  if (hex) {
+    const decoded = hex[1].replace(/../g, m => String.fromCharCode(parseInt(m, 16)));
+    if (decoded.includes('data:text/html')) return decoded;
+  }
+
+  const raw = text.match(/data:text\/html[,%][^\s)>]*/);
+  if (raw) return unescapePdfString(raw[0]);
+
+  return null;
+}
+
+async function importFile(file) {
+  if (file.name.toLowerCase().endsWith('.pdf')) {
+    const uri = await extractFromPDF(file);
+    if (!uri) { toast('No GCUES cartridge data found in PDF'); return; }
+    const html = decodeDataURI(uri);
+    if (html) { closePasteOverlay(); await ingestAndRun(html); }
+    else { toast('Could not decode data URI from PDF'); }
+    return;
+  }
+  // HTML file
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const html = decodeDataURI(reader.result) || reader.result;
+    closePasteOverlay();
+    await ingestAndRun(html);
+  };
+  reader.readAsText(file);
+}
+
+// ══════════════════════════════════════════════════
 // WIRE UP CONTROLS
 // ══════════════════════════════════════════════════
 
@@ -1438,6 +1732,10 @@ $('#btn-fullscreen').addEventListener('click', toggleFullscreen);
 $('#btn-immersive-exit').addEventListener('click', exitImmersive);
 $('#btn-paste').addEventListener('click', openPasteOverlay);
 
+// Trust prompt
+$('#btn-accept').addEventListener('click', acceptCartridge);
+$('#btn-reject').addEventListener('click', rejectCartridge);
+
 // Library close
 $('#btn-lib-close').addEventListener('click', closeLibrary);
 
@@ -1455,6 +1753,12 @@ $('#btn-paste-cancel').addEventListener('click', closePasteOverlay);
 $('#btn-paste-load').addEventListener('click', loadFromPaste);
 $pasteInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); loadFromPaste(); }
+});
+
+// File import (PDF / HTML)
+$('#file-import').addEventListener('change', (e) => {
+  if (e.target.files[0]) importFile(e.target.files[0]);
+  e.target.value = '';
 });
 
 // ══════════════════════════════════════════════════

@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GCU Geode — Console</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: 'IBM Plex Mono', monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    gap: 12px;
+  }
+  h1 {
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #a0a0c0;
+  }
+  #screen-wrap {
+    position: relative;
+    width: 480px;
+    height: 480px;
+    border: 2px solid #333;
+    border-radius: 4px;
+    background: #000;
+  }
+  canvas {
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    display: block;
+  }
+  #error-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(180, 30, 30, 0.95);
+    color: #fff;
+    font-family: monospace;
+    font-size: 13px;
+    padding: 16px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  #error-overlay.visible { display: block; }
+  .controls-hint {
+    font-size: 11px;
+    color: #666;
+    text-align: center;
+  }
+  #status {
+    font-size: 12px;
+    color: #888;
+  }
+</style>
+</head>
+<body>
+
+<h1>GCU Geode</h1>
+<div id="screen-wrap">
+  <canvas id="screen"></canvas>
+  <div id="error-overlay"></div>
+</div>
+<div id="gamepad-container"></div>
+<p class="controls-hint">Arrow keys = move &nbsp;|&nbsp; Z / Space = A &nbsp;|&nbsp; X = B &nbsp;|&nbsp; Enter = start &nbsp;|&nbsp; Shift = select</p>
+<p id="status">loading wasmoon…</p>
+
+<script src="lib/wasmoon/index.js"></script>
+<script>
+// -- runtime/api.js --
+// ─────────────────────────────────────────────────────────────────────────────
+// GCU Geode — Runtime API
+// Drawing, input, math, palette, font — everything the Lua game code calls.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Sweetie-16 palette (CC0 public domain) ──────────────────────────────────
+// https://lospec.com/palette-list/sweetie-16
+const PALETTE = [
+  0x1a1c2c, // 0  black
+  0x5d275d, // 1  dark purple
+  0xb13e53, // 2  dark red
+  0xef7d57, // 3  orange
+  0xffcd75, // 4  yellow
+  0xa7f070, // 5  light green
+  0x38b764, // 6  green
+  0x257179, // 7  dark teal
+  0x29366f, // 8  dark blue
+  0x3b5dc9, // 9  blue
+  0x41a6f6, // 10 light blue
+  0x73eff7, // 11 cyan
+  0xf4f4f4, // 12 white
+  0x94b0c2, // 13 light gray
+  0x566c86, // 14 gray
+  0x333c57, // 15 dark gray
+];
+
+// ── 5x7 pixel font ─────────────────────────────────────────────────────────
+// Covers printable ASCII 0x20..0x7E (space..tilde). Each char is 5 wide,
+// 7 tall, packed as 5 bytes (one per column, LSB = top row).
+// Glyph spacing: 1px between chars → 6px per character cell.
+const FONT_W = 5, FONT_H = 7, FONT_SPACE = 1;
+const FONT = [
+  // space ! " # $ % & ' ( ) * + , - . /
+  [0x00,0x00,0x00,0x00,0x00],[0x00,0x00,0x5f,0x00,0x00],[0x00,0x07,0x00,0x07,0x00],
+  [0x14,0x7f,0x14,0x7f,0x14],[0x24,0x2a,0x7f,0x2a,0x12],[0x23,0x13,0x08,0x64,0x62],
+  [0x36,0x49,0x55,0x22,0x50],[0x00,0x00,0x07,0x00,0x00],[0x00,0x1c,0x22,0x41,0x00],
+  [0x00,0x41,0x22,0x1c,0x00],[0x14,0x08,0x3e,0x08,0x14],[0x08,0x08,0x3e,0x08,0x08],
+  [0x00,0x50,0x30,0x00,0x00],[0x08,0x08,0x08,0x08,0x08],[0x00,0x60,0x60,0x00,0x00],
+  [0x20,0x10,0x08,0x04,0x02],
+  // 0-9
+  [0x3e,0x51,0x49,0x45,0x3e],[0x00,0x42,0x7f,0x40,0x00],[0x42,0x61,0x51,0x49,0x46],
+  [0x21,0x41,0x45,0x4b,0x31],[0x18,0x14,0x12,0x7f,0x10],[0x27,0x45,0x45,0x45,0x39],
+  [0x3c,0x4a,0x49,0x49,0x30],[0x01,0x71,0x09,0x05,0x03],[0x36,0x49,0x49,0x49,0x36],
+  [0x06,0x49,0x49,0x29,0x1e],
+  // : ; < = > ? @
+  [0x00,0x36,0x36,0x00,0x00],[0x00,0x56,0x36,0x00,0x00],[0x08,0x14,0x22,0x41,0x00],
+  [0x14,0x14,0x14,0x14,0x14],[0x00,0x41,0x22,0x14,0x08],[0x02,0x01,0x51,0x09,0x06],
+  [0x3e,0x41,0x5d,0x55,0x1e],
+  // A-Z
+  [0x7e,0x09,0x09,0x09,0x7e],[0x7f,0x49,0x49,0x49,0x36],[0x3e,0x41,0x41,0x41,0x22],
+  [0x7f,0x41,0x41,0x22,0x1c],[0x7f,0x49,0x49,0x49,0x41],[0x7f,0x09,0x09,0x09,0x01],
+  [0x3e,0x41,0x49,0x49,0x7a],[0x7f,0x08,0x08,0x08,0x7f],[0x00,0x41,0x7f,0x41,0x00],
+  [0x20,0x40,0x41,0x3f,0x01],[0x7f,0x08,0x14,0x22,0x41],[0x7f,0x40,0x40,0x40,0x40],
+  [0x7f,0x02,0x0c,0x02,0x7f],[0x7f,0x04,0x08,0x10,0x7f],[0x3e,0x41,0x41,0x41,0x3e],
+  [0x7f,0x09,0x09,0x09,0x06],[0x3e,0x41,0x51,0x21,0x5e],[0x7f,0x09,0x19,0x29,0x46],
+  [0x26,0x49,0x49,0x49,0x32],[0x01,0x01,0x7f,0x01,0x01],[0x3f,0x40,0x40,0x40,0x3f],
+  [0x1f,0x20,0x40,0x20,0x1f],[0x3f,0x40,0x38,0x40,0x3f],[0x63,0x14,0x08,0x14,0x63],
+  [0x07,0x08,0x70,0x08,0x07],[0x61,0x51,0x49,0x45,0x43],
+  // [ \ ] ^ _ `
+  [0x00,0x7f,0x41,0x41,0x00],[0x02,0x04,0x08,0x10,0x20],[0x00,0x41,0x41,0x7f,0x00],
+  [0x04,0x02,0x01,0x02,0x04],[0x40,0x40,0x40,0x40,0x40],[0x00,0x01,0x02,0x04,0x00],
+  // a-z
+  [0x20,0x54,0x54,0x54,0x78],[0x7f,0x48,0x44,0x44,0x38],[0x38,0x44,0x44,0x44,0x20],
+  [0x38,0x44,0x44,0x48,0x7f],[0x38,0x54,0x54,0x54,0x18],[0x08,0x7e,0x09,0x01,0x02],
+  [0x0c,0x52,0x52,0x52,0x3e],[0x7f,0x08,0x04,0x04,0x78],[0x00,0x44,0x7d,0x40,0x00],
+  [0x20,0x40,0x44,0x3d,0x00],[0x7f,0x10,0x28,0x44,0x00],[0x00,0x41,0x7f,0x40,0x00],
+  [0x7c,0x04,0x18,0x04,0x78],[0x7c,0x08,0x04,0x04,0x78],[0x38,0x44,0x44,0x44,0x38],
+  [0x7c,0x14,0x14,0x14,0x08],[0x08,0x14,0x14,0x18,0x7c],[0x7c,0x08,0x04,0x04,0x08],
+  [0x48,0x54,0x54,0x54,0x20],[0x04,0x3f,0x44,0x40,0x20],[0x3c,0x40,0x40,0x20,0x7c],
+  [0x1c,0x20,0x40,0x20,0x1c],[0x3c,0x40,0x30,0x40,0x3c],[0x44,0x28,0x10,0x28,0x44],
+  [0x0c,0x50,0x50,0x50,0x3c],[0x44,0x64,0x54,0x4c,0x44],
+  // { | } ~
+  [0x00,0x08,0x36,0x41,0x00],[0x00,0x00,0x7f,0x00,0x00],[0x00,0x41,0x36,0x08,0x00],
+  [0x08,0x04,0x08,0x10,0x08],
+];
+
+// ── Color resolution ────────────────────────────────────────────────────────
+let penColor = 12; // default: white
+
+function resolveColor(c) {
+  if (c === undefined || c === null) return resolveRGB(penColor);
+  return resolveRGB(c);
+}
+
+function resolveRGB(c) {
+  if (c >= 0 && c <= 15) {
+    const hex = PALETTE[c];
+    return [(hex >> 16) & 0xff, (hex >> 8) & 0xff, hex & 0xff];
+  }
+  if (c > 255) {
+    return [(c >> 16) & 0xff, (c >> 8) & 0xff, c & 0xff];
+  }
+  // fallback: palette 0
+  const hex = PALETTE[0];
+  return [(hex >> 16) & 0xff, (hex >> 8) & 0xff, hex & 0xff];
+}
+
+// ── Pixel buffer ────────────────────────────────────────────────────────────
+// Graphics context — set by initGfx, used by all drawing functions.
+let _W = 0, _H = 0;
+let _buf = null;
+let _ctx = null;
+let _imgData = null;
+
+const screenInfo = { w: 0, h: 0, name: 'ST7789sq', shape: 'rect', color: '65k' };
+
+function initGfx(canvas, w, h, screenData) {
+  _W = w; _H = h;
+  _ctx = canvas.getContext('2d');
+  _imgData = _ctx.createImageData(w, h);
+  _buf = _imgData.data;
+  screenInfo.w = w;
+  screenInfo.h = h;
+  if (screenData) {
+    screenInfo.name = screenData.id;
+    screenInfo.shape = screenData.shape;
+    screenInfo.color = screenData.color;
+  }
+  // Precompute mono/round state
+  _mono = screenInfo.color === 'mono';
+  _round = screenInfo.shape === 'round';
+  if (_round) {
+    _cx = (w - 1) / 2;
+    _cy = (h - 1) / 2;
+    const rad = Math.min(w, h) / 2;
+    _rSq = rad * rad;
+  }
+  return { ctx: _ctx, imgData: _imgData, buf: _buf, w: _W, h: _H };
+}
+
+function flushGfx() {
+  _ctx.putImageData(_imgData, 0, 0);
+}
+
+// Mono luminance threshold + round screen clipping helpers.
+// Precomputed on initGfx to keep setPixel fast.
+let _mono = false;
+let _round = false;
+let _cx = 0, _cy = 0, _rSq = 0;
+
+function monoRGB(r, g, b) {
+  // ITU BT.601 luminance, threshold at 50%
+  const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+  return lum >= 128 ? 255 : 0;
+}
+
+function setPixel(x, y, r, g, b) {
+  x = x | 0; y = y | 0;
+  if (x < 0 || x >= _W || y < 0 || y >= _H) return;
+  if (_round) {
+    const dx = x - _cx, dy = y - _cy;
+    if (dx * dx + dy * dy > _rSq) return;
+  }
+  if (_mono) {
+    const v = monoRGB(r, g, b);
+    r = v; g = v; b = v;
+  }
+  const i = (y * _W + x) * 4;
+  _buf[i] = r; _buf[i+1] = g; _buf[i+2] = b; _buf[i+3] = 255;
+}
+
+// ── Drawing API ─────────────────────────────────────────────────────────────
+function api_cls(c) {
+  let [r, g, b] = resolveColor(c !== undefined ? c : 0);
+  if (_mono) { const v = monoRGB(r, g, b); r = v; g = v; b = v; }
+  for (let i = 0; i < _buf.length; i += 4) {
+    _buf[i] = r; _buf[i+1] = g; _buf[i+2] = b; _buf[i+3] = 255;
+  }
+}
+
+function api_color(c) {
+  if (c !== undefined && c !== null) penColor = c;
+}
+
+function api_pix(x, y, c) {
+  const [r, g, b] = resolveColor(c);
+  setPixel(x, y, r, g, b);
+}
+
+function api_line(x1, y1, x2, y2, c) {
+  const [r, g, b] = resolveColor(c);
+  x1 = Math.round(x1); y1 = Math.round(y1);
+  x2 = Math.round(x2); y2 = Math.round(y2);
+  let dx = Math.abs(x2 - x1), sx = x1 < x2 ? 1 : -1;
+  let dy = -Math.abs(y2 - y1), sy = y1 < y2 ? 1 : -1;
+  let err = dx + dy;
+  for (;;) {
+    setPixel(x1, y1, r, g, b);
+    if (x1 === x2 && y1 === y2) break;
+    const e2 = 2 * err;
+    if (e2 >= dy) { err += dy; x1 += sx; }
+    if (e2 <= dx) { err += dx; y1 += sy; }
+  }
+}
+
+function api_rect(x, y, w, h, c) {
+  const [r, g, b] = resolveColor(c);
+  x = Math.round(x); y = Math.round(y);
+  w = Math.round(w); h = Math.round(h);
+  for (let i = 0; i < w; i++) {
+    setPixel(x + i, y, r, g, b);
+    setPixel(x + i, y + h - 1, r, g, b);
+  }
+  for (let j = 0; j < h; j++) {
+    setPixel(x, y + j, r, g, b);
+    setPixel(x + w - 1, y + j, r, g, b);
+  }
+}
+
+function api_rectfill(x, y, w, h, c) {
+  const [r, g, b] = resolveColor(c);
+  x = Math.round(x); y = Math.round(y);
+  w = Math.round(w); h = Math.round(h);
+  for (let j = 0; j < h; j++) {
+    for (let i = 0; i < w; i++) {
+      setPixel(x + i, y + j, r, g, b);
+    }
+  }
+}
+
+function api_circ(cx, cy, rad, c) {
+  const [r, g, b] = resolveColor(c);
+  cx = Math.round(cx); cy = Math.round(cy); rad = Math.round(rad);
+  let x = rad, y = 0, err = 1 - rad;
+  while (x >= y) {
+    setPixel(cx + x, cy + y, r, g, b);
+    setPixel(cx + y, cy + x, r, g, b);
+    setPixel(cx - y, cy + x, r, g, b);
+    setPixel(cx - x, cy + y, r, g, b);
+    setPixel(cx - x, cy - y, r, g, b);
+    setPixel(cx - y, cy - x, r, g, b);
+    setPixel(cx + y, cy - x, r, g, b);
+    setPixel(cx + x, cy - y, r, g, b);
+    y++;
+    if (err < 0) {
+      err += 2 * y + 1;
+    } else {
+      x--;
+      err += 2 * (y - x) + 1;
+    }
+  }
+}
+
+function api_circfill(cx, cy, rad, c) {
+  const [r, g, b] = resolveColor(c);
+  cx = Math.round(cx); cy = Math.round(cy); rad = Math.round(rad);
+  let x = rad, y = 0, err = 1 - rad;
+  function hline(lx, rx, py) {
+    for (let i = lx; i <= rx; i++) setPixel(i, py, r, g, b);
+  }
+  while (x >= y) {
+    hline(cx - x, cx + x, cy + y);
+    hline(cx - x, cx + x, cy - y);
+    hline(cx - y, cx + y, cy + x);
+    hline(cx - y, cx + y, cy - x);
+    y++;
+    if (err < 0) {
+      err += 2 * y + 1;
+    } else {
+      x--;
+      err += 2 * (y - x) + 1;
+    }
+  }
+}
+
+function api_tri(x1, y1, x2, y2, x3, y3, c) {
+  api_line(x1, y1, x2, y2, c);
+  api_line(x2, y2, x3, y3, c);
+  api_line(x3, y3, x1, y1, c);
+}
+
+function api_trifill(x1, y1, x2, y2, x3, y3, c) {
+  const [r, g, b] = resolveColor(c);
+  let verts = [{x: Math.round(x1), y: Math.round(y1)},
+               {x: Math.round(x2), y: Math.round(y2)},
+               {x: Math.round(x3), y: Math.round(y3)}];
+  verts.sort((a, b) => a.y - b.y);
+  const [v0, v1, v2] = verts;
+  // Upper half
+  for (let y = v0.y; y <= v1.y; y++) {
+    const dy01 = v1.y - v0.y || 1;
+    const dy02 = v2.y - v0.y || 1;
+    const t1 = (y - v0.y) / dy01;
+    const t2 = (y - v0.y) / dy02;
+    let lx = Math.round(v0.x + t1 * (v1.x - v0.x));
+    let rx = Math.round(v0.x + t2 * (v2.x - v0.x));
+    if (lx > rx) { let tmp = lx; lx = rx; rx = tmp; }
+    for (let x = lx; x <= rx; x++) setPixel(x, y, r, g, b);
+  }
+  // Lower half
+  for (let y = v1.y + 1; y <= v2.y; y++) {
+    const dy12 = v2.y - v1.y || 1;
+    const dy02 = v2.y - v0.y || 1;
+    const t1 = (y - v1.y) / dy12;
+    const t2 = (y - v0.y) / dy02;
+    let lx = Math.round(v1.x + t1 * (v2.x - v1.x));
+    let rx = Math.round(v0.x + t2 * (v2.x - v0.x));
+    if (lx > rx) { let tmp = lx; lx = rx; rx = tmp; }
+    for (let x = lx; x <= rx; x++) setPixel(x, y, r, g, b);
+  }
+}
+
+// ── Text ────────────────────────────────────────────────────────────────────
+function api_print(text, x, y, c) {
+  if (text === undefined || text === null) return;
+  text = String(text);
+  const [r, g, b] = resolveColor(c);
+  x = Math.round(x || 0);
+  y = Math.round(y || 0);
+  for (let ci = 0; ci < text.length; ci++) {
+    const code = text.charCodeAt(ci) - 0x20;
+    if (code < 0 || code >= FONT.length) { x += FONT_W + FONT_SPACE; continue; }
+    const glyph = FONT[code];
+    for (let col = 0; col < FONT_W; col++) {
+      const bits = glyph[col];
+      for (let row = 0; row < FONT_H; row++) {
+        if (bits & (1 << row)) {
+          setPixel(x + col, y + row, r, g, b);
+        }
+      }
+    }
+    x += FONT_W + FONT_SPACE;
+  }
+}
+
+// ── Sprites ──────────────────────────────────────────────────────────────────
+// 16x16 grid of 8x8 sprites = 256 sprites, byte-per-pixel (palette index).
+// Color index 0 is transparent when drawing sprites.
+const SPR_SIZE = 8;
+const SHEET_COLS = 16;
+const MAX_SPRITES = 256;
+
+const sprSheet = new Uint8Array(MAX_SPRITES * SPR_SIZE * SPR_SIZE);
+const sprFlags = new Uint8Array(MAX_SPRITES);
+
+function api_spr(n, x, y, flip_x, flip_y) {
+  n = n | 0;
+  if (n < 0 || n >= MAX_SPRITES) return;
+  x = Math.round(x); y = Math.round(y);
+  const base = n * SPR_SIZE * SPR_SIZE;
+  for (let py = 0; py < SPR_SIZE; py++) {
+    for (let px = 0; px < SPR_SIZE; px++) {
+      const sx = flip_x ? (SPR_SIZE - 1 - px) : px;
+      const sy = flip_y ? (SPR_SIZE - 1 - py) : py;
+      const ci = sprSheet[base + sy * SPR_SIZE + sx];
+      if (ci === 0) continue;
+      const [r, g, b] = resolveRGB(ci);
+      setPixel(x + px, y + py, r, g, b);
+    }
+  }
+}
+
+function api_sspr(n, x, y, sw, sh) {
+  n = n | 0; sw = sw | 0; sh = sh | 0;
+  if (sw <= 0 || sh <= 0) return;
+  const col0 = n % SHEET_COLS;
+  const row0 = (n / SHEET_COLS) | 0;
+  x = Math.round(x); y = Math.round(y);
+  for (let sr = 0; sr < sh; sr++) {
+    for (let sc = 0; sc < sw; sc++) {
+      const col = col0 + sc;
+      const row = row0 + sr;
+      if (col >= SHEET_COLS || row >= (MAX_SPRITES / SHEET_COLS)) continue;
+      const sn = row * SHEET_COLS + col;
+      const base = sn * SPR_SIZE * SPR_SIZE;
+      const dx = x + sc * SPR_SIZE;
+      const dy = y + sr * SPR_SIZE;
+      for (let py = 0; py < SPR_SIZE; py++) {
+        for (let px = 0; px < SPR_SIZE; px++) {
+          const ci = sprSheet[base + py * SPR_SIZE + px];
+          if (ci === 0) continue;
+          const [r, g, b] = resolveRGB(ci);
+          setPixel(dx + px, dy + py, r, g, b);
+        }
+      }
+    }
+  }
+}
+
+function api_fget(n, flag) {
+  n = n | 0;
+  if (n < 0 || n >= MAX_SPRITES) return false;
+  if (flag === undefined || flag === null) return sprFlags[n];
+  return !!(sprFlags[n] & (1 << (flag & 7)));
+}
+
+function api_fset(n, flag, v) {
+  n = n | 0;
+  if (n < 0 || n >= MAX_SPRITES) return;
+  if (v === undefined || v === null) {
+    // fset(n, byte) — set entire flag byte
+    sprFlags[n] = flag & 0xff;
+  } else {
+    // fset(n, bit, bool) — set/clear individual bit
+    if (v) sprFlags[n] |= (1 << (flag & 7));
+    else   sprFlags[n] &= ~(1 << (flag & 7));
+  }
+}
+
+// ── Tilemap ──────────────────────────────────────────────────────────────────
+// 2D grid of sprite indices (1 byte each). Default 128x64 tiles.
+let _mapW = 128, _mapH = 64;
+let _mapData = new Uint8Array(_mapW * _mapH);
+
+function initMap(w, h, data) {
+  _mapW = w; _mapH = h;
+  _mapData = data ? new Uint8Array(data) : new Uint8Array(w * h);
+}
+
+function api_mget(mx, my) {
+  mx = mx | 0; my = my | 0;
+  if (mx < 0 || mx >= _mapW || my < 0 || my >= _mapH) return 0;
+  return _mapData[my * _mapW + mx];
+}
+
+function api_mset(mx, my, n) {
+  mx = mx | 0; my = my | 0;
+  if (mx < 0 || mx >= _mapW || my < 0 || my >= _mapH) return;
+  _mapData[my * _mapW + mx] = n & 0xff;
+}
+
+function api_map(mx, my, mw, mh, dx, dy) {
+  mx = mx | 0; my = my | 0;
+  mw = mw | 0; mh = mh | 0;
+  dx = Math.round(dx); dy = Math.round(dy);
+  for (let ty = 0; ty < mh; ty++) {
+    for (let tx = 0; tx < mw; tx++) {
+      const tmx = mx + tx, tmy = my + ty;
+      if (tmx < 0 || tmx >= _mapW || tmy < 0 || tmy >= _mapH) continue;
+      const sn = _mapData[tmy * _mapW + tmx];
+      if (sn === 0) continue;
+      // Inline sprite draw for speed (no flip)
+      const base = sn * SPR_SIZE * SPR_SIZE;
+      const sx = dx + tx * SPR_SIZE;
+      const sy = dy + ty * SPR_SIZE;
+      for (let py = 0; py < SPR_SIZE; py++) {
+        for (let px = 0; px < SPR_SIZE; px++) {
+          const ci = sprSheet[base + py * SPR_SIZE + px];
+          if (ci === 0) continue;
+          const [r, g, b] = resolveRGB(ci);
+          setPixel(sx + px, sy + py, r, g, b);
+        }
+      }
+    }
+  }
+}
+
+// ── Input ───────────────────────────────────────────────────────────────────
+// Two independent layers merged with OR so that releasing touch
+// doesn't cancel a held keyboard key (and vice versa).
+const kbKeys = {};
+const touchKeys = {};
+const keys = {};
+const keysPressed = {};
+const keysPrev = {};
+
+function mergeKey(id) {
+  keys[id] = !!(kbKeys[id] || touchKeys[id]);
+}
+
+const KEY_MAP = {
+  'ArrowUp': 'up', 'ArrowDown': 'down', 'ArrowLeft': 'left', 'ArrowRight': 'right',
+  'z': 'a', 'Z': 'a', ' ': 'a',
+  'x': 'b', 'X': 'b',
+  'Enter': 'start',
+  'Shift': 'select',
+};
+
+document.addEventListener('keydown', (e) => {
+  const mapped = KEY_MAP[e.key];
+  if (mapped) { kbKeys[mapped] = true; mergeKey(mapped); e.preventDefault(); }
+});
+document.addEventListener('keyup', (e) => {
+  const mapped = KEY_MAP[e.key];
+  if (mapped) { kbKeys[mapped] = false; mergeKey(mapped); e.preventDefault(); }
+});
+
+function setKey(id, pressed) {
+  touchKeys[id] = !!pressed;
+  mergeKey(id);
+}
+
+function tickInput() {
+  for (const k in keys) {
+    keysPressed[k] = keys[k] && !keysPrev[k];
+    keysPrev[k] = keys[k];
+  }
+}
+
+function api_btn(id) {
+  return !!keys[id];
+}
+
+function api_btnp(id) {
+  return !!keysPressed[id];
+}
+
+function api_dpad() {
+  let dx = 0, dy = 0;
+  if (keys['left'])  dx -= 1;
+  if (keys['right']) dx += 1;
+  if (keys['up'])    dy -= 1;
+  if (keys['down'])  dy += 1;
+  return [dx, dy];
+}
+
+function api_stick() {
+  return [0, 0];
+}
+
+// ── Math aliases ────────────────────────────────────────────────────────────
+function api_rnd(n) {
+  return Math.random() * (n === undefined ? 1 : n);
+}
+function api_flr(x) { return Math.floor(x); }
+function api_ceil(x) { return Math.ceil(x); }
+function api_abs(x) { return Math.abs(x); }
+function api_sin(x) { return Math.sin(x); }
+function api_cos(x) { return Math.cos(x); }
+function api_atan2(y, x) { return Math.atan2(y, x); }
+function api_min(a, b) { return Math.min(a, b); }
+function api_max(a, b) { return Math.max(a, b); }
+function api_mid(a, b, c) {
+  if (a > b) { let t = a; a = b; b = t; }
+  if (b > c) { b = c; }
+  if (a > b) { b = a; }
+  return b;
+}
+function api_sgn(x) { return x > 0 ? 1 : x < 0 ? -1 : 0; }
+
+
+// -- runtime/audio.js --
+// ─────────────────────────────────────────────────────────────────────────────
+// GCU Geode — Audio Engine
+// Web Audio oscillator: sfx, beep, note. No imports.
+// ─────────────────────────────────────────────────────────────────────────────
+
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+const WAVE_TYPES = ['square', 'sawtooth', 'triangle'];
+
+function sfx(freq, dur, wave) {
+  const ctx = ensureAudio();
+  freq = freq || 440;
+  dur = dur || 0.1;
+  const type = (wave === 3) ? 'square' : (WAVE_TYPES[wave || 0] || 'square');
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  if (wave === 3) {
+    // noise approximation: rapid frequency modulation
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    for (let t = 0; t < dur; t += 0.005) {
+      osc.frequency.setValueAtTime(freq * (0.5 + Math.random()), ctx.currentTime + t);
+    }
+  } else {
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+  }
+  gain.gain.setValueAtTime(0.15, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + dur);
+}
+
+function beep(freq, dur) {
+  sfx(freq || 440, dur || 0.1, 0);
+}
+
+// Note name → frequency
+const NOTE_NAMES = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 };
+
+function parseNote(name) {
+  if (!name || typeof name !== 'string') return null;
+  const match = name.match(/^([A-Ga-g])(#|b)?(\d)$/);
+  if (!match) return null;
+  let semitone = NOTE_NAMES[match[1].toUpperCase()];
+  if (match[2] === '#') semitone++;
+  if (match[2] === 'b') semitone--;
+  const octave = parseInt(match[3]);
+  const midi = semitone + (octave + 1) * 12;
+  const freq = 440 * Math.pow(2, (midi - 69) / 12);
+  return freq;
+}
+
+function note(name, dur) {
+  const freq = parseNote(name);
+  if (freq === null) return;
+  sfx(freq, dur || 0.2, 0);
+}
+
+
+// -- faceplate/screens.js --
+// ─────────────────────────────────────────────────────────────────────────────
+// GCU Geode — Screen Catalog
+// Display chip specs for the 8 supported real modules.
+// Pure data — no imports, no side effects.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const SCREENS = {
+  SSD1306:  { id: 'SSD1306',  w: 128, h: 64,  color: 'mono', shape: 'rect',  size: 0.96 },
+  SSD1306L: { id: 'SSD1306L', w: 128, h: 32,  color: 'mono', shape: 'rect',  size: 0.91 },
+  ST7735s:  { id: 'ST7735s',  w: 128, h: 128, color: '65k',  shape: 'rect',  size: 1.44 },
+  ST7735r:  { id: 'ST7735r',  w: 160, h: 80,  color: '65k',  shape: 'rect',  size: 0.96 },
+  ST7789sq: { id: 'ST7789sq', w: 240, h: 240, color: '65k',  shape: 'rect',  size: 1.3  },
+  ST7789t:  { id: 'ST7789t',  w: 135, h: 240, color: '65k',  shape: 'rect',  size: 1.14 },
+  GC9A01:   { id: 'GC9A01',   w: 240, h: 240, color: '65k',  shape: 'round', size: 1.28 },
+  ILI9341:  { id: 'ILI9341',  w: 320, h: 240, color: '65k',  shape: 'rect',  size: 2.4  },
+};
+
+const DEFAULT_SCREEN = 'ST7789sq';
+
+function resolveScreen(id, rotation) {
+  const entry = SCREENS[id] || SCREENS[DEFAULT_SCREEN];
+  if (!entry) return null;
+
+  const rot = (rotation || 0) % 360;
+  const swap = (rot === 90 || rot === 270);
+  return {
+    id: entry.id,
+    w: swap ? entry.h : entry.w,
+    h: swap ? entry.w : entry.h,
+    color: entry.color,
+    shape: entry.shape,
+    size: entry.size,
+    rotation: rot,
+  };
+}
+
+
+// -- runtime/gamepad.js --
+// ─────────────────────────────────────────────────────────────────────────────
+// GCU Geode — Touch Gamepad
+// Injects a virtual d-pad + buttons overlay for touch devices.
+// Self-contained: creates its own <style> and DOM elements on init.
+// ─────────────────────────────────────────────────────────────────────────────
+
+
+let _container = null;
+let _styleEl = null;
+let _gamepadEl = null;
+let _allButtons = [];
+
+const CSS = `
+.gamepad {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  pointer-events: none;
+  z-index: 1000;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+.gamepad.active { display: flex; justify-content: space-between; align-items: flex-end; padding: 16px; }
+
+/* ── D-pad ────────────────────────────────────────────── */
+.gp-dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 56px);
+  grid-template-rows: repeat(3, 56px);
+  gap: 4px;
+  pointer-events: auto;
+}
+.gp-dpad-btn {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.6);
+  font-size: 20px;
+  font-family: sans-serif;
+}
+.gp-dpad-btn.pressed { background: rgba(255,255,255,0.35); }
+.gp-dpad-spacer { visibility: hidden; }
+
+/* ── Meta (start / select) ────────────────────────────── */
+.gp-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-self: flex-end;
+  margin-bottom: 8px;
+  pointer-events: auto;
+}
+.gp-meta-btn {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 12px;
+  padding: 6px 16px;
+  color: rgba(255,255,255,0.5);
+  font-size: 10px;
+  font-family: sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-align: center;
+}
+.gp-meta-btn.pressed { background: rgba(255,255,255,0.3); }
+
+/* ── Action buttons (A / B) ───────────────────────────── */
+.gp-buttons {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  pointer-events: auto;
+}
+.gp-action-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.18);
+  border: 2px solid rgba(255,255,255,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.7);
+  font-size: 18px;
+  font-weight: bold;
+  font-family: sans-serif;
+}
+.gp-action-btn.pressed { background: rgba(255,255,255,0.4); }
+.gp-action-btn[data-key="a"] { margin-bottom: 24px; }
+`;
+
+function el(tag, cls, attrs) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (attrs) {
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === 'text') e.textContent = v;
+      else e.dataset[k] = v;
+    }
+  }
+  return e;
+}
+
+function buildDpad() {
+  const dpad = el('div', 'gp-dpad');
+  // Row 1: _ up _
+  dpad.appendChild(el('div', 'gp-dpad-spacer'));
+  const up = el('div', 'gp-dpad-btn', { key: 'up', text: '\u25B2' });
+  dpad.appendChild(up);
+  dpad.appendChild(el('div', 'gp-dpad-spacer'));
+  // Row 2: left _ right
+  const left = el('div', 'gp-dpad-btn', { key: 'left', text: '\u25C0' });
+  dpad.appendChild(left);
+  dpad.appendChild(el('div', 'gp-dpad-spacer'));
+  const right = el('div', 'gp-dpad-btn', { key: 'right', text: '\u25B6' });
+  dpad.appendChild(right);
+  // Row 3: _ down _
+  dpad.appendChild(el('div', 'gp-dpad-spacer'));
+  const down = el('div', 'gp-dpad-btn', { key: 'down', text: '\u25BC' });
+  dpad.appendChild(down);
+  dpad.appendChild(el('div', 'gp-dpad-spacer'));
+  return { dpad, buttons: [up, down, left, right] };
+}
+
+function buildMeta(metaKeys) {
+  const wrap = el('div', 'gp-meta');
+  const btns = [];
+  for (const id of metaKeys) {
+    const b = el('div', 'gp-meta-btn', { key: id, text: id });
+    wrap.appendChild(b);
+    btns.push(b);
+  }
+  return { meta: wrap, buttons: btns };
+}
+
+function buildActions(actionKeys) {
+  const wrap = el('div', 'gp-buttons');
+  const btns = [];
+  for (const id of actionKeys) {
+    const b = el('div', 'gp-action-btn', { key: id, text: id.toUpperCase() });
+    wrap.appendChild(b);
+    btns.push(b);
+  }
+  return { actions: wrap, buttons: btns };
+}
+
+function handleTouches(e) {
+  e.preventDefault();
+
+  // Build set of currently-touched keys
+  const touched = new Set();
+  for (let i = 0; i < e.touches.length; i++) {
+    const t = e.touches[i];
+    const target = document.elementFromPoint(t.clientX, t.clientY);
+    if (target && target.dataset && target.dataset.key) {
+      touched.add(target.dataset.key);
+    }
+  }
+
+  // Update all tracked buttons
+  for (const btn of _allButtons) {
+    const id = btn.dataset.key;
+    const isDown = touched.has(id);
+    setKey(id, isDown);
+    btn.classList.toggle('pressed', isDown);
+  }
+}
+
+function initGamepad(container, controls) {
+  controls = controls || { dpad: true, buttons: ['a', 'b'], meta: ['start', 'select'] };
+
+  // Inject CSS
+  _styleEl = document.createElement('style');
+  _styleEl.textContent = CSS;
+  document.head.appendChild(_styleEl);
+
+  _container = container;
+  _gamepadEl = el('div', 'gamepad');
+  _gamepadEl.id = 'gamepad';
+  _allButtons = [];
+
+  if (controls.dpad !== false) {
+    const { dpad, buttons } = buildDpad();
+    _gamepadEl.appendChild(dpad);
+    _allButtons.push(...buttons);
+  }
+
+  if (controls.meta && controls.meta.length) {
+    const { meta, buttons } = buildMeta(controls.meta);
+    _gamepadEl.appendChild(meta);
+    _allButtons.push(...buttons);
+  }
+
+  if (controls.buttons && controls.buttons.length) {
+    const { actions, buttons } = buildActions(controls.buttons);
+    _gamepadEl.appendChild(actions);
+    _allButtons.push(...buttons);
+  }
+
+  _container.appendChild(_gamepadEl);
+
+  // Attach touch listeners on the gamepad element
+  _gamepadEl.addEventListener('touchstart',  handleTouches, { passive: false });
+  _gamepadEl.addEventListener('touchmove',   handleTouches, { passive: false });
+  _gamepadEl.addEventListener('touchend',    handleTouches, { passive: false });
+  _gamepadEl.addEventListener('touchcancel', handleTouches, { passive: false });
+
+  // Auto-show on touch-capable devices
+  if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+    _gamepadEl.classList.add('active');
+  }
+}
+
+function destroyGamepad() {
+  if (_gamepadEl) {
+    _gamepadEl.removeEventListener('touchstart',  handleTouches);
+    _gamepadEl.removeEventListener('touchmove',   handleTouches);
+    _gamepadEl.removeEventListener('touchend',    handleTouches);
+    _gamepadEl.removeEventListener('touchcancel', handleTouches);
+    // Clear all touch keys
+    for (const btn of _allButtons) setKey(btn.dataset.key, false);
+    _gamepadEl.remove();
+    _gamepadEl = null;
+  }
+  if (_styleEl) {
+    _styleEl.remove();
+    _styleEl = null;
+  }
+  _allButtons = [];
+  _container = null;
+}
+
+
+// -- runtime/vm.js --
+// ─────────────────────────────────────────────────────────────────────────────
+// GCU Geode — VM (Wasmoon lifecycle + game loop)
+// ─────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+let _rafId = null;
+
+async function bootGeode(canvas, luaCode, opts) {
+  opts = opts || {};
+  const wasmPath = opts.wasmPath || 'lib/wasmoon/glue.wasm';
+
+  // Resolve screen from catalog (backward-compatible with opts.width/height)
+  const screenData = opts.screen ? resolveScreen(opts.screen, opts.rotation) : null;
+  const w = screenData ? screenData.w : (opts.width || 240);
+  const h = screenData ? screenData.h : (opts.height || 240);
+  canvas.width = w;
+  canvas.height = h;
+
+  const gfx = initGfx(canvas, w, h, screenData);
+
+  // Init touch gamepad if container provided
+  if (opts.gamepadContainer) initGamepad(opts.gamepadContainer, opts.controls);
+
+  // Wasmoon boot
+  const factory = new wasmoon.LuaFactory(wasmPath);
+  const lua = await factory.createEngine();
+  const G = lua.global;
+
+  // Screen table
+  G.set('screen', screenInfo);
+
+  // Drawing
+  G.set('cls',      api_cls);
+  G.set('color',    api_color);
+  G.set('pix',      api_pix);
+  G.set('line',     api_line);
+  G.set('rect',     api_rect);
+  G.set('rectfill', api_rectfill);
+  G.set('circ',     api_circ);
+  G.set('circfill', api_circfill);
+  G.set('tri',      api_tri);
+  G.set('trifill',  api_trifill);
+  G.set('print',    api_print);
+
+  // Sprites
+  G.set('spr',  api_spr);
+  G.set('sspr', api_sspr);
+  G.set('fget', api_fget);
+  G.set('fset', api_fset);
+
+  // Map
+  G.set('map',  api_map);
+  G.set('mget', api_mget);
+  G.set('mset', api_mset);
+
+  // Input
+  G.set('btn',  api_btn);
+  G.set('btnp', api_btnp);
+  G.set('_js_dpad',  api_dpad);
+  G.set('_js_stick', api_stick);
+
+  // Math
+  G.set('rnd',   api_rnd);
+  G.set('flr',   api_flr);
+  G.set('ceil',  api_ceil);
+  G.set('abs',   api_abs);
+  G.set('sin',   api_sin);
+  G.set('cos',   api_cos);
+  G.set('atan2', api_atan2);
+  G.set('min',   api_min);
+  G.set('max',   api_max);
+  G.set('mid',   api_mid);
+  G.set('sgn',   api_sgn);
+
+  // Audio
+  G.set('sfx',  sfx);
+  G.set('beep', beep);
+  G.set('note', note);
+
+  // Lua wrappers for multi-return functions
+  await lua.doString(`
+    function dpad()
+      local r = _js_dpad()
+      return r[1], r[2]
+    end
+    function stick(n)
+      local r = _js_stick(n)
+      return r[1], r[2]
+    end
+  `);
+
+  // Run game code
+  try {
+    await lua.doString(luaCode);
+  } catch (e) {
+    if (opts.onError) opts.onError(e.message || String(e));
+    return;
+  }
+
+  // Get lifecycle callbacks
+  let fn_init, fn_update, fn_draw;
+  try {
+    fn_init   = G.get('_init');
+    fn_update = G.get('_update');
+    fn_draw   = G.get('_draw');
+  } catch (e) {
+    if (opts.onError) opts.onError('Failed to get callbacks: ' + (e.message || e));
+    return;
+  }
+
+  // Call _init
+  if (typeof fn_init === 'function') {
+    try { fn_init(); } catch (e) {
+      if (opts.onError) opts.onError('_init error:\n' + (e.message || e));
+      return;
+    }
+  }
+
+  if (opts.onReady) opts.onReady();
+
+  // Game loop
+  let lastTime = performance.now();
+  let frameCount = 0;
+  let fpsTime = 0;
+  let fps = 0;
+
+  function gameLoop(now) {
+    const dt = Math.min((now - lastTime) / 1000, 0.1);
+    lastTime = now;
+
+    frameCount++;
+    fpsTime += dt;
+    if (fpsTime >= 1) {
+      fps = frameCount;
+      frameCount = 0;
+      fpsTime -= 1;
+    }
+
+    tickInput();
+
+    try {
+      if (typeof fn_update === 'function') fn_update(dt);
+      if (typeof fn_draw === 'function') fn_draw();
+    } catch (e) {
+      if (opts.onError) opts.onError(e.message || String(e));
+      return;
+    }
+
+    // FPS overlay
+    const fpsStr = fps + ' fps';
+    const fpsColor = resolveRGB(14);
+    for (let ci = 0; ci < fpsStr.length; ci++) {
+      const code = fpsStr.charCodeAt(ci) - 0x20;
+      if (code < 0 || code >= FONT.length) continue;
+      const glyph = FONT[code];
+      const ox = gfx.w - (fpsStr.length - ci) * (FONT_W + FONT_SPACE);
+      for (let col = 0; col < FONT_W; col++) {
+        const bits = glyph[col];
+        for (let row = 0; row < FONT_H; row++) {
+          if (bits & (1 << row)) {
+            const px = ox + col;
+            const py = gfx.h - FONT_H - 2 + row;
+            if (px >= 0 && px < gfx.w && py >= 0 && py < gfx.h) {
+              const idx = (py * gfx.w + px) * 4;
+              gfx.buf[idx] = fpsColor[0]; gfx.buf[idx+1] = fpsColor[1];
+              gfx.buf[idx+2] = fpsColor[2]; gfx.buf[idx+3] = 255;
+            }
+          }
+        }
+      }
+    }
+
+    flushGfx();
+    _rafId = requestAnimationFrame(gameLoop);
+  }
+
+  _rafId = requestAnimationFrame(gameLoop);
+}
+
+function stopGeode() {
+  if (_rafId !== null) {
+    cancelAnimationFrame(_rafId);
+    _rafId = null;
+  }
+}
+
+
+// ── Demo game (Lua) ─────────────────────────────────────────────────────────
+const DEMO_LUA = `
+-- Paddle & Ball — GCU Geode demo
+-- Exercises: _init, _update, _draw, cls, rectfill, circfill, print,
+--            btn, rnd, flr, mid, screen.w/h
+
+local sw, sh = screen.w, screen.h
+
+-- paddle
+local pw, ph = 40, 6
+local px, py
+local speed = 180
+
+-- ball
+local bx, by, bvx, bvy
+local br = 4
+
+-- score
+local score = 0
+local hi = 0
+
+-- bricks
+local cols = 10
+local rows = 5
+local bw, bh = 22, 8
+local bricks = {}
+local brick_gap = 2
+local brick_ox = 0
+
+function reset_bricks()
+  brick_ox = (sw - cols * (bw + brick_gap) + brick_gap) / 2
+  bricks = {}
+  for r = 1, rows do
+    bricks[r] = {}
+    for c = 1, cols do
+      bricks[r][c] = true
+    end
+  end
+end
+
+function reset_ball()
+  bx = sw / 2
+  by = sh / 2 + 30
+  local angle = rnd(1.2) + 0.9  -- roughly 50-120 degrees
+  bvx = cos(angle) * 120
+  bvy = -abs(sin(angle) * 120)
+end
+
+function _init()
+  px = (sw - pw) / 2
+  py = sh - 20
+  reset_ball()
+  reset_bricks()
+  score = 0
+end
+
+function _update(dt)
+  -- paddle movement
+  if btn("left") then
+    px = px - speed * dt
+  end
+  if btn("right") then
+    px = px + speed * dt
+  end
+  px = mid(0, px, sw - pw)
+
+  -- ball movement
+  bx = bx + bvx * dt
+  by = by + bvy * dt
+
+  -- wall bounces
+  if bx - br < 0 then
+    bx = br
+    bvx = abs(bvx)
+  end
+  if bx + br > sw then
+    bx = sw - br
+    bvx = -abs(bvx)
+  end
+  if by - br < 0 then
+    by = br
+    bvy = abs(bvy)
+  end
+
+  -- paddle collision
+  if bvy > 0 and by + br >= py and by + br <= py + ph and bx >= px and bx <= px + pw then
+    bvy = -abs(bvy)
+    -- angle based on hit position
+    local hit = (bx - px) / pw - 0.5  -- -0.5 to 0.5
+    bvx = bvx + hit * 100
+    by = py - br
+    beep(660, 0.05)
+  end
+
+  -- brick collision
+  for r = 1, rows do
+    for c = 1, cols do
+      if bricks[r][c] then
+        local bkx = brick_ox + (c - 1) * (bw + brick_gap)
+        local bky = 30 + (r - 1) * (bh + brick_gap)
+        if bx + br > bkx and bx - br < bkx + bw and by + br > bky and by - br < bky + bh then
+          bricks[r][c] = false
+          bvy = -bvy
+          score = score + 10
+          if score > hi then hi = score end
+          beep(880, 0.03)
+        end
+      end
+    end
+  end
+
+  -- check all bricks cleared
+  local any = false
+  for r = 1, rows do
+    for c = 1, cols do
+      if bricks[r][c] then any = true end
+    end
+  end
+  if not any then
+    reset_bricks()
+    reset_ball()
+    -- speed up
+    speed = speed + 10
+  end
+
+  -- ball fell off bottom
+  if by - br > sh then
+    beep(220, 0.2)
+    score = 0
+    speed = 180
+    reset_ball()
+    reset_bricks()
+  end
+end
+
+function _draw()
+  cls(8)  -- dark blue
+
+  -- bricks
+  for r = 1, rows do
+    for c = 1, cols do
+      if bricks[r][c] then
+        local bkx = brick_ox + (c - 1) * (bw + brick_gap)
+        local bky = 30 + (r - 1) * (bh + brick_gap)
+        -- color by row
+        local colors = {2, 3, 4, 5, 10}
+        rectfill(bkx, bky, bw, bh, colors[r])
+      end
+    end
+  end
+
+  -- paddle
+  rectfill(px, py, pw, ph, 12)
+
+  -- ball
+  circfill(flr(bx), flr(by), br, 4)
+
+  -- score
+  print("SCORE " .. score, 4, 4, 12)
+  print("HI " .. hi, sw - 60, 4, 13)
+
+  -- title
+  print("GEODE", sw/2 - 18, sh - 10, 14)
+end
+`;
+
+// ── Boot ────────────────────────────────────────────────────────────────────
+(async function () {
+  'use strict';
+  const statusEl = document.getElementById('status');
+  const canvas   = document.getElementById('screen');
+  const errOverlay = document.getElementById('error-overlay');
+
+  function showError(msg) {
+    errOverlay.textContent = 'GEODE RUNTIME ERROR\n\n' + msg;
+    errOverlay.classList.add('visible');
+  }
+
+  statusEl.textContent = 'initializing…';
+
+  await bootGeode(canvas, DEMO_LUA, {
+    wasmPath: 'lib/wasmoon/glue.wasm',
+    screen: 'ST7789sq',
+    gamepadContainer: document.getElementById('gamepad-container'),
+    onReady: () => { statusEl.textContent = 'running'; },
+    onError: (msg) => {
+      showError(msg);
+      statusEl.textContent = 'error';
+    },
+  });
+})().catch(err => {
+  document.getElementById('error-overlay').textContent = 'BOOT ERROR\n\n' + (err.message || err);
+  document.getElementById('error-overlay').classList.add('visible');
+  document.getElementById('status').textContent = 'boot error';
+  console.error(err);
+});
+</script>
+</body>
+</html>

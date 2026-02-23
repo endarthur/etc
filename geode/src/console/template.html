@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GCU Geode — Console</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: 'IBM Plex Mono', monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    gap: 12px;
+  }
+  h1 {
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #a0a0c0;
+  }
+  #screen-wrap {
+    position: relative;
+    width: 480px;
+    height: 480px;
+    border: 2px solid #333;
+    border-radius: 4px;
+    background: #000;
+  }
+  canvas {
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    display: block;
+  }
+  #error-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(180, 30, 30, 0.95);
+    color: #fff;
+    font-family: monospace;
+    font-size: 13px;
+    padding: 16px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  #error-overlay.visible { display: block; }
+  .controls-hint {
+    font-size: 11px;
+    color: #666;
+    text-align: center;
+  }
+  #status {
+    font-size: 12px;
+    color: #888;
+  }
+</style>
+</head>
+<body>
+
+<h1>GCU Geode</h1>
+<div id="screen-wrap">
+  <canvas id="screen"></canvas>
+  <div id="error-overlay"></div>
+</div>
+<div id="gamepad-container"></div>
+<p class="controls-hint">Arrow keys = move &nbsp;|&nbsp; Z / Space = A &nbsp;|&nbsp; X = B &nbsp;|&nbsp; Enter = start &nbsp;|&nbsp; Shift = select</p>
+<p id="status">loading wasmoon…</p>
+
+<script src="lib/wasmoon/index.js"></script>
+<script>
+// __INJECT_MODULES__
+
+// ── Demo game (Lua) ─────────────────────────────────────────────────────────
+const DEMO_LUA = `
+-- Paddle & Ball — GCU Geode demo
+-- Exercises: _init, _update, _draw, cls, rectfill, circfill, print,
+--            btn, rnd, flr, mid, screen.w/h
+
+local sw, sh = screen.w, screen.h
+
+-- paddle
+local pw, ph = 40, 6
+local px, py
+local speed = 180
+
+-- ball
+local bx, by, bvx, bvy
+local br = 4
+
+-- score
+local score = 0
+local hi = 0
+
+-- bricks
+local cols = 10
+local rows = 5
+local bw, bh = 22, 8
+local bricks = {}
+local brick_gap = 2
+local brick_ox = 0
+
+function reset_bricks()
+  brick_ox = (sw - cols * (bw + brick_gap) + brick_gap) / 2
+  bricks = {}
+  for r = 1, rows do
+    bricks[r] = {}
+    for c = 1, cols do
+      bricks[r][c] = true
+    end
+  end
+end
+
+function reset_ball()
+  bx = sw / 2
+  by = sh / 2 + 30
+  local angle = rnd(1.2) + 0.9  -- roughly 50-120 degrees
+  bvx = cos(angle) * 120
+  bvy = -abs(sin(angle) * 120)
+end
+
+function _init()
+  px = (sw - pw) / 2
+  py = sh - 20
+  reset_ball()
+  reset_bricks()
+  score = 0
+end
+
+function _update(dt)
+  -- paddle movement
+  if btn("left") then
+    px = px - speed * dt
+  end
+  if btn("right") then
+    px = px + speed * dt
+  end
+  px = mid(0, px, sw - pw)
+
+  -- ball movement
+  bx = bx + bvx * dt
+  by = by + bvy * dt
+
+  -- wall bounces
+  if bx - br < 0 then
+    bx = br
+    bvx = abs(bvx)
+  end
+  if bx + br > sw then
+    bx = sw - br
+    bvx = -abs(bvx)
+  end
+  if by - br < 0 then
+    by = br
+    bvy = abs(bvy)
+  end
+
+  -- paddle collision
+  if bvy > 0 and by + br >= py and by + br <= py + ph and bx >= px and bx <= px + pw then
+    bvy = -abs(bvy)
+    -- angle based on hit position
+    local hit = (bx - px) / pw - 0.5  -- -0.5 to 0.5
+    bvx = bvx + hit * 100
+    by = py - br
+    beep(660, 0.05)
+  end
+
+  -- brick collision
+  for r = 1, rows do
+    for c = 1, cols do
+      if bricks[r][c] then
+        local bkx = brick_ox + (c - 1) * (bw + brick_gap)
+        local bky = 30 + (r - 1) * (bh + brick_gap)
+        if bx + br > bkx and bx - br < bkx + bw and by + br > bky and by - br < bky + bh then
+          bricks[r][c] = false
+          bvy = -bvy
+          score = score + 10
+          if score > hi then hi = score end
+          beep(880, 0.03)
+        end
+      end
+    end
+  end
+
+  -- check all bricks cleared
+  local any = false
+  for r = 1, rows do
+    for c = 1, cols do
+      if bricks[r][c] then any = true end
+    end
+  end
+  if not any then
+    reset_bricks()
+    reset_ball()
+    -- speed up
+    speed = speed + 10
+  end
+
+  -- ball fell off bottom
+  if by - br > sh then
+    beep(220, 0.2)
+    score = 0
+    speed = 180
+    reset_ball()
+    reset_bricks()
+  end
+end
+
+function _draw()
+  cls(8)  -- dark blue
+
+  -- bricks
+  for r = 1, rows do
+    for c = 1, cols do
+      if bricks[r][c] then
+        local bkx = brick_ox + (c - 1) * (bw + brick_gap)
+        local bky = 30 + (r - 1) * (bh + brick_gap)
+        -- color by row
+        local colors = {2, 3, 4, 5, 10}
+        rectfill(bkx, bky, bw, bh, colors[r])
+      end
+    end
+  end
+
+  -- paddle
+  rectfill(px, py, pw, ph, 12)
+
+  -- ball
+  circfill(flr(bx), flr(by), br, 4)
+
+  -- score
+  print("SCORE " .. score, 4, 4, 12)
+  print("HI " .. hi, sw - 60, 4, 13)
+
+  -- title
+  print("GEODE", sw/2 - 18, sh - 10, 14)
+end
+`;
+
+// ── Boot ────────────────────────────────────────────────────────────────────
+(async function () {
+  'use strict';
+  const statusEl = document.getElementById('status');
+  const canvas   = document.getElementById('screen');
+  const errOverlay = document.getElementById('error-overlay');
+
+  function showError(msg) {
+    errOverlay.textContent = 'GEODE RUNTIME ERROR\n\n' + msg;
+    errOverlay.classList.add('visible');
+  }
+
+  statusEl.textContent = 'initializing…';
+
+  await bootGeode(canvas, DEMO_LUA, {
+    wasmPath: 'lib/wasmoon/glue.wasm',
+    screen: 'ST7789sq',
+    gamepadContainer: document.getElementById('gamepad-container'),
+    onReady: () => { statusEl.textContent = 'running'; },
+    onError: (msg) => {
+      showError(msg);
+      statusEl.textContent = 'error';
+    },
+  });
+})().catch(err => {
+  document.getElementById('error-overlay').textContent = 'BOOT ERROR\n\n' + (err.message || err);
+  document.getElementById('error-overlay').classList.add('visible');
+  document.getElementById('status').textContent = 'boot error';
+  console.error(err);
+});
+</script>
+</body>
+</html>

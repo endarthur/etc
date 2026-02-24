@@ -17,6 +17,9 @@ const RUNTIME = [
   'runtime/api.js',
   'runtime/audio.js',
   'faceplate/screens.js',
+  'faceplate/controls.js',
+  'faceplate/serialize.js',
+  'cartridge/codec.js',
   'runtime/gamepad.js',
   'runtime/vm.js',
 ];

@@ -1,7 +1,7 @@
 name: Emit Certificate
 on:
   issues:
-    types: [opened]
+    types: [opened, labeled]
 
 concurrency:
   group: cert-emission

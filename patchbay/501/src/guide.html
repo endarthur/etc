@@ -1,0 +1,414 @@
+<!-- ═══════════════════════════════════════════════════
+     PATCHBAY 501: NaNoGEon — Course Guide
+     At the Mountains of MadLibs
+     ═══════════════════════════════════════════════════ -->
+
+<!-- Chapter 0: Welcome -->
+<div class="ch-content active">
+  <h3>Welcome to NaNoGEon</h3>
+
+  <p>In 2013, Darius Kazemi created NaNoGenMo &mdash; National Novel Generation Month. Write code that generates a 50,000-word novel. Not a good novel. Not a readable novel. Just a novel. The challenge runs every November. It's still going.</p>
+
+  <p>The human version &mdash; NaNoWriMo, National Novel Writing Month &mdash; collapsed in 2025 after scandals involving AI and safeguarding. The machine version survived the machine it was named after.</p>
+
+  <p>This course is NaNoGEon: the National Novel Generation <em>Eon</em>. Because the code never stops running.</p>
+
+  <p>You're going to build a complete AI-generated novel pipeline. Trope selection, story bible, beat sheet, chapter generation, cover art, reader app, export. A full content factory in a single browser window. By the time you're done, you'll hold publication-ready files for novels you didn't write.</p>
+
+  <div class="concept">
+    <strong>Concept: The loaded gun</strong>
+    This course gives you a working weapon and teaches you how every part of it works. What you do with it afterward is your decision, not ours. We don't automate publishing. We don't gamify distribution. We don't pretend there's a safe distance between knowledge and action. The course completes while everything is still on your machine. What you do next is yours to carry.
+  </div>
+
+  <p>But first &mdash; <em>why</em> build this?</p>
+
+  <p>Because the factories already exist. GoodNovel, WebNovel, the KDP gold rush, the YouTube narration mills &mdash; they're running right now, generating content at industrial scale. The $497 grifter courses teach the pipeline without the ethics. We teach the pipeline <em>with</em> the ethics. The best inoculation against manipulation is understanding the mechanism.</p>
+
+  <p>The kid who builds a slop pipeline will never fall for one.</p>
+
+  <p>And novels are the least harmful thing this pipeline can do. The same architecture &mdash; bible, beats, chapters, scheduled at scale &mdash; also produces bot networks, review farms, political astroturfing, and synthetic engagement. We're using novels because they're slow, legible, and expose the mechanism clearly. The course completes with a novel factory. The <em>lesson</em> is bigger. We'll come back to that at the end.</p>
+
+  <div class="guide-state"></div>
+
+  <div class="concept">
+    <strong>The library is already stocked</strong>
+    This workshop ships with 15 pre-generated novels. Covers, bibles, beat sheets, full chapters, all included. The course works end-to-end without an API key.
+  </div>
+
+  <div class="task">
+    <strong>Getting started</strong>
+    <ol>
+      <li data-check="has-provider">(Optional) <button class="guide-action" onclick="toggleWin('win-settings')">⚙ Settings</button> &mdash; choose a provider if you want to generate your own novels.</li>
+      <li data-check="has-library"><button class="guide-action" onclick="toggleWin('win-library')">📚 Library</button> &mdash; 15 novels are already there.</li>
+      <li>Come back and hit <strong>Next</strong>.</li>
+    </ol>
+  </div>
+</div>
+
+<!-- Chapter 1: The Anatomy -->
+<div class="ch-content">
+  <h3>Chapter 1: The Anatomy</h3>
+
+  <p>Before you build, you dissect.</p>
+
+  <div class="guide-state"></div>
+
+  <p>Select <strong>Stolen Crown</strong> in the Library &mdash; that's the first novel, the showcase the course walks through. Read a couple of chapters in the <button class="guide-action" onclick="toggleWin('win-phone')">📱 Reader</button>. Pay attention to how each one ends. Setup, escalation, cliffhanger. Every time. Without exception.</p>
+
+  <p>Now open <button class="guide-action" onclick="toggleWin('win-editorial')">📜 Editorial</button> and switch to the <strong>Bible</strong> tab. This is the document that drove the entire novel. Every name, every location, every plot beat &mdash; the model didn't invent these. The bible did. The model just filled in the prose.</p>
+
+  <div class="concept">
+    <strong>Concept: The bible as memory</strong>
+    LLMs don't remember. They process context. The bible solves this by giving every chapter call the same source of truth. The model never needs to recall a character's name or a location's description &mdash; it reads the bible fresh every time. This is why the pipeline works on mid-tier models with small context windows. The bible <em>is</em> the memory.
+  </div>
+
+  <p>Switch to the <strong>Beat Sheet</strong> tab. Fifteen entries, one per chapter. Each describes an emotional shape, not a scene. "The Strut" doesn't say what happens &mdash; it says the antagonist should be enjoying stolen power. The bible provides the nouns. The beats provide the shape. The model does the rest.</p>
+
+  <p>Now the <strong>Prompts</strong> tab. This is the part most courses hide. Every prompt sent to the LLM is here, editable, transparent. The bible system prompt. The chapter user template. The banned-phrases list. The content guardrails. These prompts <em>are</em> the product. The model is a commodity. The prompts are the craft.</p>
+
+  <div class="task">
+    <strong>Try it</strong>
+    <ol>
+      <li>Select <strong>Stolen Crown</strong> in <button class="guide-action" onclick="toggleWin('win-library')">📚 Library</button>. Read Chapters 1 &amp; 2 in the reader.</li>
+      <li>Open <button class="guide-action" onclick="toggleWin('win-editorial')">📜 Editorial</button> &rarr; Bible. Find Elias's "hidden truth." Re-read Chapter 1 &mdash; do you see the cracks?</li>
+      <li>Editorial &rarr; Beat Sheet. Read the Chapter 3 cliffhanger. Then read Chapter 3. Did the model follow?</li>
+      <li>Editorial &rarr; Prompts. Read the <strong>Chapter &mdash; System Prompt</strong>. Find the banned-phrases list. Search the novel for "eyes locked onto" or "mind racing." You shouldn't find them.</li>
+      <li>Browse other novels &mdash; notice how many titles use "Silent." We'll talk about that next chapter.</li>
+    </ol>
+  </div>
+
+  <div class="concept">
+    <strong>Concept: Serialized fiction is a formula</strong>
+    Not because formulas are bad &mdash; because formulas are <em>efficient</em>. A formula is a compression algorithm for narrative. Three acts, fifteen beats, a cliffhanger every chapter. Save the Cat, the Hero's Journey, the Hollywood three-act structure &mdash; these aren't creative constraints. They're manufacturing specifications. Every GoodNovel bestseller, every Marvel movie, every K-drama uses this shape. The shape works. That's why the factory works.
+  </div>
+
+  <div class="hint">
+    <strong>Skull 1: The Generator</strong>
+    Examining a bible and beat sheet unlocks this skull. (Already earned if the library loaded.)
+  </div>
+</div>
+
+<!-- Chapter 2: At the Mountains of MadLibs -->
+<div class="ch-content">
+  <h3>Chapter 2: At the Mountains of MadLibs</h3>
+
+  <p>Time to make your own. Open <button class="guide-action" onclick="toggleWin('win-commission')">🎲 Commissioning</button>.</p>
+
+  <p>Four slots. Six options each. <strong>WHO</strong> is the hidden truth &mdash; what the protagonist secretly is. <strong>WHAT</strong> is the humiliation &mdash; the inciting wound. <strong>HOW</strong> is the revenge &mdash; the mechanism of the reversal. <strong>WITH</strong> is the relationship subplot, optional but powerful.</p>
+
+  <p>1,296 unique combinations. Pick four, or hit Randomize. Then hit <strong>Generate Bible</strong>. (Requires a provider. Skip if you're using only the pre-gen library.)</p>
+
+  <div class="guide-state"></div>
+
+  <div class="concept">
+    <strong>Concept: Finite inputs, infinite outputs</strong>
+    Every combination produces a different novel. Different setting, different names, different conflicts. But the <em>shape</em> is always the same: someone hidden is wronged, they fight back, they win. The input space is 1,296 permutations. The output space is infinite. Every novel is different. Every novel is the same. That's the MadLib. That's the mountain.
+  </div>
+
+  <div class="task">
+    <strong>Try it</strong>
+    <ol>
+      <li>Pick a combination in <button class="guide-action" onclick="toggleWin('win-commission')">🎲 Commissioning</button>. Generate a bible (with a provider) or browse the library to examine a few.</li>
+      <li data-check="has-bible">Look at a second bible. Different setting, same shape.</li>
+      <li>Now a third. Notice the pattern yet?</li>
+    </ol>
+  </div>
+
+  <p>This is how GoodNovel works. Not literally &mdash; they don't use this exact UI &mdash; but structurally. A finite set of proven tropes. An infinite supply of surface variation. The machine behind the machine is always a MadLib.</p>
+
+  <div class="concept">
+    <strong>Concept: The factory repeats itself</strong>
+    <p>Look at the 15 novels in your library. Count the "Silent"s. Three, four, five. The model has favorites &mdash; words that signal hidden power, which maps to every WHO trope in the picker. So it reaches for them. Three novels called "The Silent Something" on the same shelf is a tell.</p>
+    <p>This is the same phenomenon in real publishing. After <em>Gone Girl</em>, every thriller had "girl" in the title. After <em>The Night Circus</em>, "night" was everywhere. The model learned from the same data the publishers generated.</p>
+    <p>The pipeline feeds your existing titles into the bible prompt to avoid repetition. But that's a patch. The underlying force &mdash; reaching for what statistically works &mdash; is the same force driving real content markets.</p>
+  </div>
+
+  <div class="hint">
+    <strong>Going further: Series</strong>
+    <p>The pipeline generates standalone novels. But you could build a series &mdash; same world, recurring characters, escalating stakes. Same top-down approach: series bible first, per-book bibles, beat sheets, chapters. We don't automate it because coherence across books is hard, but the architecture is the same. Bible first. Structure second. Prose last.</p>
+  </div>
+</div>
+
+<!-- Chapter 3: The Beat Sheet -->
+<div class="ch-content">
+  <h3>Chapter 3: The Beat Sheet</h3>
+
+  <p>You have a bible. Now you need a plan. Open <button class="guide-action" onclick="toggleWin('win-editorial')">📜 Editorial</button> and hit <strong>Generate Beat Sheet</strong> (or browse the existing one if you're in library-only mode).</p>
+
+  <div class="guide-state"></div>
+
+  <p>Three acts. Five beats per act. Fall, pressure, rise. Each entry has a summary, an emotional temperature, a list of characters present, a cliffhanger, and a line of dramatic irony. The beats are specific to your story &mdash; they use the names from your bible &mdash; but the <em>shape</em> is universal.</p>
+
+  <div class="concept">
+    <strong>Concept: Save the Cat, but for machines</strong>
+    <p>In 2005, Blake Snyder published <em>Save the Cat!</em>, a screenwriting book that reduced Hollywood structure to 15 beats. It became so influential that critics called it "the most dangerous book in Hollywood" &mdash; not because it was wrong, but because it was too right. Every movie started feeling the same.</p>
+    <p>Our 15-beat arc is a variant of Snyder's structure, adapted for serialized revenge fiction. The Mask. The Strike. The Silence. The Strut. Each beat is an emotional shape, not a scene. "The Overreach" works for a CEO fumbling a merger or a prince failing to command an army. The beat doesn't care about the setting. It cares about the <em>feeling</em>.</p>
+  </div>
+
+  <div class="task">
+    <strong>Try it</strong>
+    <ol>
+      <li>In <button class="guide-action" onclick="editorialTab('beats')">📜 Beat Sheet</button>, read your Chapter 1 entry. Compare it to the prose.</li>
+      <li>Look at the cliffhangers. Are they varied? The prompt says they should be.</li>
+      <li>Open <button class="guide-action" onclick="editorialTab('prompts')">📜 Prompts</button>. Read the <strong>Beat Sheet &mdash; User Template</strong>. The beat descriptions do the heavy lifting.</li>
+      <li>Edit a beat description. Make "The Wobble" darker, or funnier. Regenerate. See the output shift.</li>
+    </ol>
+  </div>
+
+  <p>This is where the pipeline becomes predictable &mdash; and that predictability is the point. Readers of serialized fiction don't want surprises. They want the <em>right kind</em> of surprises. The cliffhanger at the end of chapter 7 should feel different from chapter 3, but both should make you turn the page. The beat sheet ensures this.</p>
+
+  <p>This is also where the pipeline becomes honest about what it is. A human author uses structure because it works. A machine uses structure because it can't do anything else. Same output. Different reason. Does the difference matter to the reader?</p>
+</div>
+
+<!-- Chapter 4: The Factory -->
+<div class="ch-content">
+  <h3>Chapter 4: The Factory</h3>
+
+  <p>Open <button class="guide-action" onclick="toggleWin('win-factory')">🏭 Factory</button>. This is where prose materializes.</p>
+
+  <div class="guide-state"></div>
+
+  <p>Hit <strong>Generate Next Chapter</strong>. Watch the progress pip light up. Read what comes out. The model received your bible, the current beat, the next beat (so it knows where the cliffhanger aims), rolling summaries of previous chapters, and the full text of the chapter before this one (for prose continuity). That's the entire context. No memory. No history. Just a bible and a beat.</p>
+
+  <p>Chapters aim for 1,000&ndash;1,200 words &mdash; about 3&ndash;4 minutes of reading on a phone. Short paragraphs. Heavy dialogue. The prose should be invisible.</p>
+
+  <div class="concept">
+    <strong>Concept: Why the model doesn't see the full arc</strong>
+    The chapter prompt includes the current beat and the next beat, but <em>not</em> the complete beat sheet. This is deliberate. If the model sees The Reveal in chapter 5, it might foreshadow it too early. By limiting the model's horizon to "where am I now" and "what comes next," we prevent premature reveals. The model writes like a reader &mdash; knowing the present but not the future.
+  </div>
+
+  <p>Now look at the red button.</p>
+
+  <p><strong>Automate Everything.</strong></p>
+
+  <p>One click. Bible, beat sheet, all 15 chapters, done. Zero human input. The Universal Paperclips moment. You started by picking tropes. You ended by watching a machine write a novel in five minutes.</p>
+
+  <div class="task">
+    <strong>Try it</strong>
+    <ol>
+      <li data-check="has-chapter1">Generate chapters one at a time in <button class="guide-action" onclick="toggleWin('win-factory')">🏭 Factory</button>. Read each one as it arrives.</li>
+      <li>Open <button class="guide-action" onclick="editorialTab('prompts')">📜 Prompts</button> &rarr; <strong>Chapter &mdash; System Prompt</strong>. Read the banned-phrases list. "Eyes locked onto." "Mind racing." "Everything went black." Search the output. Does the model obey?</li>
+      <li data-check="has-all-chapters">Press the red button. Time it. A full novel, from nothing to done, in under five minutes.</li>
+      <li>Sit with that for a moment.</li>
+    </ol>
+  </div>
+
+  <div class="hint">
+    <strong>Skull 2: The Novel</strong>
+    Complete a 15-chapter novel. You've held a machine-written novel in your hands now. That's worth knowing.
+  </div>
+</div>
+
+<!-- Chapter 5: The Reader -->
+<div class="ch-content">
+  <h3>Chapter 5: The Reader</h3>
+
+  <p>A novel without a reader is just a JSON blob. Open <button class="guide-action" onclick="toggleWin('win-phone')">📱 Reader</button>.</p>
+
+  <div class="guide-state"></div>
+
+  <p>Your novel, rendered as a reader would see it. Chapter by chapter. Warm serif typography. Clean margins. A cliffhanger at every turn. This is what the slop looks like when it's dressed up for the real world.</p>
+
+  <p>The default reader is deliberately beautiful. No dark patterns. No manipulation. No fake engagement counters. No "Sarah from Ohio just started reading." No chapter-locking paywall. Just prose and navigation.</p>
+
+  <p>That's a choice. And understanding <em>why</em> it's a choice is the lesson.</p>
+
+  <div class="concept">
+    <strong>Concept: What the reader doesn't have</strong>
+    <p>Real platforms add layers of manipulation on top of the reading experience:</p>
+    <p>&bull; <strong>Fake social proof</strong> &mdash; "1,247 readers online now"<br>
+    &bull; <strong>Engagement toasts</strong> &mdash; "Alex from London just started Chapter 3"<br>
+    &bull; <strong>Chapter locking</strong> &mdash; first 3 free, rest behind coin paywall<br>
+    &bull; <strong>Interstitial ads</strong> &mdash; full-screen ads between chapters<br>
+    &bull; <strong>Reading streaks</strong> &mdash; "You've read 7 days in a row!" (loss aversion)<br>
+    &bull; <strong>Next-chapter manipulation</strong> &mdash; auto-scroll, countdown timers, oversized "keep reading" buttons</p>
+    <p>Our reader has none of this. But it has the <em>slots</em>.</p>
+  </div>
+
+  <p>When you export the reader (Chapter 7), the HTML contains hidden, empty <code>&lt;div&gt;</code> elements where ads would go. Between chapters, on the catalog page, before the first chapter. They're documented. They're commented. They're one uncomment away from active.</p>
+
+  <p>The distance between "beautiful free reader" and "ad-infested engagement trap" is uncommenting a <code>&lt;div&gt;</code>. That's worth knowing.</p>
+
+  <div class="task">
+    <strong>Customize it</strong>
+    <ol>
+      <li>Open <button class="guide-action" onclick="toggleWin('win-settings');settingsTab('reader')">⚙ Settings &rarr; Reader</button>. Try different fonts, sizes, themes. The <button class="guide-action" onclick="toggleWin('win-phone')">📱 Reader</button> updates live.</li>
+      <li data-check="previewed">Actually read a chapter. How does it feel on the phone frame?</li>
+    </ol>
+  </div>
+
+  <div class="hint">
+    <strong>Skull 3: The Reader</strong>
+    Preview a novel in the reader. The skull unlocks when you see your prose through a reader's eyes.
+  </div>
+</div>
+
+<!-- Chapter 6: The Catalog & Covers -->
+<div class="ch-content">
+  <h3>Chapter 6: The Catalog &amp; Covers</h3>
+
+  <p>One novel is a project. Three novels is a library. Ten novels is a platform. Fifteen is already here. Open <button class="guide-action" onclick="toggleWin('win-library')">📚 Library</button>.</p>
+
+  <div class="guide-state"></div>
+
+  <p>Watch the grid. Covers, titles, blurbs, genre tags. The empire takes shape. Generate your own to add to it, or click <strong>📦 Load Pack</strong> to pull in themed extensions: Historical, Modern, Fantasy &amp; Unusual, No Romance, Extra Variety, More Historical. Thirty more novels, loaded on demand.</p>
+
+  <div class="concept">
+    <strong>Concept: Pack economy</strong>
+    The extension packs are a real pattern. GoodNovel pushes "recommended reads" based on your current read. WebNovel has genre shelves. Amazon's KDP uses "also bought" lists. Each pack is a way to keep you in the platform longer. Ours are honest &mdash; labeled, sorted, you choose when to load them. But the <em>structure</em> is the same: content as a service, consumed in bundles.
+  </div>
+
+  <div class="concept">
+    <strong>Concept: Cover illustration</strong>
+    If you're using NanoGPT, you can generate cover art. Open <button class="guide-action" onclick="toggleWin('win-settings');settingsTab('covers')">⚙ Settings &rarr; Covers</button> to pick an image model and style. Then hit <strong>Generate Cover</strong> in the Editorial bible view. Notice we generate an <em>illustration</em>, not a finished cover. Image models can't render text reliably &mdash; they produce garbled letters. The pipeline generates the art. The code adds the typography.
+  </div>
+
+  <div class="task">
+    <strong>Try it: Covers</strong>
+    <ol>
+      <li>Open <button class="guide-action" onclick="toggleWin('win-settings');settingsTab('covers')">⚙ Settings &rarr; Covers</button>. Try different image models (each has its own style).</li>
+      <li>Try different style modifiers (painterly, cinematic, minimalist, vintage, watercolor).</li>
+      <li>Open <button class="guide-action" onclick="toggleWin('win-editorial');editorialTab('prompts')">📜 Prompts</button>. Find the <strong>Cover &mdash; Image Prompt</strong>. Find "absolutely no text." Remove it. Regenerate. See what happens. Put it back.</li>
+      <li data-check="has-cover">Pick a layout template to composite your title onto the cover.</li>
+    </ol>
+  </div>
+
+  <div class="concept">
+    <strong>Concept: The LLM as bookseller</strong>
+    You used an LLM to write the books. Now you're using one to sell them. Hit <strong>Curate Catalog</strong> in the Library. The same model that wrote the prose now writes the marketing copy, picks a staff favorite, organizes themed shelves. Same machine. Different mask.
+  </div>
+
+  <p>After curation, each novel has a marketing blurb &mdash; different from the bible's pitch. The pitch <em>describes</em>. The blurb <em>sells</em>. "She lost everything. He took it all. Now she's back &mdash; and she brought an army." That's not a summary. That's a hook.</p>
+
+  <div class="task">
+    <strong>Try it: Curation</strong>
+    <ol>
+      <li data-check="has-3-novels">Get at least 3 novels in your library (generate or load a pack).</li>
+      <li>In <button class="guide-action" onclick="toggleWin('win-library')">📚 Library</button>, hit <strong>Curate Catalog</strong>.</li>
+      <li>Read the themed section names. Read the editorial notes. Do they feel like a human wrote them?</li>
+      <li>Look at the "For fans of..." comparables. Fictional titles that don't exist. But they <em>feel</em> real.</li>
+      <li>Now imagine this at scale. A thousand novels. All machine-curated.</li>
+    </ol>
+  </div>
+
+  <div class="hint">
+    <strong>Skull 4: The Catalog</strong>
+    Build a multi-novel catalog (at least 3 novels). The empire is real. The question is what you do with it.
+  </div>
+</div>
+
+<!-- Chapter 7: The Package -->
+<div class="ch-content">
+  <h3>Chapter 7: The Package</h3>
+
+  <p>Open <button class="guide-action" onclick="toggleWin('win-export')">📦 Export</button>. Three formats. Three lessons in file format demystification.</p>
+
+  <div class="guide-state"></div>
+
+  <p><strong>EPUB</strong> &mdash; the standard e-reader format. Open one in Calibre or Apple Books. Inside: a zip of XHTML pages, a table of contents in XML, a metadata manifest. An EPUB is just a website in a trenchcoat. The model wrote the HTML. JSZip wrapped the trenchcoat.</p>
+
+  <p><strong>DOCX</strong> &mdash; Microsoft Word's format. Also a zip. Also XML inside. But this XML pretends to be a document, not a website. A DOCX is XML that wished it was HTML. Open it in Word or Google Docs. It looks real. It looks like someone wrote it.</p>
+
+  <p><strong>Deployable ZIP</strong> &mdash; a self-contained reader app with your entire catalog. One HTML file, all novels embedded, ready to drag into Cloudflare Pages. Three clicks and it's live on the internet. Free hosting. Unlimited bandwidth. Your slop factory, deployed to the world.</p>
+
+  <p>Except you won't. Because the course ends here.</p>
+
+  <div class="concept">
+    <strong>Concept: The course boundary</strong>
+    <p>Five skulls. All earned while everything is still local on your machine. Nothing published. Nothing deployed. Nothing distributed. The course gives you the capability and stops at the threshold.</p>
+    <p>After the certificate, there's an appendix (Chapter 8: Beyond the Novel). No skulls. No achievements. Just the broader picture: what this pipeline actually is, where you've already seen it in the wild, and how to recognize it when it's pointed at you. Go there when you're ready.</p>
+  </div>
+
+  <div class="task">
+    <strong>Try it</strong>
+    <ol>
+      <li data-check="exported">In <button class="guide-action" onclick="toggleWin('win-export')">📦 Export</button>, export an EPUB. Open it in an e-reader. Swipe through the chapters. It's a real book.</li>
+      <li>Export the Deployable ZIP. Unzip it. Open <code>index.html</code> in a browser. That's your store. Browse, search, read. It works.</li>
+      <li>Notice the ad slots in the reader's HTML. Hidden, empty, documented. One uncommented <code>&lt;div&gt;</code> away from active.</li>
+      <li>Don't deploy it. Not yet. Not until you've decided what kind of person you want to be.</li>
+    </ol>
+  </div>
+
+  <div class="hint">
+    <strong>Skull 5: The Export</strong>
+    Export in at least one format. The course is complete. All five skulls earned.
+  </div>
+
+  <p style="text-align:center;margin-top:24px;font-style:italic;color:var(--text-dim)">"This certifies that you have completed Patchbay 501: NaNoGEon."</p>
+  <p style="text-align:center;font-style:italic;color:var(--text-dim)">"What you do next is yours to carry."</p>
+
+  <div id="cert-section"></div>
+</div>
+
+<!-- Chapter 8: Post-Credits — Beyond the Novel -->
+<div class="ch-content">
+  <h3>Chapter 8: Beyond the Novel</h3>
+  <p style="color:var(--text-faint);font-style:italic;font-size:11px;margin-bottom:16px">Post-credits. No skulls. No achievements. Just the part of the course that matters most.</p>
+
+  <p>You built a novel factory. That was the cover story.</p>
+
+  <p>The thing you actually built is a <strong>pipeline architecture</strong>: a finite input space mapped to an infinite output space, structured by templates, scheduled at scale, curated by a second-order model, and delivered through a platform designed to maximize engagement. Novels are the least harmful application of that pattern. They're slow. They're legible. A human reader can notice the tells &mdash; repeating phrases, flat characters, formula fatigue &mdash; because a novel is long enough to accumulate evidence.</p>
+
+  <p>The same architecture produces things that are harder to notice.</p>
+
+  <div class="concept">
+    <strong>Concept: The pipeline generalizes</strong>
+    <p>Replace "trope" with "persona." Replace "bible" with "account profile." Replace "beat sheet" with "posting schedule." Replace "chapter" with "tweet" or "review" or "comment." Replace "cover art" with "profile picture." Replace "curation" with "amplification network." The code you edited this week is the same code, structurally, behind:</p>
+    <ul style="margin:8px 0 0 16px;color:var(--text-dim);line-height:1.7;font-size:12px">
+      <li><strong>Bot networks</strong> &mdash; coordinated inauthentic accounts pushing narratives on Twitter/X, Facebook, Reddit, YouTube comments. Each account has a "bible" (age, location, interests, backstory) and generates posts from templates.</li>
+      <li><strong>Review farms</strong> &mdash; fake product reviews at scale. The bible is the reviewer persona. The beat sheet is a review structure (hook, specific detail, minor complaint, recommendation).</li>
+      <li><strong>Astroturfing</strong> &mdash; manufactured grassroots movements. Thousands of accounts converging on the same talking points, each with its own fake history.</li>
+      <li><strong>Political influence operations</strong> &mdash; state-sponsored or partisan actors running the same pipeline against elections, public health, foreign policy.</li>
+      <li><strong>Engagement farming</strong> &mdash; fake accounts that build follower counts by posting templated "inspirational" or "controversial" content, then get sold to businesses or scammers.</li>
+    </ul>
+  </div>
+
+  <p>The novel factory is a 1:1 simulation of how these systems work. The only difference is output medium and moral weight.</p>
+
+  <div class="concept">
+    <strong>Concept: The recognition cues</strong>
+    <p>You spent seven chapters learning to see the tells in novels. Those same tells show up everywhere:</p>
+    <ul style="margin:8px 0 0 16px;color:var(--text-dim);line-height:1.7;font-size:12px">
+      <li><strong>Phrase repetition across "independent" sources</strong> &mdash; the "Silent" problem at scale. If thirty accounts use the same unusual turn of phrase in the same 24-hour window, they're running off the same template.</li>
+      <li><strong>Temporal clustering</strong> &mdash; posts, reviews, or accounts appearing in bursts. Real users are distributed. Pipeline output clusters.</li>
+      <li><strong>Structural consistency</strong> &mdash; every post follows the same shape (hook, personal anecdote, call to action). That's a beat sheet.</li>
+      <li><strong>Persona thinness</strong> &mdash; accounts that post about one narrow topic with strong opinions but have no mundane life signals (no birthday posts, no weather complaints, no "look at this dog"). That's a bible with no slack in it.</li>
+      <li><strong>Convenient "For fans of..."</strong> &mdash; suspiciously specific "if you like X, you'll love Y" recommendations that always point at the same small set of products. That's a curation prompt.</li>
+      <li><strong>Staff picks that read like press releases</strong> &mdash; editorial copy with the exact cadence of an LLM. Real humans are messier.</li>
+      <li><strong>Profile pictures that almost work</strong> &mdash; symmetric but slightly off, with generic backgrounds. Image model output.</li>
+    </ul>
+  </div>
+
+  <p>The thesis of this course was simple: <strong>if you can build one, you can spot one.</strong> The appendix is the test. Open your feed tomorrow. Look for the shapes you made this week. They're there.</p>
+
+  <div class="concept">
+    <strong>Where to go deeper</strong>
+    <p>The research community is already on this. Some starting points:</p>
+    <ul style="margin:8px 0 0 16px;color:var(--text-dim);line-height:1.7;font-size:12px">
+      <li><strong>Stanford Internet Observatory</strong> &mdash; tracks influence operations across platforms.</li>
+      <li><strong>Graphika</strong> &mdash; network analysis of coordinated inauthentic behavior.</li>
+      <li><strong>DFRLab (Atlantic Council)</strong> &mdash; open-source investigation methodology and ongoing monitoring.</li>
+      <li><strong>EU DisinfoLab</strong> &mdash; European focus. Documents Russian, Chinese, and domestic influence ops.</li>
+      <li><strong>Meta / X / Google transparency reports</strong> &mdash; platforms publish what they've caught. Useful for scale estimates.</li>
+      <li><strong>Shannon Vallor, <em>The AI Mirror</em></strong> &mdash; philosophical treatment of what AI reflects about us.</li>
+      <li><strong>Renée DiResta, <em>Invisible Rulers</em></strong> &mdash; on how information flows, propaganda, and platform design intersect.</li>
+    </ul>
+  </div>
+
+  <div class="concept">
+    <strong>The other appendix: publishing and monetization</strong>
+    <p>Because it would be dishonest to pretend the distribution side doesn't exist:</p>
+    <ul style="margin:8px 0 0 16px;color:var(--text-dim);line-height:1.7;font-size:12px">
+      <li><strong>Amazon KDP</strong> accepts AI-generated books, limits uploads to 3/day, requires AI disclosure on the publisher's side (not shown to customers). Estimated 81 of the top 100 KDP bestsellers at various points have been AI-generated or AI-assisted.</li>
+      <li><strong>GoodNovel / WebNovel</strong> require manual chapter upload &mdash; natural friction, but the pipeline still produces the chapters.</li>
+      <li><strong>Cloudflare Pages</strong> hosts your deployable reader for free, unlimited bandwidth, commercial use OK. Drag a folder into the dashboard. That's the whole deploy.</li>
+      <li><strong>Ad networks</strong> (AdSense, Ezoic, Mediavine) approve based on content volume and traffic. Your pipeline produces both.</li>
+      <li><strong>Chapter-locking paywalls</strong> are a 20-line addition to the reader. Not a hard technical problem. A hard ethical one.</li>
+    </ul>
+    <p>Documented, not instructed. The course boundary is deliberate.</p>
+  </div>
+
+  <p style="font-style:italic;color:var(--text-dim);line-height:1.7">The pipeline is morally neutral. It does whatever it's pointed at. You're now fluent in a language most people are being written <em>in</em>. Use that fluency carefully. Write the thing you'd actually sign your name to. Or don't write at all. Either is an honest choice. The dishonest choice is pretending you never learned how it works.</p>
+
+  <p style="text-align:center;margin-top:24px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">&mdash; END &mdash;</p>
+</div>

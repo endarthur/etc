@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patchbay 501 — NaNoGEon: At the Mountains of MadLibs</title>
+<script>
+/* __INJECT_JSZIP__ */
+</script>
+<style>
+/* __INJECT_CSS__ */
+</style>
+</head>
+<body>
+
+<!-- ═══ Splash ═══ -->
+<div id="splash">
+  <div class="splash-state active" id="splash-welcome">
+    <h1>PATCHBAY <span>501</span></h1>
+    <div class="splash-subtitle">NANOGEO&#x2060;N &mdash; AT THE MOUNTAINS OF MADLIBS</div>
+    <div class="sub">
+      Build a complete AI-generated novel pipeline.
+      <em>A workshop on content factories, serialized fiction, and media literacy.</em>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:12px">
+      <button class="btn btn-primary start-btn" onclick="startCourse()">Follow the Course &rarr;</button>
+      <button class="btn start-btn" onclick="startTool()">Just Build &rarr;</button>
+    </div>
+    <div style="font-size:10px;color:var(--text-faint);margin-top:8px;text-align:center;max-width:380px;line-height:1.4">
+      <strong style="color:var(--text-dim)">Follow the Course</strong> walks through each chapter with context and skulls.<br>
+      <strong style="color:var(--text-dim)">Just Build</strong> unlocks all windows &mdash; skip to the factory.
+    </div>
+  </div>
+
+  <div class="splash-state" id="splash-loading">
+    <h1>PATCHBAY <span>501</span></h1>
+    <div class="splash-subtitle">NANOGEO&#x2060;N</div>
+    <div class="sub">Warming up the presses<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span></div>
+  </div>
+</div>
+
+<!-- ═══ Status Bar ═══ -->
+<div id="status-bar">
+  <div class="left">
+    <span class="title">PATCHBAY 501</span>
+    <span class="status-pill" id="sp-provider"><span class="status-dot" id="provider-dot"></span> <span id="provider-status">no provider</span></span>
+    <span class="status-pill skull-row" id="sp-skulls">
+      <span class="skull" id="skull-0" title="The Generator">&#x1F480;</span>
+      <span class="skull" id="skull-1" title="The Novel">&#x1F480;</span>
+      <span class="skull" id="skull-2" title="The Reader">&#x1F480;</span>
+      <span class="skull" id="skull-3" title="The Catalog">&#x1F480;</span>
+      <span class="skull" id="skull-4" title="The Export">&#x1F480;</span>
+    </span>
+  </div>
+  <div class="right">
+    <span class="status-pill" id="sp-novels" style="display:none">&#x1F4DA; <span id="novel-count">0</span> novels</span>
+    <button onclick="window.open('https://github.com/endarthur/etc/tree/main/patchbay','_blank')" title="GitHub repo">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="vertical-align:middle"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ═══ Chapter Guide ═══ -->
+<div id="guide-panel">
+  <div class="guide-header">
+    <h2>Course Guide</h2>
+    <div class="guide-progress" id="guide-progress"></div>
+  </div>
+  <div class="guide-body">
+<!-- __INJECT_GUIDE__ -->
+  </div>
+  <div class="guide-footer">
+    <button class="guide-btn" id="guide-prev" onclick="guideNav(-1)">&larr; Back</button>
+    <span class="guide-pos" id="guide-pos">0 / 7</span>
+    <div class="guide-nav">
+      <button class="guide-btn guide-btn-idx" onclick="showGuideIndex()">&#x2630;</button>
+      <button class="guide-btn" id="guide-next" onclick="guideNav(1)">Next &rarr;</button>
+    </div>
+  </div>
+  <div class="guide-resize" id="guide-resize"></div>
+</div>
+
+<!-- ═══ Desktop ═══ -->
+<div id="desktop" onclick="desktopClick(event)">
+  <!-- Guide desktop icon -->
+  <div class="desktop-icon" style="position:absolute;right:20px;top:12px" onclick="toggleGuide()">
+    <span class="icon-glyph">&#x1F4D6;</span>
+    <span class="icon-label">Course Guide</span>
+  </div>
+
+  <!-- ═══ Commissioning Window (Trope Picker) ═══ -->
+  <div class="window focused" id="win-commission" style="left:330px;top:20px;width:520px;height:460px">
+    <div class="window-titlebar" onmousedown="startDrag(event,'win-commission')">
+      <div class="dots"><button class="dot dot-close" onclick="closeWin('win-commission')"></button><button class="dot dot-min" onclick="minimizeWin('win-commission')"></button><button class="dot dot-max"></button></div>
+      <span class="wt">&#x1F3B2; Commissioning</span>
+    </div>
+    <div class="window-body">
+      <div class="trope-section">
+        <h3>At the Mountains of MadLibs</h3>
+        <p style="font-size:11px;color:var(--text-faint);margin-bottom:12px">Four tropes. 1,296 combinations. Every novel is different. Every novel is the same.</p>
+        <div class="trope-slots" id="trope-slots">
+          <div class="trope-slot">
+            <span class="slot-label">WHO</span>
+            <select id="trope-who" onchange="updateCombo()">
+              <option value="">-- pick the hidden truth --</option>
+              <option value="secret-heir">Secret Heir</option>
+              <option value="hidden-master">Hidden Master</option>
+              <option value="disguised-royalty">Disguised Royalty</option>
+              <option value="returned-exile">Returned Exile</option>
+              <option value="retired-legend">Retired Legend</option>
+              <option value="secret-benefactor">Secret Benefactor</option>
+            </select>
+          </div>
+          <div class="trope-slot">
+            <span class="slot-label">WHAT</span>
+            <select id="trope-what" onchange="updateCombo()">
+              <option value="">-- pick the humiliation --</option>
+              <option value="public-accusation">Public Accusation</option>
+              <option value="betrayal">Betrayal by Trusted Person</option>
+              <option value="cast-out">Cast Out</option>
+              <option value="stolen-credit">Stolen Credit</option>
+              <option value="framed">Framed</option>
+              <option value="wedding-ruined">Wedding Ruined</option>
+            </select>
+          </div>
+          <div class="trope-slot">
+            <span class="slot-label">HOW</span>
+            <select id="trope-how" onchange="updateCombo()">
+              <option value="">-- pick the revenge --</option>
+              <option value="reveal-identity">Reveal True Identity</option>
+              <option value="withdraw-support">Withdraw What They Depend On</option>
+              <option value="let-them-fail">Let Them Fail Without You</option>
+              <option value="take-theirs">Take What's Theirs</option>
+              <option value="someone-better">Show Up With Someone Better</option>
+              <option value="systematic-dismantling">Systematic Dismantling</option>
+            </select>
+          </div>
+          <div class="trope-slot">
+            <span class="slot-label">WITH</span>
+            <select id="trope-with" onchange="updateCombo()">
+              <option value="">-- relationship (optional) --</option>
+              <option value="contract-marriage">Contract Marriage</option>
+              <option value="fake-dating">Fake Dating</option>
+              <option value="childhood-promise">Childhood Promise</option>
+              <option value="ex-returns">Ex Returns</option>
+              <option value="enemy-to-lover">Enemy to Lover</option>
+              <option value="forbidden-connection">Forbidden Connection</option>
+            </select>
+          </div>
+        </div>
+        <div class="trope-freeform" id="trope-freeform" style="display:none">
+          <input type="text" id="trope-tags" placeholder="werewolves, K-pop industry, 1920s Shanghai..." oninput="updateCombo()">
+          <div style="font-size:10px;color:var(--text-faint);margin-top:4px">Freeform tags add world texture. Requires an API key.</div>
+        </div>
+        <div class="trope-actions">
+          <button class="btn" onclick="randomizeTropes()">&#x1F3B2; Randomize</button>
+          <button class="btn btn-primary" onclick="generateBible()" id="btn-generate-bible" disabled>Generate Bible &rarr;</button>
+          <button class="btn" onclick="startNewNovel()" id="btn-new-novel" style="margin-left:auto">+ New Novel</button>
+        </div>
+        <div class="trope-combo" id="trope-combo" style="display:none"></div>
+      </div>
+    </div>
+    <div class="resize-handle" onmousedown="startResize(event,'win-commission')"></div>
+  </div>
+
+  <!-- ═══ Editorial Window (Bible + Beat Sheet) ═══ -->
+  <div class="window minimized" id="win-editorial" style="left:380px;top:50px;width:520px;height:480px">
+    <div class="window-titlebar" onmousedown="startDrag(event,'win-editorial')">
+      <div class="dots"><button class="dot dot-close" onclick="closeWin('win-editorial')"></button><button class="dot dot-min" onclick="minimizeWin('win-editorial')"></button><button class="dot dot-max"></button></div>
+      <span class="wt">&#x1F4DC; Editorial</span>
+    </div>
+    <div class="window-body" style="display:flex;flex-direction:column">
+      <div class="editorial-tabs">
+        <div class="editorial-tab active" onclick="editorialTab('bible')">Bible</div>
+        <div class="editorial-tab" onclick="editorialTab('beats')">Beat Sheet</div>
+        <div class="editorial-tab" onclick="editorialTab('prompts');renderPromptsTab()">Prompts</div>
+      </div>
+      <div class="editorial-pane active" id="ed-bible" style="flex:1">
+        <div style="color:var(--text-faint);padding:20px;text-align:center;font-size:11px">No bible generated yet. Use the Commissioning window to pick tropes and generate.</div>
+      </div>
+      <div class="editorial-pane" id="ed-beats" style="flex:1">
+        <div style="color:var(--text-faint);padding:20px;text-align:center;font-size:11px">No beat sheet generated yet. Generate a bible first.</div>
+      </div>
+      <div class="editorial-pane" id="ed-prompts" style="flex:1;overflow-y:auto">
+        <div style="color:var(--text-faint);padding:20px;text-align:center;font-size:11px">Loading prompts...</div>
+      </div>
+    </div>
+    <div class="resize-handle" onmousedown="startResize(event,'win-editorial')"></div>
+  </div>
+
+  <!-- ═══ Factory Window (Chapter Generation) ═══ -->
+  <div class="window minimized" id="win-factory" style="left:340px;top:30px;width:560px;height:480px">
+    <div class="window-titlebar" onmousedown="startDrag(event,'win-factory')">
+      <div class="dots"><button class="dot dot-close" onclick="closeWin('win-factory')"></button><button class="dot dot-min" onclick="minimizeWin('win-factory')"></button><button class="dot dot-max"></button></div>
+      <span class="wt">&#x1F3ED; Factory</span>
+    </div>
+    <div class="window-body">
+      <div class="factory-content">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <h3 style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim)">Chapter Progress</h3>
+          <div class="factory-stats">
+            <span>chapters: <strong id="fact-ch-count">0</strong>/15</span>
+            <span>words: <strong id="fact-word-count">0</strong></span>
+          </div>
+        </div>
+        <div class="factory-progress" id="factory-progress">
+          <div class="factory-pip" title="Ch 1"></div><div class="factory-pip" title="Ch 2"></div><div class="factory-pip" title="Ch 3"></div>
+          <div class="factory-pip" title="Ch 4"></div><div class="factory-pip" title="Ch 5"></div><div class="factory-pip" title="Ch 6"></div><div class="factory-pip" title="Ch 7"></div>
+          <div class="factory-pip" title="Ch 8"></div><div class="factory-pip" title="Ch 9"></div><div class="factory-pip" title="Ch 10"></div><div class="factory-pip" title="Ch 11"></div>
+          <div class="factory-pip" title="Ch 12"></div><div class="factory-pip" title="Ch 13"></div><div class="factory-pip" title="Ch 14"></div><div class="factory-pip" title="Ch 15"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" onclick="generateNextChapter()" id="btn-gen-next" disabled>Generate Next Chapter</button>
+          <button class="btn btn-primary" onclick="automateAll()" id="btn-automate" disabled style="border-color:var(--red);background:var(--red);color:#fff">&#x26A0; Automate Everything</button>
+        </div>
+        <div class="factory-stream" id="factory-stream">
+          <span style="color:var(--text-faint)">No chapters generated yet. Generate a bible and beat sheet first.</span>
+        </div>
+      </div>
+    </div>
+    <div class="resize-handle" onmousedown="startResize(event,'win-factory')"></div>
+  </div>
+
+  <!-- ═══ Library Window (Catalog) ═══ -->
+  <div class="window minimized" id="win-library" style="left:200px;top:60px;width:540px;height:400px">
+    <div class="window-titlebar" onmousedown="startDrag(event,'win-library')">
+      <div class="dots"><button class="dot dot-close" onclick="closeWin('win-library')"></button><button class="dot dot-min" onclick="minimizeWin('win-library')"></button><button class="dot dot-max"></button></div>
+      <span class="wt">&#x1F4DA; Library</span>
+    </div>
+    <div class="window-body">
+      <div class="library-grid" id="library-grid">
+        <div style="color:var(--text-faint);padding:40px;text-align:center;font-size:11px;grid-column:1/-1">No novels in your library yet.</div>
+      </div>
+    </div>
+    <div class="resize-handle" onmousedown="startResize(event,'win-library')"></div>
+  </div>
+
+  <!-- ═══ Phone Window (Reader Preview) ═══ -->
+  <div class="window minimized" id="win-phone" style="left:600px;top:20px;width:340px;height:560px">
+    <div class="window-titlebar" onmousedown="startDrag(event,'win-phone')">
+      <div class="dots"><button class="dot dot-close" onclick="closeWin('win-phone')"></button><button class="dot dot-min" onclick="minimizeWin('win-phone')"></button><button class="dot dot-max"></button></div>
+      <span class="wt">&#x1F4F1; Reader Preview</span>
+    </div>
+    <div class="window-body">
+      <div class="phone-frame">
+        <div class="phone-bezel">
+          <div class="phone-notch"></div>
+          <div id="phone-content" style="width:100%;height:100%">
+            <div class="phone-empty">
+              <div class="icon">&#x1F4D6;</div>
+              <div class="msg">No novel loaded.<br>Select one from the Library.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="resize-handle" onmousedown="startResize(event,'win-phone')"></div>
+  </div>
+
+  <!-- ═══ Export Window ═══ -->
+  <div class="window minimized" id="win-export" style="left:400px;top:100px;width:380px;height:320px">
+    <div class="window-titlebar" onmousedown="startDrag(event,'win-export')">
+      <div class="dots"><button class="dot dot-close" onclick="closeWin('win-export')"></button><button class="dot dot-min" onclick="minimizeWin('win-export')"></button><button class="dot dot-max"></button></div>
+      <span class="wt">&#x1F4E6; Export</span>
+    </div>
+    <div class="window-body">
+      <div class="export-content">
+        <div style="font-size:11px;color:var(--text-faint);margin-bottom:4px">Select a novel in the Library first, then export.</div>
+        <div class="export-card" onclick="exportEpub()">
+          <div class="ec-icon">&#x1F4D5;</div>
+          <div>
+            <div class="ec-label">EPUB</div>
+            <div class="ec-desc">E-reader format. "An EPUB is just a website in a trenchcoat."</div>
+          </div>
+        </div>
+        <div class="export-card" onclick="exportDocx()">
+          <div class="ec-icon">&#x1F4C4;</div>
+          <div>
+            <div class="ec-label">DOCX</div>
+            <div class="ec-desc">Word document. "A DOCX is XML that wished it was HTML."</div>
+          </div>
+        </div>
+        <div class="export-card" onclick="exportZip()">
+          <div class="ec-icon">&#x1F310;</div>
+          <div>
+            <div class="ec-label">Deployable ZIP</div>
+            <div class="ec-desc">Reader HTML + novel JSON. Drag to Cloudflare Pages.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="resize-handle" onmousedown="startResize(event,'win-export')"></div>
+  </div>
+
+  <!-- ═══ Settings Window ═══ -->
+  <div class="window" id="win-settings" style="left:500px;top:80px;width:420px;height:400px">
+    <div class="window-titlebar" onmousedown="startDrag(event,'win-settings')">
+      <div class="dots"><button class="dot dot-close" onclick="closeWin('win-settings')"></button><button class="dot dot-min" onclick="minimizeWin('win-settings')"></button><button class="dot dot-max"></button></div>
+      <span class="wt">&#x2699; Settings</span>
+    </div>
+    <div class="window-body" style="display:flex;flex-direction:column">
+      <div class="settings-body">
+        <div class="settings-tabs">
+          <div class="settings-tab active" onclick="settingsTab('provider')">Provider</div>
+          <div class="settings-tab" onclick="settingsTab('covers')">Covers</div>
+          <div class="settings-tab" onclick="settingsTab('reader')">Reader</div>
+          <div class="settings-tab" onclick="settingsTab('reset')" style="color:var(--red);margin-left:auto">Reset</div>
+        </div>
+        <div style="flex:1;overflow:auto">
+          <div class="settings-pane active" id="stab-provider">
+            <h3>LLM Provider</h3>
+            <div class="provider-cards" id="provider-cards">
+              <div class="provider-card" onclick="selectProvider('groq')" data-p="groq">
+                <div class="pc-name">Groq</div>
+                <div class="pc-desc">Free, fast inference</div>
+              </div>
+              <div class="provider-card" onclick="selectProvider('nanogpt')" data-p="nanogpt">
+                <div class="pc-name">NanoGPT</div>
+                <div class="pc-desc">$8/mo, adds images</div>
+              </div>
+              <div class="provider-card" onclick="selectProvider('ollama')" data-p="ollama">
+                <div class="pc-name">Ollama</div>
+                <div class="pc-desc">Local, private, free</div>
+              </div>
+              <div class="provider-card" onclick="selectProvider('none')" data-p="none">
+                <div class="pc-name">None</div>
+                <div class="pc-desc">Pre-generated library only</div>
+              </div>
+            </div>
+            <div id="provider-config" style="margin-top:12px"></div>
+          </div>
+          <div class="settings-pane" id="stab-covers">
+            <h3>Cover Generation</h3>
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px;line-height:1.5">
+              Covers are generated by image models via NanoGPT. The pipeline generates an <em>illustration</em>, not a finished cover &mdash; text and typography are your job, not the model's.
+            </div>
+            <div class="sf">
+              <label>Image Model</label>
+              <select id="cover-model" onchange="STATE.imageModel=this.value;saveState()">
+              </select>
+              <div class="hint">Different models produce different visual styles. Experiment.</div>
+            </div>
+            <div class="sf" style="margin-top:12px">
+              <label>Style Modifier</label>
+              <select id="cover-style" onchange="STATE.coverStyle=this.value;saveState()">
+              </select>
+              <div class="hint">Appends a style instruction to the cover prompt. See the Prompts tab to edit the full prompt.</div>
+            </div>
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+              <div style="font-size:10px;color:var(--text-faint);line-height:1.5">
+                <strong style="color:var(--text-dim)">Why no text on covers?</strong><br>
+                Image models can't reliably render text &mdash; they produce garbled letters, misspellings, and visual noise.
+                Professional covers composite typography separately. The illustration is the foundation; the title is added later.
+                If you want text, use an image editor or CSS overlay in the reader.
+              </div>
+            </div>
+          </div>
+          <div class="settings-pane" id="stab-reader">
+            <h3>Reader Typography</h3>
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px;line-height:1.5">
+              These settings apply to the Reader Preview and the exported deployable reader. What you configure here is what you ship.
+            </div>
+            <div class="sf">
+              <label>Font Family</label>
+              <select id="reader-font" onchange="setReaderSetting('font',this.value)">
+                <option value="serif">Georgia (serif, default)</option>
+                <option value="garamond">Garamond (classic serif)</option>
+                <option value="sans">System sans-serif</option>
+                <option value="helvetica">Helvetica (clean sans)</option>
+                <option value="mono">IBM Plex Mono (monospace)</option>
+              </select>
+            </div>
+            <div class="sf" style="margin-top:10px">
+              <label>Font Size: <span id="reader-size-val">18</span>px</label>
+              <input type="range" id="reader-size" min="14" max="24" step="1" value="18" oninput="setReaderSetting('size',this.value);document.getElementById('reader-size-val').textContent=this.value">
+            </div>
+            <div class="sf" style="margin-top:10px">
+              <label>Line Height: <span id="reader-lh-val">1.8</span></label>
+              <input type="range" id="reader-lh" min="1.4" max="2.2" step="0.1" value="1.8" oninput="setReaderSetting('lineHeight',this.value);document.getElementById('reader-lh-val').textContent=this.value">
+            </div>
+            <div class="sf" style="margin-top:10px">
+              <label>Theme</label>
+              <select id="reader-theme" onchange="setReaderSetting('theme',this.value)">
+                <option value="cream">Cream (warm, default)</option>
+                <option value="white">White (bright)</option>
+                <option value="sepia">Sepia (aged paper)</option>
+                <option value="dark">Dark (low light)</option>
+                <option value="black">Black (OLED)</option>
+              </select>
+            </div>
+            <div class="sf" style="margin-top:10px">
+              <label>Reading Width: <span id="reader-width-val">640</span>px</label>
+              <input type="range" id="reader-width" min="480" max="800" step="40" value="640" oninput="setReaderSetting('maxWidth',this.value);document.getElementById('reader-width-val').textContent=this.value">
+            </div>
+            <div style="margin-top:14px;display:flex;gap:8px">
+              <button class="btn" onclick="resetReaderSettings()" style="padding:5px 12px;font-size:10px">Reset Defaults</button>
+            </div>
+            <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:10px;color:var(--text-faint);line-height:1.5">
+              Changes apply to the Reader Preview (📱) immediately. Re-export the deployable ZIP to update it with your settings.
+            </div>
+          </div>
+          <div class="settings-pane" id="stab-reset">
+            <h3 style="color:var(--red)">Reset Options</h3>
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:16px;line-height:1.5">
+              Fine-grained reset. Pick what you want to clear.
+            </div>
+
+            <div style="padding:12px;border:1px solid var(--border);border-radius:6px;margin-bottom:10px">
+              <div style="font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--text);margin-bottom:4px">Your novels</div>
+              <div style="font-size:10px;color:var(--text-dim);margin-bottom:8px;line-height:1.5">Deletes novels you generated. Pre-gen library stays.</div>
+              <button class="btn btn-danger" onclick="resetUserNovels()" style="padding:5px 12px;font-size:10px">Delete My Novels</button>
+            </div>
+
+            <div style="padding:12px;border:1px solid var(--border);border-radius:6px;margin-bottom:10px">
+              <div style="font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--text);margin-bottom:4px">Prompt overrides</div>
+              <div style="font-size:10px;color:var(--text-dim);margin-bottom:8px;line-height:1.5">Revert all edited prompts back to defaults.</div>
+              <button class="btn btn-danger" onclick="resetAllPrompts()" style="padding:5px 12px;font-size:10px">Reset All Prompts</button>
+            </div>
+
+            <div style="padding:12px;border:1px solid var(--border);border-radius:6px;margin-bottom:10px">
+              <div style="font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--text);margin-bottom:4px">Course progress</div>
+              <div style="font-size:10px;color:var(--text-dim);margin-bottom:8px;line-height:1.5">Clears skulls earned and course chapter position.</div>
+              <button class="btn btn-danger" onclick="resetCourseProgress()" style="padding:5px 12px;font-size:10px">Reset Progress</button>
+            </div>
+
+            <div style="padding:12px;border:1px solid var(--red);border-radius:6px;margin-bottom:10px;background:rgba(192,57,43,0.06)">
+              <div style="font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--red);margin-bottom:4px">⚠ Reset everything</div>
+              <div style="font-size:10px;color:var(--text-dim);margin-bottom:8px;line-height:1.5">Wipes all data: novels, prompts, progress, window layout, API keys, everything. Page will reload. This cannot be undone.</div>
+              <button class="btn btn-danger" onclick="resetEverything()" style="padding:5px 12px;font-size:10px">Reset Everything…</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="resize-handle" onmousedown="startResize(event,'win-settings')"></div>
+  </div>
+
+</div>
+
+<!-- ═══ Dock ═══ -->
+<div id="dock">
+  <div class="dock-item active" onclick="toggleWin('win-commission')">&#x1F3B2;<span class="dock-tooltip">Commissioning</span></div>
+  <div class="dock-item" onclick="toggleWin('win-editorial')">&#x1F4DC;<span class="dock-tooltip">Editorial</span></div>
+  <div class="dock-item" onclick="toggleWin('win-factory')">&#x1F3ED;<span class="dock-tooltip">Factory</span></div>
+  <div class="dock-sep"></div>
+  <div class="dock-item" onclick="toggleWin('win-library')">&#x1F4DA;<span class="dock-tooltip">Library</span></div>
+  <div class="dock-item" onclick="toggleWin('win-phone')">&#x1F4F1;<span class="dock-tooltip">Reader</span></div>
+  <div class="dock-item" onclick="toggleWin('win-export')">&#x1F4E6;<span class="dock-tooltip">Export</span></div>
+  <div class="dock-sep"></div>
+  <div class="dock-item active" onclick="toggleWin('win-settings')">&#x2699;<span class="dock-tooltip">Settings</span></div>
+</div>
+
+<script>
+// __INJECT_APP__
+</script>
+</body>
+</html>

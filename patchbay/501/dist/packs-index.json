@@ -1,0 +1,44 @@
+[
+  {
+    "id": "historical",
+    "name": "Historical",
+    "file": "pack-historical.json.gz",
+    "novels": 5,
+    "size_kb": 303
+  },
+  {
+    "id": "modern",
+    "name": "Modern",
+    "file": "pack-modern.json.gz",
+    "novels": 5,
+    "size_kb": 328
+  },
+  {
+    "id": "fantasy",
+    "name": "Fantasy & Unusual",
+    "file": "pack-fantasy.json.gz",
+    "novels": 5,
+    "size_kb": 296
+  },
+  {
+    "id": "no-romance",
+    "name": "No Romance",
+    "file": "pack-no-romance.json.gz",
+    "novels": 5,
+    "size_kb": 301
+  },
+  {
+    "id": "variety",
+    "name": "Extra Variety",
+    "file": "pack-variety.json.gz",
+    "novels": 5,
+    "size_kb": 309
+  },
+  {
+    "id": "more-historical",
+    "name": "More Historical",
+    "file": "pack-more-historical.json.gz",
+    "novels": 5,
+    "size_kb": 318
+  }
+]

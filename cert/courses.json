@@ -156,6 +156,34 @@
       },
       "hours": 10,
       "color": "#a78bfa"
+    },
+    "PB-501": {
+      "series": "patchbay",
+      "layout": "skulls",
+      "title": {
+        "en": "Patchbay 501 \u2014 NaNoGEon",
+        "pt": "Patchbay 501 \u2014 NaNoGEon"
+      },
+      "desc": {
+        "en": [
+          "AI-powered serialized fiction pipeline architecture",
+          "Trope-driven story bible and beat sheet generation",
+          "Prompt engineering for commercial prose output",
+          "Cover illustration generation and text compositing",
+          "EPUB, DOCX, and web reader export formats",
+          "Media literacy and content factory ethics"
+        ],
+        "pt": [
+          "Arquitetura de pipeline de fic\u00e7\u00e3o serializada com IA",
+          "Gera\u00e7\u00e3o de b\u00edblia e roteiro a partir de tropos",
+          "Engenharia de prompts para prosa comercial",
+          "Gera\u00e7\u00e3o de ilustra\u00e7\u00f5es de capa e composi\u00e7\u00e3o de texto",
+          "Formatos de exporta\u00e7\u00e3o EPUB, DOCX e leitor web",
+          "Letramento midi\u00e1tico e \u00e9tica de f\u00e1bricas de conte\u00fado"
+        ]
+      },
+      "hours": 8,
+      "color": "#d4a017"
     }
   }
 }

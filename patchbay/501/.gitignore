@@ -1,0 +1,7 @@
+SECRETS
+# Test outputs
+test-*.md
+test-*.json
+test-cover-*.png
+novel-A*
+novel-B*

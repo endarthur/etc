@@ -458,6 +458,7 @@ const STRINGS = {
 const BACKGROUNDS = {
   topo: renderTopoContours,
   blocks: renderBlockGrid,
+  skulls: renderSkullsBg,
 };
 
 /* ══════════════════════════════════════════════════
@@ -884,6 +885,156 @@ function renderBlockGrid(ctx, code, color, W, H) {
 }
 
 /* ══════════════════════════════════════════════════
+   Procedural Skull Rendering (PB-501 — NaNoGEon)
+   5 unique skulls seeded from cert code
+   ══════════════════════════════════════════════════ */
+
+function renderSkullsBg(ctx, code, color, W, H) {
+  const seed = hashCode(code);
+  const rng = mulberry32(seed);
+
+  const silverColor = '#8a8a84';
+  const goldColor = color;
+
+  ctx.save();
+
+  // Place skulls with collision avoidance
+  // Each skull is tracked as a circle (center + radius) for overlap testing
+  const placed = []; // { x, y, r, gold }
+
+  function overlaps(x, y, r) {
+    for (const p of placed) {
+      const dx = x - p.x, dy = y - p.y;
+      const minDist = r + p.r + 8; // 8px padding — tight but no overlap
+      if (dx * dx + dy * dy < minDist * minDist) return true;
+    }
+    return false;
+  }
+
+  // Place 5 golden skulls first (they're larger, get priority)
+  const goldRng = mulberry32(seed + 7);
+  const goldBands = [0.08, 0.26, 0.44, 0.62, 0.80]; // vertical bands
+
+  for (let i = 0; i < 5; i++) {
+    const scale = 100 + goldRng() * 50;
+    const r = scale * 0.55;
+    let px, py, attempts = 0;
+    do {
+      px = (0.15 + goldRng() * 0.55) * W;
+      py = (goldBands[i] + goldRng() * 0.10) * H;
+      attempts++;
+    } while (overlaps(px, py, r) && attempts < 30);
+
+    placed.push({ x: px, y: py, r });
+
+    const gSkRng = mulberry32(Math.floor(goldRng() * 0xFFFFFF));
+    const rot = (goldRng() - 0.5) * 0.25;
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.rotate(rot);
+    ctx.globalAlpha = 0.25;
+    ctx.strokeStyle = goldColor;
+    ctx.fillStyle = goldColor;
+    drawSkull(ctx, 0, 0, scale, gSkRng);
+    ctx.restore();
+  }
+
+  // Fill remaining space with silver skulls
+  const silverCount = 200;
+
+  for (let i = 0; i < silverCount; i++) {
+    const scale = 35 + rng() * 45; // smaller skulls pack tighter
+    const r = scale * 0.45;
+    let px, py, attempts = 0;
+    do {
+      px = rng() * W;
+      py = rng() * H;
+      attempts++;
+    } while (overlaps(px, py, r) && attempts < 40);
+
+    if (attempts >= 40) continue;
+
+    placed.push({ x: px, y: py, r });
+
+    const skRng = mulberry32(Math.floor(rng() * 0xFFFFFF));
+    const rot = (rng() - 0.5) * 0.4;
+    const alpha = 0.08 + rng() * 0.10; // 0.08–0.18, more visible
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.rotate(rot);
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = silverColor;
+    ctx.fillStyle = silverColor;
+    drawSkull(ctx, 0, 0, scale, skRng);
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+function drawSkull(ctx, cx, cy, size, rng) {
+  const s = size;
+  // Seeded variations
+  const craniumStretch = 0.9 + rng() * 0.2;   // 0.9–1.1
+  const jawWidth = 0.55 + rng() * 0.15;        // 0.55–0.70
+  const jawDrop = 0.35 + rng() * 0.15;         // 0.35–0.50
+  const eyeSpread = 0.25 + rng() * 0.10;       // 0.25–0.35
+  const eyeHeight = 0.05 + rng() * 0.10;       // 0.05–0.15
+  const eyeSize = 0.12 + rng() * 0.06;         // 0.12–0.18
+  const noseLen = 0.08 + rng() * 0.06;         // 0.08–0.14
+  const teethCount = 4 + Math.floor(rng() * 4); // 4–7
+
+  ctx.lineWidth = Math.max(2, s * 0.02);
+
+  // Cranium — ellipse
+  ctx.beginPath();
+  ctx.ellipse(cx, cy - s * 0.05, s * 0.45 * craniumStretch, s * 0.5, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Jaw — U shape
+  const jw = s * jawWidth;
+  const jd = s * jawDrop;
+  ctx.beginPath();
+  ctx.moveTo(cx - jw * 0.5, cy + s * 0.15);
+  ctx.quadraticCurveTo(cx - jw * 0.5, cy + s * 0.15 + jd, cx, cy + s * 0.15 + jd * 1.1);
+  ctx.quadraticCurveTo(cx + jw * 0.5, cy + s * 0.15 + jd, cx + jw * 0.5, cy + s * 0.15);
+  ctx.stroke();
+
+  // Eye sockets — ellipses
+  const ex = s * eyeSpread;
+  const ey = cy - s * eyeHeight;
+  const er = s * eyeSize;
+  ctx.beginPath();
+  ctx.ellipse(cx - ex, ey, er, er * 0.85, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.ellipse(cx + ex, ey, er, er * 0.85, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Nose — inverted triangle
+  const ny = cy + s * 0.1;
+  const nl = s * noseLen;
+  ctx.beginPath();
+  ctx.moveTo(cx - nl * 0.5, ny);
+  ctx.lineTo(cx + nl * 0.5, ny);
+  ctx.lineTo(cx, ny + nl);
+  ctx.closePath();
+  ctx.stroke();
+
+  // Teeth — vertical lines across jaw
+  const teethY = cy + s * 0.15 + jd * 0.3;
+  const teethH = jd * 0.4;
+  const teethSpan = jw * 0.4;
+  for (let t = 0; t < teethCount; t++) {
+    const tx = cx - teethSpan * 0.5 + (teethSpan / (teethCount - 1)) * t;
+    ctx.beginPath();
+    ctx.moveTo(tx, teethY);
+    ctx.lineTo(tx, teethY + teethH);
+    ctx.stroke();
+  }
+}
+
+/* ══════════════════════════════════════════════════
    Text Wrapping Helper
    ══════════════════════════════════════════════════ */
 
@@ -912,7 +1063,9 @@ function renderCertificate() {
   if (!currentCert) return;
   const course = COURSES[currentCert.courseKey];
   const series = SERIES[course.series];
-  const bgFn = BACKGROUNDS[series.layout] || renderTopoContours;
+  // Course-level layout override (e.g. PB-501 uses "skulls" while series uses "topo")
+  const layoutKey = course.layout || series.layout;
+  const bgFn = BACKGROUNDS[layoutKey] || renderTopoContours;
   renderCertLayout(currentCert, course, series, bgFn);
 }
 

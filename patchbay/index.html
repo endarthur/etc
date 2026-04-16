@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Patchbay — API Workshops</title>
+<title>Patchbay — Workshops</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -24,6 +24,8 @@
   --red: #c0392b;
   --purple: #a78bfa;
   --purple-dim: rgba(167,139,250,0.12);
+  --sepia: #c49a6c;
+  --sepia-dim: rgba(196,154,108,0.12);
   --mono: 'IBM Plex Mono', monospace;
   --sans: 'IBM Plex Sans', sans-serif;
 }
@@ -136,6 +138,7 @@ body::before {
 .card:nth-child(2)::before { background: var(--cyan); }
 .card:nth-child(3)::before { background: var(--green); }
 .card:nth-child(4)::before { background: var(--purple); }
+.card:nth-child(5)::before { background: var(--sepia); }
 
 /* Ghost text/shapes that appear on hover */
 .card::after {
@@ -212,6 +215,22 @@ body::before {
 }
 .card:nth-child(4):hover::after { opacity: 0.08; }
 
+.card:nth-child(5)::after {
+  content: 'WHO: Secret Heir ────────┐\a WHAT: Wedding Ruined ────┤\a HOW: Systematic ─────────┤─→ BIBLE\a WITH: Enemy to Lover ────┘     ↓\a                             BEAT SHEET\a                                ↓\a                             15 × CHAPTER\a                                ↓\a                             EPUB / DOCX / .zip';
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 0.52rem;
+  line-height: 1.7;
+  color: var(--sepia);
+  opacity: 0;
+  padding: 1.2rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  text-align: left;
+}
+.card:nth-child(5):hover::after { opacity: 0.08; }
+
 .ghost-cat {
   position: absolute;
   bottom: 10px;
@@ -228,6 +247,7 @@ body::before {
 .card:nth-child(2) { animation: fadeUp 0.6s 0.25s ease-out both; }
 .card:nth-child(3) { animation: fadeUp 0.6s 0.35s ease-out both; }
 .card:nth-child(4) { animation: fadeUp 0.6s 0.45s ease-out both; }
+.card:nth-child(5) { animation: fadeUp 0.6s 0.55s ease-out both; }
 
 .card-number {
   font-family: var(--mono);
@@ -242,6 +262,7 @@ body::before {
 .card:nth-child(2) .card-number { color: var(--cyan); }
 .card:nth-child(3) .card-number { color: var(--green); }
 .card:nth-child(4) .card-number { color: var(--purple); }
+.card:nth-child(5) .card-number { color: var(--sepia); }
 
 .card-body { flex: 1; min-width: 0; }
 
@@ -300,6 +321,7 @@ body::before {
 .card:nth-child(2):hover .card-arrow { color: var(--cyan); }
 .card:nth-child(3):hover .card-arrow { color: var(--green); }
 .card:nth-child(4):hover .card-arrow { color: var(--purple); }
+.card:nth-child(5):hover .card-arrow { color: var(--sepia); }
 
 /* ── Download section ── */
 .download-section {
@@ -414,11 +436,12 @@ body::before {
     <div class="logo"><span class="patch">Patch</span><span class="bay">bay</span></div>
     <div class="tagline">plug things into other things until something happens</div>
     <p class="intro">
-      Four workshops about the plumbing behind every app, bot, and automation you've ever used.
+      Five workshops about the plumbing behind every app, bot, and automation you've ever used.
       Start by yelling into the void of the internet with raw HTTP. Graduate to building a
       Telegram bot that yells back. Wire a visual pipeline where you can <em>see</em>
-      the data move. Then raise an AI agent that lives in a folder on your computer.
-      Each one is a single HTML file — no install, no backend, no signup wall.
+      the data move. Raise an AI agent that lives in a folder on your computer.
+      Then build a slop factory that writes novels &mdash; and understand why you shouldn't deploy it.
+      Each one is a single HTML file &mdash; no install, no backend, no signup wall.
       Download, open, break stuff.
     </p>
   </header>
@@ -516,6 +539,29 @@ body::before {
       <div class="card-arrow">→</div>
     </a>
 
+    <a class="card" href="./501/nanogeon.html">
+      <div class="card-number">501</div>
+      <div class="card-body">
+        <div class="card-title">NaNoGEon</div>
+        <div class="card-sub">At the Mountains of MadLibs</div>
+        <div class="card-desc">
+          Build a complete AI novel factory. <strong>Trope selection, story bibles, beat sheets,
+          chapter generation, cover art, a deployable reader app</strong> — the full anatomy of every
+          content farm, from GoodNovel to the KDP gold rush. Ends with a loaded gun on your desktop
+          and a decision to make. <em>What you do next is yours to carry.</em>
+        </div>
+        <div class="card-tags">
+          <span class="tag">content factory</span>
+          <span class="tag">media literacy</span>
+          <span class="tag">15 novels included</span>
+          <span class="tag">EPUB / DOCX</span>
+          <span class="tag">8 chapters</span>
+          <span class="tag">WA-BOB</span>
+        </div>
+      </div>
+      <div class="card-arrow">→</div>
+    </a>
+
   </div>
 
   <div class="prereq">
@@ -524,7 +570,7 @@ body::before {
 
   <!-- Download -->
   <div class="download-section">
-    <p>Five HTML files, zero dependencies, works on a plane. Take the whole thing:</p>
+    <p>Six HTML files, zero dependencies, works on a plane. Take the whole thing:</p>
     <button class="download-btn" onclick="downloadAll(this)">
       <span class="dl-icon">↓</span>
       Download Patchbay (.zip)
@@ -548,6 +594,7 @@ const FILES = [
   { name: 'patchbay/bot_workshop.html', url: './bot_workshop.html' },
   { name: 'patchbay/flow_workshop.html', url: './flow_workshop.html' },
   { name: 'patchbay/401/agent_workshop.html', url: './401/agent_workshop.html' },
+  { name: 'patchbay/501/nanogeon.html', url: './501/nanogeon.html' },
 ];
 
 async function downloadAll(btn) {

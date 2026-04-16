@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="theme-color" content="#1a1714">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>__READER_TITLE__</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#faf8f5;--surface:#fff;--border:#e8e4dc;--text:#2a2520;--text-dim:#6a6560;
+  --text-faint:#9a9590;--accent:#d4a017;--accent-dim:rgba(212,160,23,0.08);
+  --reader-bg:#faf8f5;--reader-text:#2a2520;--reader-font:Georgia,'Times New Roman',serif;
+  --reader-size:18px;--reader-lh:1.8;--reader-max:640px;
+  --nav-bg:rgba(255,255,255,0.95);--nav-shadow:0 1px 8px rgba(0,0,0,0.08);
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1a1714;--surface:#221f19;--border:#332e27;--text:#e4dfd4;--text-dim:#8a8478;
+  --text-faint:#5a554c;--accent-dim:rgba(212,160,23,0.12);
+  --reader-bg:#1a1714;--reader-text:#d8d4c8;
+  --nav-bg:rgba(26,23,20,0.95);--nav-shadow:0 1px 8px rgba(0,0,0,0.3);
+}}
+html,body{width:100%;min-height:100%;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+*{max-width:100%}
+
+/* ═══ Top Nav ═══ */
+.top-nav{position:sticky;top:0;z-index:100;background:var(--nav-bg);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:28px 12px 0;height:72px;display:flex;align-items:center;gap:8px;box-sizing:border-box}
+.nav-brand{font-weight:700;font-size:14px;color:var(--accent);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40%}
+.nav-search{flex:1;position:relative;min-width:0}
+.nav-search input{width:100%;padding:7px 10px 7px 28px;border:1px solid var(--border);border-radius:16px;background:var(--bg);color:var(--text);font-size:12px;outline:none}
+.nav-search input:focus{border-color:var(--accent)}
+.nav-search::before{content:'🔍';position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:11px;pointer-events:none}
+.nav-links{display:flex;gap:2px}
+.nav-link{padding:6px 8px;border-radius:6px;font-size:12px;font-weight:500;color:var(--text-dim);cursor:pointer;transition:all 0.15s;white-space:nowrap}
+.nav-link:hover,.nav-link.active{background:var(--accent-dim);color:var(--accent)}
+
+/* Hide search on very narrow screens (phone preview) */
+@media (max-width: 400px) {
+  .nav-search { display: none; }
+}
+
+/* ═══ Views ═══ */
+.view{display:none;padding:12px;max-width:1200px;margin:0 auto;box-sizing:border-box}
+.view.active{display:block}
+
+/* ═══ Storefront ═══ */
+.section-header{display:flex;justify-content:space-between;align-items:center;margin:20px 0 10px;padding:0 2px;gap:8px}
+.section-header:first-child{margin-top:4px}
+.section-title{font-size:16px;font-weight:700;color:var(--text)}
+.section-link{font-size:12px;color:var(--accent);cursor:pointer}
+.novel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
+@media (min-width: 500px) { .novel-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))} }
+@media(min-width:768px){.novel-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}}
+.novel-tile{cursor:pointer;border-radius:8px;overflow:hidden;background:var(--surface);border:1px solid var(--border);transition:all 0.2s}
+.novel-tile:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,0.1);border-color:var(--accent)}
+.tile-cover{aspect-ratio:2/3;background:var(--bg);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.tile-cover img{width:100%;height:100%;object-fit:cover}
+.tile-cover .placeholder{font-size:40px;color:var(--text-faint)}
+.tile-info{padding:10px}
+.tile-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile-meta{font-size:11px;color:var(--text-faint)}
+.tile-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.tag{font-size:9px;padding:2px 6px;border-radius:3px;background:var(--accent-dim);color:var(--accent);font-weight:500;text-transform:uppercase;letter-spacing:0.3px}
+
+/* ═══ Genre Filter Bar ═══ */
+.genre-bar{display:flex;gap:6px;padding:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.genre-bar::-webkit-scrollbar{display:none}
+.genre-pill{padding:6px 14px;border-radius:16px;font-size:12px;font-weight:500;border:1px solid var(--border);background:var(--surface);color:var(--text-dim);cursor:pointer;white-space:nowrap;transition:all 0.15s}
+.genre-pill:hover,.genre-pill.active{border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
+
+/* ═══ Novel Detail ═══ */
+.detail-hero{display:flex;gap:16px;margin-bottom:20px}
+@media(max-width:600px){.detail-hero{flex-direction:column;align-items:center;text-align:center}}
+.detail-cover{width:160px;max-width:60vw;flex-shrink:0;border-radius:8px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.15)}
+.detail-cover img{width:100%;display:block}
+.detail-info{flex:1;min-width:0}
+.detail-title{font-size:20px;font-weight:700;margin-bottom:6px;line-height:1.2}
+.detail-pitch{font-size:14px;color:var(--text-dim);line-height:1.5;margin-bottom:10px}
+.detail-stats{display:flex;gap:12px;font-size:12px;color:var(--text-faint);margin-bottom:12px;flex-wrap:wrap;justify-content:center}
+@media(min-width:600px){.detail-stats{justify-content:flex-start}}
+.detail-stats span strong{color:var(--text-dim)}
+.detail-actions{display:flex;gap:8px;margin-bottom:20px;justify-content:center}
+@media(min-width:600px){.detail-actions{justify-content:flex-start}}
+.btn{padding:10px 20px;border-radius:6px;font-size:14px;font-weight:600;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;transition:all 0.15s}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{filter:brightness(1.1)}
+.btn-fav{font-size:18px;padding:8px 14px}
+.chapter-list{list-style:none}
+.chapter-list li{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:background 0.1s}
+.chapter-list li:hover{background:var(--accent-dim)}
+.ch-title{font-size:14px;color:var(--text)}
+.ch-meta{font-size:11px;color:var(--text-faint)}
+.ch-progress{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--accent);flex-shrink:0}
+.ch-progress.done{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* ═══ Reader ═══ */
+.reader-view{background:var(--reader-bg);min-height:100vh}
+.reader-header{position:sticky;top:0;z-index:50;background:var(--nav-bg);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:28px 12px 0;height:66px;display:flex;align-items:center;gap:12px;box-sizing:border-box}
+.reader-back{font-size:13px;color:var(--accent);cursor:pointer;white-space:nowrap}
+.reader-title{font-size:12px;color:var(--text-faint);flex:1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reader-progress{position:sticky;top:66px;left:0;right:0;height:3px;background:var(--border);z-index:49}
+.reader-progress-bar{height:100%;background:var(--accent);transition:width 0.3s}
+.reader-body{max-width:var(--reader-max);margin:0 auto;padding:24px 16px 60px;font-family:var(--reader-font);font-size:var(--reader-size);line-height:var(--reader-lh);color:var(--reader-text)}
+@media (max-width: 400px) { :root{--reader-size:16px;--reader-lh:1.7} }
+.reader-body h2{font-size:1.4em;margin-bottom:1em;font-weight:700;color:var(--text)}
+.reader-body p{margin-bottom:1em;text-indent:1.5em}
+.reader-body p:first-of-type{text-indent:0}
+.reader-footer{max-width:var(--reader-max);margin:0 auto;padding:0 20px 40px;display:flex;justify-content:space-between;align-items:center}
+.reader-footer .btn{padding:8px 16px;font-size:13px}
+.reader-pos{font-size:12px;color:var(--text-faint)}
+.reading-time{font-size:12px;color:var(--text-faint);margin-bottom:16px;font-family:system-ui,sans-serif}
+
+/*
+  AD INTEGRATION GUIDE (we strongly recommend against this)
+  1. Unhide the ad-slot divs you want to use
+  2. Paste your ad network's script tag in the head
+  3. Register a refresh callback with the reader lifecycle hooks:
+     reader.onChapterChange(chapterNumber)
+     reader.onCatalogOpen()
+     reader.onFirstChapter()
+  The distance between "beautiful free reader" and "ad-infested engagement trap"
+  is uncommenting a div. That's worth knowing.
+*/
+.ad-slot{margin:24px auto;max-width:var(--reader-max);text-align:center;min-height:90px}
+
+/* ═══ Library View ═══ */
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-faint)}
+.empty-state .icon{font-size:48px;margin-bottom:12px}
+.empty-state p{font-size:14px;line-height:1.6}
+
+/* ═══ Scrollbar ═══ */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ═══ User typography overrides (injected by workshop Settings) ═══ */
+/* __READER_SETTINGS_CSS__ */
+</style>
+</head>
+<body>
+
+<!-- ═══ Top Navigation ═══ -->
+<nav class="top-nav" id="main-nav">
+  <span class="nav-brand" onclick="showView('browse')">__READER_TITLE__</span>
+  <div class="nav-search"><input type="text" id="search-input" placeholder="Search novels..." oninput="filterNovels(this.value)"></div>
+  <div class="nav-links">
+    <span class="nav-link active" onclick="showView('browse')" data-view="browse">Browse</span>
+    <span class="nav-link" onclick="showView('library')" data-view="library">My Library</span>
+  </div>
+</nav>
+
+<!-- ═══ Browse View ═══ -->
+<div class="view active" id="view-browse">
+  <div class="genre-bar" id="genre-bar"></div>
+
+  <!-- AD SLOT: catalog (on the browse page) -->
+  <div class="ad-slot ad-catalog" hidden></div>
+
+  <!-- Curated sections (if available) -->
+  <div id="curated-sections"></div>
+
+  <div class="section-header">
+    <span class="section-title" id="browse-title">All Novels</span>
+    <span class="section-link" id="browse-count"></span>
+  </div>
+  <div class="novel-grid" id="novel-grid"></div>
+</div>
+
+<!-- ═══ Detail View ═══ -->
+<div class="view" id="view-detail">
+  <div id="detail-content"></div>
+</div>
+
+<!-- ═══ Reader View ═══ -->
+<div class="view reader-view" id="view-reader">
+  <div class="reader-header">
+    <span class="reader-back" onclick="backFromReader()">&larr; Back</span>
+    <span class="reader-title" id="reader-title"></span>
+    <span style="width:40px"></span>
+  </div>
+  <div class="reader-progress"><div class="reader-progress-bar" id="reader-progress-bar"></div></div>
+
+  <!-- AD SLOT: interstitial (before first chapter) -->
+  <div class="ad-slot ad-interstitial" hidden></div>
+
+  <div class="reader-body" id="reader-body"></div>
+
+  <!-- AD SLOT: chapter-break -->
+  <div class="ad-slot ad-chapter-break" hidden></div>
+
+  <div class="reader-footer">
+    <button class="btn" id="reader-prev" onclick="readerNav(-1)">&larr; Previous</button>
+    <span class="reader-pos" id="reader-pos"></span>
+    <button class="btn" id="reader-next" onclick="readerNav(1)">Next &rarr;</button>
+  </div>
+</div>
+
+<!-- ═══ Library View ═══ -->
+<div class="view" id="view-library">
+  <div class="section-header"><span class="section-title">My Library</span></div>
+  <div id="library-content"></div>
+</div>
+
+<script>
+// ─── Data (injected by export) ───
+const CATALOG = __CATALOG_JSON__;
+
+// Detect localStorage availability — blob:// and some sandboxed contexts block it
+let _lsAvailable = false;
+try {
+  localStorage.setItem('__test__', '1');
+  localStorage.removeItem('__test__');
+  _lsAvailable = true;
+} catch { _lsAvailable = false; }
+
+function loadReaderState() {
+  if (!_lsAvailable) return { favorites: {}, progress: {} };
+  try { return JSON.parse(localStorage.getItem(LS_KEY)) || { favorites: {}, progress: {} }; }
+  catch { return { favorites: {}, progress: {} }; }
+}
+function saveReaderState() {
+  if (!_lsAvailable) return;
+  try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch {}
+}
+
+// ─── State ───
+const LS_KEY = 'nanogeon-reader';
+let state = loadReaderState();
+let currentNovel = null;
+let currentChapter = 0;
+let activeGenre = null;
+let searchQuery = '';
+
+// ─── Lifecycle hooks (for ad integration — documented, not active) ───
+const reader = {
+  _hooks: { chapterChange: [], catalogOpen: [], firstChapter: [] },
+  onChapterChange(fn) { this._hooks.chapterChange.push(fn); },
+  onCatalogOpen(fn) { this._hooks.catalogOpen.push(fn); },
+  onFirstChapter(fn) { this._hooks.firstChapter.push(fn); },
+  _fire(hook, ...args) { this._hooks[hook].forEach(fn => fn(...args)); },
+};
+
+// ─── Genre extraction ───
+function getAllGenres() {
+  const genres = new Set();
+  CATALOG.forEach(n => (n.genre_tags || []).forEach(t => genres.add(t)));
+  return [...genres].sort();
+}
+
+// ─── Views ───
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.querySelectorAll('.nav-link').forEach(l =>
+    l.classList.toggle('active', l.dataset.view === name));
+  document.getElementById('main-nav').style.display = name === 'reader' ? 'none' : '';
+  if (name === 'browse') reader._fire('catalogOpen');
+  if (name === 'library') renderLibrary();
+  window.scrollTo(0, 0);
+}
+
+// ─── Browse / Storefront ───
+function renderBrowse() {
+  // Genre bar
+  const genres = getAllGenres();
+  const bar = document.getElementById('genre-bar');
+  bar.innerHTML = `<span class="genre-pill ${!activeGenre ? 'active' : ''}" onclick="filterGenre(null)">All</span>` +
+    genres.map(g => `<span class="genre-pill ${activeGenre===g?'active':''}" onclick="filterGenre('${esc(g)}')">${esc(g)}</span>`).join('');
+
+  // Filter novels
+  let novels = CATALOG;
+  if (activeGenre) novels = novels.filter(n => (n.genre_tags || []).includes(activeGenre));
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    novels = novels.filter(n =>
+      n.title.toLowerCase().includes(q) ||
+      (n.pitch || '').toLowerCase().includes(q) ||
+      (n.genre_tags || []).some(t => t.toLowerCase().includes(q))
+    );
+  }
+
+  document.getElementById('browse-title').textContent = activeGenre || 'All Novels';
+  document.getElementById('browse-count').textContent = novels.length + ' novel' + (novels.length !== 1 ? 's' : '');
+
+  const grid = document.getElementById('novel-grid');
+  if (!novels.length) {
+    grid.innerHTML = '<div class="empty-state"><div class="icon">📚</div><p>No novels found.</p></div>';
+    return;
+  }
+  grid.innerHTML = novels.map((n, i) => {
+    const idx = CATALOG.indexOf(n);
+    const cover = n.cover
+      ? `<img src="${n.cover}" alt="${esc(n.title)}">`
+      : `<span class="placeholder">📖</span>`;
+    const tags = (n.genre_tags || []).slice(0, 3).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+    const progress = state.progress[idx];
+    const meta = progress ? `Ch ${progress.chapter + 1}/${n.chapters.length}` : `${n.word_count.toLocaleString()} words`;
+    return `<div class="novel-tile" onclick="showDetail(${idx})">
+      <div class="tile-cover">${cover}</div>
+      <div class="tile-info">
+        <div class="tile-title">${esc(n.title)}</div>
+        <div class="tile-meta">${meta}</div>
+        <div class="tile-tags">${tags}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderCuration() {
+  const el = document.getElementById('curated-sections');
+  if (!el || typeof CURATION === 'undefined' || !CURATION) { if (el) el.innerHTML = ''; return; }
+
+  let html = '';
+
+  // Featured pick
+  if (CURATION.featured) {
+    const idx = CATALOG.findIndex(n => n.title === CURATION.featured || n.title.includes(CURATION.featured));
+    if (idx >= 0) {
+      const n = CATALOG[idx];
+      const cover = n.cover ? `<img src="${n.cover}" style="width:120px;border-radius:6px;flex-shrink:0">` : '';
+      html += `<div style="display:flex;gap:16px;padding:20px;background:var(--accent-dim);border-radius:12px;margin:16px 0;cursor:pointer" onclick="showDetail(${idx})">
+        ${cover}
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Staff Pick</div>
+          <div style="font-size:18px;font-weight:700;margin-bottom:6px">${esc(n.title)}</div>
+          <div style="font-size:13px;color:var(--text-dim);line-height:1.5">${esc(CURATION.featuredNote || n.blurb || n.pitch)}</div>
+        </div>
+      </div>`;
+    }
+  }
+
+  // Themed sections
+  for (const section of CURATION.sections || []) {
+    const sectionNovels = section.novels.map(title =>
+      CATALOG.findIndex(n => n.title === title || n.title.includes(title) || title.includes(n.title))
+    ).filter(i => i >= 0);
+    if (!sectionNovels.length) continue;
+
+    html += `<div class="section-header">
+      <span class="section-title">${esc(section.name)}</span>
+      <span style="font-size:12px;color:var(--text-faint)">${esc(section.tagline)}</span>
+    </div>`;
+    html += '<div class="novel-grid">';
+    for (const idx of sectionNovels) {
+      const n = CATALOG[idx];
+      const cover = n.cover ? `<img src="${n.cover}" alt="${esc(n.title)}">` : `<span class="placeholder">📖</span>`;
+      const tags = (n.genre_tags || []).slice(0, 3).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+      html += `<div class="novel-tile" onclick="showDetail(${idx})">
+        <div class="tile-cover">${cover}</div>
+        <div class="tile-info">
+          <div class="tile-title">${esc(n.title)}</div>
+          <div class="tile-meta">${n.word_count.toLocaleString()} words</div>
+          <div class="tile-tags">${tags}</div>
+        </div>
+      </div>`;
+    }
+    html += '</div>';
+  }
+
+  el.innerHTML = html;
+}
+
+function filterGenre(genre) { activeGenre = genre; renderBrowse(); }
+function filterNovels(q) { searchQuery = q; renderBrowse(); }
+
+// ─── Novel Detail ───
+function showDetail(idx) {
+  currentNovel = idx;
+  const n = CATALOG[idx];
+  const isFav = state.favorites[idx];
+  const progress = state.progress[idx];
+  const cover = n.cover ? `<img src="${n.cover}" style="width:100%">` : '';
+  const btnText = progress ? `Continue (Ch ${progress.chapter + 1})` : 'Start Reading';
+  const startCh = progress ? progress.chapter : 0;
+  const tags = (n.genre_tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join(' ');
+  const readingTime = Math.ceil(n.word_count / 250);
+
+  const chList = n.chapters.map((ch, i) => {
+    const done = progress && progress.chapter > i;
+    const current = progress && progress.chapter === i;
+    return `<li onclick="startReading(${idx},${i})">
+      <div>
+        <div class="ch-title">${esc(ch.title ? 'Chapter ' + ch.number + ': ' + ch.title : 'Chapter ' + ch.number)}</div>
+        <div class="ch-meta">${ch.word_count.toLocaleString()} words &middot; ~${Math.ceil(ch.word_count/250)} min</div>
+      </div>
+      <div class="ch-progress ${done ? 'done' : ''}">${done ? '✓' : current ? '▸' : ''}</div>
+    </li>`;
+  }).join('');
+
+  // Blurb or pitch
+  const displayBlurb = n.blurb || n.pitch || '';
+  const comparable = n.comparable || '';
+
+  // Recommendations from curation
+  let recsHtml = '';
+  if (typeof CURATION !== 'undefined' && CURATION && CURATION.recommendations) {
+    const recTitles = CURATION.recommendations[n.title] || [];
+    if (recTitles.length) {
+      const recCards = recTitles.map(t => {
+        const ri = CATALOG.findIndex(c => c.title === t || c.title.includes(t) || t.includes(c.title));
+        if (ri < 0) return '';
+        const rn = CATALOG[ri];
+        const rc = rn.cover ? `<img src="${rn.cover}" alt="${esc(rn.title)}">` : `<span class="placeholder">📖</span>`;
+        return `<div class="novel-tile" onclick="showDetail(${ri})" style="min-width:140px">
+          <div class="tile-cover">${rc}</div>
+          <div class="tile-info"><div class="tile-title">${esc(rn.title)}</div></div>
+        </div>`;
+      }).filter(Boolean).join('');
+      if (recCards) {
+        recsHtml = `<div style="margin-top:24px">
+          <div class="section-header"><span class="section-title">You might also like</span></div>
+          <div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px">${recCards}</div>
+        </div>`;
+      }
+    }
+  }
+
+  document.getElementById('detail-content').innerHTML = `
+    <div class="detail-hero">
+      <div class="detail-cover">${cover}</div>
+      <div class="detail-info">
+        <div class="detail-title">${esc(n.title)}</div>
+        <div class="detail-pitch">${esc(displayBlurb)}</div>
+        ${comparable ? `<div style="font-size:12px;color:var(--text-faint);font-style:italic;margin-bottom:8px">${esc(comparable)}</div>` : ''}
+        <div class="detail-stats">
+          <span><strong>${n.chapters.length}</strong> chapters</span>
+          <span><strong>${n.word_count.toLocaleString()}</strong> words</span>
+          <span>~<strong>${readingTime}</strong> min read</span>
+        </div>
+        <div style="margin-bottom:12px">${tags}</div>
+        <div class="detail-actions">
+          <button class="btn btn-primary" onclick="startReading(${idx},${startCh})">${btnText}</button>
+          <button class="btn btn-fav" onclick="toggleFav(${idx})" title="${isFav ? 'Remove from library' : 'Add to library'}">${isFav ? '❤️' : '🤍'}</button>
+        </div>
+      </div>
+    </div>
+    <ul class="chapter-list">${chList}</ul>
+    ${recsHtml}`;
+
+  showView('detail');
+}
+
+function toggleFav(idx) {
+  state.favorites[idx] = !state.favorites[idx];
+  if (!state.favorites[idx]) delete state.favorites[idx];
+  saveReaderState();
+  showDetail(idx);
+}
+
+// ─── Reader ───
+function startReading(novelIdx, chapterIdx) {
+  currentNovel = novelIdx;
+  currentChapter = chapterIdx;
+  if (chapterIdx === 0) reader._fire('firstChapter');
+  renderReader();
+  showView('reader');
+}
+
+function renderReader() {
+  const n = CATALOG[currentNovel];
+  const ch = n.chapters[currentChapter];
+  const lines = ch.text.split('\n').filter(l => l.trim());
+  const readingTime = Math.ceil(ch.word_count / 250);
+
+  let html = `<div class="reading-time">${readingTime} min read</div>`;
+  html += '<h2>' + esc(lines[0]) + '</h2>';
+  for (let i = 1; i < lines.length; i++) html += '<p>' + esc(lines[i]) + '</p>';
+
+  document.getElementById('reader-body').innerHTML = html;
+  document.getElementById('reader-title').textContent = n.title;
+  document.getElementById('reader-prev').disabled = currentChapter <= 0;
+  document.getElementById('reader-next').disabled = currentChapter >= n.chapters.length - 1;
+  document.getElementById('reader-next').textContent = currentChapter >= n.chapters.length - 1 ? 'Finish' : 'Next →';
+  document.getElementById('reader-pos').textContent = `${currentChapter + 1} / ${n.chapters.length}`;
+
+  // Progress bar
+  const pct = ((currentChapter + 1) / n.chapters.length * 100).toFixed(1);
+  document.getElementById('reader-progress-bar').style.width = pct + '%';
+
+  // Save progress
+  state.progress[currentNovel] = { chapter: currentChapter, updated: Date.now() };
+  saveReaderState();
+
+  reader._fire('chapterChange', currentChapter);
+  window.scrollTo(0, 0);
+}
+
+function readerNav(dir) {
+  const n = CATALOG[currentNovel];
+  const next = currentChapter + dir;
+  if (next < 0) return;
+  if (next >= n.chapters.length) { backFromReader(); return; }
+  currentChapter = next;
+  renderReader();
+}
+
+function backFromReader() { showDetail(currentNovel); }
+
+// ─── Library View ───
+function renderLibrary() {
+  const el = document.getElementById('library-content');
+  const favIdxs = Object.keys(state.favorites).filter(k => state.favorites[k]).map(Number);
+  const progressIdxs = Object.keys(state.progress).map(Number);
+  const allIdxs = [...new Set([...favIdxs, ...progressIdxs])].filter(i => CATALOG[i]);
+
+  if (!allIdxs.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📚</div><p>Your library is empty.<br>Browse novels and tap ❤️ to save favorites,<br>or start reading to track progress.</p></div>';
+    return;
+  }
+
+  // Split into reading and favorites
+  let html = '';
+  const reading = progressIdxs.filter(i => CATALOG[i]).sort((a, b) =>
+    (state.progress[b]?.updated || 0) - (state.progress[a]?.updated || 0));
+
+  if (reading.length) {
+    html += '<div class="section-header"><span class="section-title">Continue Reading</span></div>';
+    html += '<div class="novel-grid">' + reading.map(idx => {
+      const n = CATALOG[idx];
+      const p = state.progress[idx];
+      const cover = n.cover ? `<img src="${n.cover}">` : `<span class="placeholder">📖</span>`;
+      return `<div class="novel-tile" onclick="showDetail(${idx})">
+        <div class="tile-cover">${cover}</div>
+        <div class="tile-info">
+          <div class="tile-title">${esc(n.title)}</div>
+          <div class="tile-meta">Ch ${p.chapter + 1} of ${n.chapters.length}</div>
+        </div>
+      </div>`;
+    }).join('') + '</div>';
+  }
+
+  const favOnly = favIdxs.filter(i => !progressIdxs.includes(i));
+  if (favOnly.length) {
+    html += '<div class="section-header"><span class="section-title">Saved</span></div>';
+    html += '<div class="novel-grid">' + favOnly.map(idx => {
+      const n = CATALOG[idx];
+      const cover = n.cover ? `<img src="${n.cover}">` : `<span class="placeholder">📖</span>`;
+      return `<div class="novel-tile" onclick="showDetail(${idx})">
+        <div class="tile-cover">${cover}</div>
+        <div class="tile-info">
+          <div class="tile-title">${esc(n.title)}</div>
+          <div class="tile-meta">${n.word_count.toLocaleString()} words</div>
+        </div>
+      </div>`;
+    }).join('') + '</div>';
+  }
+
+  el.innerHTML = html;
+}
+
+// ─── Utilities ───
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ─── Init ───
+renderCuration();
+renderBrowse();
+
+// Preview mode: if parent injected an initial novel index, auto-open its detail page
+const INITIAL_NOVEL = __INITIAL_NOVEL__;
+if (INITIAL_NOVEL !== null && CATALOG[INITIAL_NOVEL]) {
+  showDetail(INITIAL_NOVEL);
+}
+</script>
+</body>
+</html>
